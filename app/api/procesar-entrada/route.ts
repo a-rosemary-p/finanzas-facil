@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Texto vacío' }, { status: 400 })
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
     const prompt = `${SYSTEM_PROMPT}\n\nEntrada del usuario: ${texto}`
     const result = await model.generateContent(prompt)
@@ -51,7 +51,9 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ items: parsed.items, resumen })
-  } catch {
-    return NextResponse.json({ error: 'No pudimos procesar tu entrada. Intenta de nuevo.' }, { status: 500 })
+  } catch (e) {
+    console.error('[procesar-entrada] error:', e)
+    const msg = e instanceof Error ? e.message : String(e)
+    return NextResponse.json({ error: 'No pudimos procesar tu entrada. Intenta de nuevo.', detail: msg }, { status: 500 })
   }
 }
