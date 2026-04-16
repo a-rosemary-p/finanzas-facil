@@ -1,3 +1,5 @@
+'use client'
+
 import type { Filtro } from '@/lib/storage'
 import { LABEL_FILTRO } from '@/lib/storage'
 

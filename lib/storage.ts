@@ -1,7 +1,11 @@
 import type { EntradaDia, ResumenDia } from './types'
 
 export function getFechaHoy(): string {
-  return new Date().toISOString().split('T')[0]
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 export function getLlaveEntradas(fecha: string): string {
@@ -32,18 +36,26 @@ export function actualizarEntrada(entradaActualizada: EntradaDia): void {
 export function cargarEntradasRango(fechaInicio: string, fechaFin: string): EntradaDia[] {
   if (typeof window === 'undefined') return []
   const entradas: EntradaDia[] = []
+  const keys: string[] = []
   for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i)
-    if (!key?.startsWith('entradas_')) continue
+    const k = localStorage.key(i)
+    if (k) keys.push(k)
+  }
+  for (const key of keys) {
+    if (!key.startsWith('entradas_')) continue
     const fecha = key.replace('entradas_', '')
     if (fecha >= fechaInicio && fecha <= fechaFin) {
-      const raw = localStorage.getItem(key)
-      if (raw) entradas.push(...JSON.parse(raw))
+      try {
+        const raw = localStorage.getItem(key)
+        if (raw) entradas.push(...JSON.parse(raw))
+      } catch {
+        // entrada corrupta — se omite
+      }
     }
   }
   return entradas.sort((a, b) => {
     if (b.fecha !== a.fecha) return b.fecha.localeCompare(a.fecha)
-    return b.creadoEn - a.creadoEn
+    return (b.creadoEn ?? 0) - (a.creadoEn ?? 0)
   })
 }
 
