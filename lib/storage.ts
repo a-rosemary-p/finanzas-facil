@@ -29,6 +29,45 @@ export function actualizarEntrada(entradaActualizada: EntradaDia): void {
   }
 }
 
+export function cargarEntradasRango(fechaInicio: string, fechaFin: string): EntradaDia[] {
+  if (typeof window === 'undefined') return []
+  const entradas: EntradaDia[] = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (!key?.startsWith('entradas_')) continue
+    const fecha = key.replace('entradas_', '')
+    if (fecha >= fechaInicio && fecha <= fechaFin) {
+      const raw = localStorage.getItem(key)
+      if (raw) entradas.push(...JSON.parse(raw))
+    }
+  }
+  return entradas.sort((a, b) => {
+    if (b.fecha !== a.fecha) return b.fecha.localeCompare(a.fecha)
+    return b.creadoEn - a.creadoEn
+  })
+}
+
+export type Filtro = 'hoy' | '7dias' | 'mes' | 'anio'
+
+export function getRangoFiltro(filtro: Filtro): { inicio: string; fin: string } {
+  const hoy = getFechaHoy()
+  if (filtro === 'hoy') return { inicio: hoy, fin: hoy }
+  if (filtro === '7dias') {
+    const d = new Date()
+    d.setDate(d.getDate() - 6)
+    return { inicio: d.toISOString().split('T')[0], fin: hoy }
+  }
+  if (filtro === 'mes') return { inicio: `${hoy.slice(0, 7)}-01`, fin: hoy }
+  return { inicio: `${hoy.slice(0, 4)}-01-01`, fin: hoy }
+}
+
+export const LABEL_FILTRO: Record<Filtro, string> = {
+  hoy: 'Hoy',
+  '7dias': 'Últimos 7 días',
+  mes: 'Este mes',
+  anio: 'Este año',
+}
+
 export function calcularResumenDia(entradas: EntradaDia[]): ResumenDia {
   let ingresos = 0
   let gastos = 0

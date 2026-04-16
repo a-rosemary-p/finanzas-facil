@@ -7,6 +7,7 @@ import { formatPesos, getFechaHoy, actualizarEntrada } from '@/lib/storage'
 interface HistorialEntradasProps {
   entradas: EntradaDia[]
   onEntradaActualizada: (entrada: EntradaDia) => void
+  titulo?: string
 }
 
 const CATEGORIAS = ['Ventas', 'Ingredientes', 'Servicios', 'Transporte', 'Renta', 'Servicios básicos', 'Otro']
@@ -247,18 +248,18 @@ function EntradaCard({
   )
 }
 
-export default function HistorialEntradas({ entradas, onEntradaActualizada }: HistorialEntradasProps) {
+export default function HistorialEntradas({ entradas, onEntradaActualizada, titulo = 'Registros de hoy' }: HistorialEntradasProps) {
   if (entradas.length === 0) {
     return (
       <div className="text-center text-gray-400 text-sm py-8">
-        Aún no hay registros hoy. Escribe lo que pasó en tu negocio arriba.
+        No hay registros para este período.
       </div>
     )
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="font-semibold text-gray-700">Registros de hoy</h2>
+      <h2 className="font-semibold text-gray-700">{titulo}</h2>
       {entradas.map((entrada) => (
         <EntradaCard key={entrada.id} entrada={entrada} onActualizar={onEntradaActualizada} />
       ))}
