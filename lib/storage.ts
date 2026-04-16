@@ -33,9 +33,9 @@ export function actualizarEntrada(entradaActualizada: EntradaDia): void {
   }
 }
 
-export function cargarEntradasRango(fechaInicio: string, fechaFin: string): EntradaDia[] {
+function cargarTodasLasEntradas(): EntradaDia[] {
   if (typeof window === 'undefined') return []
-  const entradas: EntradaDia[] = []
+  const todas: EntradaDia[] = []
   const keys: string[] = []
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i)
@@ -43,20 +43,29 @@ export function cargarEntradasRango(fechaInicio: string, fechaFin: string): Entr
   }
   for (const key of keys) {
     if (!key.startsWith('entradas_')) continue
-    const fecha = key.replace('entradas_', '')
-    if (fecha >= fechaInicio && fecha <= fechaFin) {
-      try {
-        const raw = localStorage.getItem(key)
-        if (raw) entradas.push(...JSON.parse(raw))
-      } catch {
-        // entrada corrupta — se omite
-      }
+    try {
+      const raw = localStorage.getItem(key)
+      if (raw) todas.push(...JSON.parse(raw))
+    } catch {
+      // entrada corrupta — se omite
     }
   }
-  return entradas.sort((a, b) => {
-    if (b.fecha !== a.fecha) return b.fecha.localeCompare(a.fecha)
-    return (b.creadoEn ?? 0) - (a.creadoEn ?? 0)
-  })
+  return todas
+}
+
+// Filtra por fechaMovimiento (cuándo ocurrió), no por fecha de registro
+export function cargarEntradasRango(fechaInicio: string, fechaFin: string): EntradaDia[] {
+  return cargarTodasLasEntradas()
+    .filter((e) => {
+      const fm = e.fechaMovimiento ?? e.fecha
+      return fm >= fechaInicio && fm <= fechaFin
+    })
+    .sort((a, b) => {
+      const fmA = a.fechaMovimiento ?? a.fecha
+      const fmB = b.fechaMovimiento ?? b.fecha
+      if (fmB !== fmA) return fmB.localeCompare(fmA)
+      return (b.creadoEn ?? 0) - (a.creadoEn ?? 0)
+    })
 }
 
 export type Filtro = 'hoy' | '7dias' | 'mes' | 'anio'
@@ -85,10 +94,11 @@ export function calcularResumenDia(entradas: EntradaDia[]): ResumenDia {
   let gastos = 0
   let pendientes = 0
   for (const entrada of entradas) {
-    for (const item of entrada.items) {
-      if (item.tipo === 'ingreso') ingresos += item.monto
-      else if (item.tipo === 'gasto') gastos += item.monto
-      else if (item.tipo === 'pendiente') pendientes += item.monto
+    for (const item of entrada.items ?? []) {
+      const m = typeof item.monto === 'number' && isFinite(item.monto) ? item.monto : 0
+      if (item.tipo === 'ingreso') ingresos += m
+      else if (item.tipo === 'gasto') gastos += m
+      else if (item.tipo === 'pendiente') pendientes += m
     }
   }
   return { ingresos, gastos, pendientes }

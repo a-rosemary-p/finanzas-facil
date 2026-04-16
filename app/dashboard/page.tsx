@@ -8,7 +8,6 @@ import HistorialEntradas from '@/components/HistorialEntradas'
 import FiltrosPeriodo from '@/components/FiltrosPeriodo'
 import {
   getFechaHoy,
-  cargarEntradasDia,
   cargarEntradasRango,
   calcularResumenDia,
   getRangoFiltro,
@@ -37,9 +36,8 @@ export default function DashboardPage() {
   const cargarEntradas = useCallback((f: Filtro) => {
     try {
       const { inicio, fin } = getRangoFiltro(f)
-      const data = f === 'hoy'
-        ? cargarEntradasDia(getFechaHoy())
-        : cargarEntradasRango(inicio, fin)
+      // Siempre filtra por fechaMovimiento (cuando ocurrió), no por fecha de registro
+      const data = cargarEntradasRango(inicio, fin)
       setEntradas(data)
       setResumen(calcularResumenDia(data))
     } catch {
@@ -76,9 +74,9 @@ export default function DashboardPage() {
   }
 
   function handleNuevaEntrada(nueva: EntradaDia) {
-    // Solo agregar al estado si la fecha de la entrada cae dentro del filtro activo
     const { inicio, fin } = getRangoFiltro(filtro)
-    if (nueva.fecha >= inicio && nueva.fecha <= fin) {
+    const fm = nueva.fechaMovimiento ?? nueva.fecha
+    if (fm >= inicio && fm <= fin) {
       const actualizadas = [nueva, ...entradas]
       setEntradas(actualizadas)
       setResumen(calcularResumenDia(actualizadas))

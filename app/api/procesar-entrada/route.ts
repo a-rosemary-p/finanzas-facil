@@ -60,13 +60,38 @@ export async function POST(req: NextRequest) {
       throw new Error('La respuesta no contiene un array de items')
     }
 
-    const resumen = {
-      ingresos:   parsed.items.filter((i: { tipo: string }) => i.tipo === 'ingreso').reduce((s: number, i: { monto: number }) => s + (i.monto ?? 0), 0),
-      gastos:     parsed.items.filter((i: { tipo: string }) => i.tipo === 'gasto').reduce((s: number, i: { monto: number }) => s + (i.monto ?? 0), 0),
-      pendientes: parsed.items.filter((i: { tipo: string }) => i.tipo === 'pendiente').reduce((s: number, i: { monto: number }) => s + (i.monto ?? 0), 0),
+    // Sanitizar: solo items con tipo válido, descripción y monto numérico > 0
+    const TIPOS_VALIDOS = ['ingreso', 'gasto', 'pendiente']
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const items = (parsed.items as any[]).filter(
+      (i) =>
+        TIPOS_VALIDOS.includes(i.tipo) &&
+        typeof i.descripcion === 'string' &&
+        i.descripcion.trim() !== '' &&
+        typeof i.monto === 'number' &&
+        isFinite(i.monto) &&
+        i.monto > 0
+    ).map((i) => ({
+      tipo: i.tipo,
+      descripcion: String(i.descripcion).trim(),
+      categoria: String(i.categoria ?? 'Otro').trim(),
+      monto: Math.round(i.monto),
+    }))
+
+    if (items.length === 0) {
+      return NextResponse.json(
+        { error: 'No encontré montos claros en tu entrada. ¿Puedes incluir las cantidades?' },
+        { status: 422 }
+      )
     }
 
-    return NextResponse.json({ items: parsed.items, resumen, fechaMovimiento })
+    const resumen = {
+      ingresos:   items.filter((i) => i.tipo === 'ingreso').reduce((s, i) => s + i.monto, 0),
+      gastos:     items.filter((i) => i.tipo === 'gasto').reduce((s, i) => s + i.monto, 0),
+      pendientes: items.filter((i) => i.tipo === 'pendiente').reduce((s, i) => s + i.monto, 0),
+    }
+
+    return NextResponse.json({ items, resumen, fechaMovimiento })
 
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
