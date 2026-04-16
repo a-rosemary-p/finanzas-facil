@@ -26,9 +26,11 @@ export default function MetricCard({ label, valor, tipo }: MetricCardProps) {
   const formatted = '$' + Math.abs(valor).toLocaleString('es-MX')
 
   return (
-    <div className={`rounded-xl p-4 ${colorBg} flex flex-col gap-1`}>
-      <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">{label}</span>
-      <span className={`text-2xl font-bold ${colorText}`}>
+    <div className={`rounded-xl p-3 ${colorBg} flex flex-col gap-1 min-w-0`}>
+      <span className="text-[10px] text-gray-500 font-semibold uppercase tracking-wide truncate">
+        {label}
+      </span>
+      <span className={`text-lg font-bold ${colorText} truncate leading-tight`}>
         {signo}{formatted}
       </span>
     </div>

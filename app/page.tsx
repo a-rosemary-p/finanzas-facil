@@ -37,7 +37,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="tu@negocio.com"
-                className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800 placeholder-gray-400"
+                className="border border-gray-200 rounded-lg px-3 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800 placeholder-gray-400 min-h-[44px]"
               />
             </div>
             <div className="flex flex-col gap-1.5">
@@ -47,7 +47,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800 placeholder-gray-400"
+                className="border border-gray-200 rounded-lg px-3 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800 placeholder-gray-400 min-h-[44px]"
               />
             </div>
 
@@ -57,7 +57,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="bg-blue-600 text-white rounded-lg py-2.5 font-medium hover:bg-blue-700 transition-colors mt-1"
+              className="bg-blue-600 text-white rounded-xl py-3.5 font-semibold text-base hover:bg-blue-700 transition-colors mt-1 min-h-[52px]"
             >
               Entrar
             </button>

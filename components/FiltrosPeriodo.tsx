@@ -17,7 +17,7 @@ export default function FiltrosPeriodo({ filtroActivo, onChange }: FiltrosPeriod
         <button
           key={f}
           onClick={() => onChange(f)}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+          className={`px-4 py-2.5 rounded-full text-sm font-medium transition-colors border min-h-[44px] flex items-center ${
             filtroActivo === f
               ? 'bg-blue-600 text-white border-blue-600'
               : 'bg-white text-gray-500 border-gray-200 hover:border-blue-300 hover:text-blue-500'

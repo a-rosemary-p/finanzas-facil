@@ -22,4 +22,27 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-lato), Arial, Helvetica, sans-serif;
+  /* Safe area for notched phones (iPhone X+) */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent iOS auto-zoom on input focus (requires font-size >= 16px) */
+input,
+textarea,
+select {
+  font-size: 16px !important;
+}
+
+/* Remove double-tap zoom delay on all interactive elements */
+button,
+a,
+label,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+/* Smooth scroll everywhere */
+html {
+  scroll-behavior: smooth;
 }

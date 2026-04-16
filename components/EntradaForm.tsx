@@ -85,7 +85,7 @@ export default function EntradaForm({ onNuevaEntrada }: EntradaFormProps) {
         <button
           type="submit"
           disabled={cargando || !texto.trim()}
-          className="bg-blue-600 text-white rounded-lg py-2.5 px-4 font-medium text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          className="bg-blue-600 text-white rounded-xl py-3.5 px-4 font-semibold text-base hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 min-h-[52px]"
         >
           {cargando ? (
             <>

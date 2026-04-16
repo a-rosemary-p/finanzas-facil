@@ -100,17 +100,21 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+      <header className="bg-white border-b border-gray-200 px-4 flex items-center justify-between sticky top-0 z-10 h-14"
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <span className="font-bold text-gray-800 text-lg">💰 FinanzasFácil</span>
         <button
           onClick={handleLogout}
-          className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          className="text-sm text-gray-500 hover:text-gray-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-end"
         >
           Cerrar sesión
         </button>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-6">
+      <main
+        className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-6"
+        style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}
+      >
         {/* Saludo */}
         <div>
           <p className="text-gray-800 font-medium">Hola, {email}</p>

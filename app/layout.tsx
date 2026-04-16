@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Lato } from "next/font/google";
 import "./globals.css";
 
@@ -12,6 +12,18 @@ const lato = Lato({
 export const metadata: Metadata = {
   title: "FinanzasFácil",
   description: "Control de ingresos y gastos para tu negocio",
+  appleWebApp: {
+    capable: true,
+    title: "FinanzasFácil",
+    statusBarStyle: "default",
+  },
+  formatDetection: { telephone: false },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#2563eb",
 };
 
 export default function RootLayout({
