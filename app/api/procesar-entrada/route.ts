@@ -30,7 +30,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 export async function POST(req: NextRequest) {
   try {
-    const { texto } = await req.json()
+    const { texto, fechaMovimiento } = await req.json()
     if (!texto?.trim()) {
       return NextResponse.json({ error: 'Texto vacío' }, { status: 400 })
     }
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
       pendientes: parsed.items.filter((i: { tipo: string }) => i.tipo === 'pendiente').reduce((s: number, i: { monto: number }) => s + i.monto, 0),
     }
 
-    return NextResponse.json({ items: parsed.items, resumen })
+    return NextResponse.json({ items: parsed.items, resumen, fechaMovimiento })
   } catch (e) {
     console.error('[procesar-entrada] error:', e)
     const msg = e instanceof Error ? e.message : String(e)

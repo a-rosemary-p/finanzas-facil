@@ -11,7 +11,8 @@ export interface EntradaDia {
   id: string
   textoOriginal: string
   items: ItemMovimiento[]
-  fecha: string
+  fecha: string           // fecha de registro (llave localStorage)
+  fechaMovimiento: string // fecha real del movimiento (YYYY-MM-DD), editable
   creadoEn: number
 }
 

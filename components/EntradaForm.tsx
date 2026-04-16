@@ -10,6 +10,7 @@ interface EntradaFormProps {
 
 export default function EntradaForm({ onNuevaEntrada }: EntradaFormProps) {
   const [texto, setTexto] = useState('')
+  const [fechaMovimiento, setFechaMovimiento] = useState(getFechaHoy())
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState('')
 
@@ -23,7 +24,7 @@ export default function EntradaForm({ onNuevaEntrada }: EntradaFormProps) {
       const res = await fetch('/api/procesar-entrada', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ texto }),
+        body: JSON.stringify({ texto, fechaMovimiento }),
       })
       const data = await res.json()
 
@@ -38,12 +39,14 @@ export default function EntradaForm({ onNuevaEntrada }: EntradaFormProps) {
         textoOriginal: texto,
         items: data.items,
         fecha,
+        fechaMovimiento,
         creadoEn: Date.now(),
       }
 
       guardarEntrada(nuevaEntrada)
       onNuevaEntrada(nuevaEntrada)
       setTexto('')
+      setFechaMovimiento(getFechaHoy())
     } catch {
       setError('No pudimos conectar con el servidor. Intenta de nuevo.')
     } finally {
@@ -63,6 +66,19 @@ export default function EntradaForm({ onNuevaEntrada }: EntradaFormProps) {
           className="w-full border border-gray-200 rounded-lg p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800 placeholder-gray-400"
           disabled={cargando}
         />
+
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-gray-500">¿Cuándo ocurrió?</label>
+          <input
+            type="date"
+            value={fechaMovimiento}
+            max={getFechaHoy()}
+            onChange={(e) => setFechaMovimiento(e.target.value)}
+            disabled={cargando}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-700 w-full"
+          />
+        </div>
+
         {error && (
           <p className="text-red-500 text-sm">{error}</p>
         )}

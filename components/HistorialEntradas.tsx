@@ -1,8 +1,36 @@
 import type { EntradaDia } from '@/lib/types'
-import { formatPesos } from '@/lib/storage'
+import { formatPesos, getFechaHoy } from '@/lib/storage'
 
 interface HistorialEntradasProps {
   entradas: EntradaDia[]
+}
+
+function formatFechaCorta(fecha: string): string {
+  const [year, month, day] = fecha.split('-').map(Number)
+  return new Date(year, month - 1, day).toLocaleDateString('es-MX', {
+    day: 'numeric',
+    month: 'short',
+  })
+}
+
+function EtiquetaFechas({ entrada }: { entrada: EntradaDia }) {
+  const hoy = getFechaHoy()
+  const fmov = entrada.fechaMovimiento ?? entrada.fecha
+
+  if (fmov !== entrada.fecha) {
+    const labelRegistro = entrada.fecha === hoy ? 'Registrado hoy' : `Registrado el ${formatFechaCorta(entrada.fecha)}`
+    return (
+      <span className="text-xs text-gray-400">
+        {labelRegistro} · <span className="text-amber-600">Ocurrió el {formatFechaCorta(fmov)}</span>
+      </span>
+    )
+  }
+
+  return (
+    <span className="text-xs text-gray-400">
+      {entrada.fecha === hoy ? 'Registrado hoy' : `Registrado el ${formatFechaCorta(entrada.fecha)}`}
+    </span>
+  )
 }
 
 export default function HistorialEntradas({ entradas }: HistorialEntradasProps) {
@@ -19,7 +47,10 @@ export default function HistorialEntradas({ entradas }: HistorialEntradasProps) 
       <h2 className="font-semibold text-gray-700">Registros de hoy</h2>
       {entradas.map((entrada) => (
         <div key={entrada.id} className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-3">
-          <p className="text-sm italic text-gray-400">"{entrada.textoOriginal}"</p>
+          <div className="flex flex-col gap-0.5">
+            <p className="text-sm italic text-gray-400">"{entrada.textoOriginal}"</p>
+            <EtiquetaFechas entrada={entrada} />
+          </div>
           <div className="flex flex-col gap-2">
             {entrada.items.map((item, idx) => (
               <div key={idx} className="flex items-start justify-between gap-2">
