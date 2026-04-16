@@ -32,24 +32,43 @@ export default function DashboardPage() {
   const [filtro, setFiltro] = useState<Filtro>('hoy')
   const [entradas, setEntradas] = useState<EntradaDia[]>([])
   const [resumen, setResumen] = useState<ResumenDia>({ ingresos: 0, gastos: 0, pendientes: 0 })
+  const [errorStorage, setErrorStorage] = useState(false)
 
   const cargarEntradas = useCallback((f: Filtro) => {
-    const { inicio, fin } = getRangoFiltro(f)
-    const data = f === 'hoy'
-      ? cargarEntradasDia(getFechaHoy())
-      : cargarEntradasRango(inicio, fin)
-    setEntradas(data)
-    setResumen(calcularResumenDia(data))
+    try {
+      const { inicio, fin } = getRangoFiltro(f)
+      const data = f === 'hoy'
+        ? cargarEntradasDia(getFechaHoy())
+        : cargarEntradasRango(inicio, fin)
+      setEntradas(data)
+      setResumen(calcularResumenDia(data))
+    } catch {
+      setErrorStorage(true)
+    }
   }, [])
 
   useEffect(() => {
-    const session = localStorage.getItem('session')
-    if (!session) { router.replace('/'); return }
-    const { loggedIn, email: e } = JSON.parse(session)
-    if (!loggedIn) { router.replace('/'); return }
-    setEmail(e)
-    cargarEntradas('hoy')
+    try {
+      const session = localStorage.getItem('session')
+      if (!session) { router.replace('/'); return }
+      const { loggedIn, email: e } = JSON.parse(session)
+      if (!loggedIn) { router.replace('/'); return }
+      setEmail(e)
+      cargarEntradas('hoy')
+    } catch {
+      setErrorStorage(true)
+    }
   }, [router, cargarEntradas])
+
+  function handleResetStorage() {
+    // Borra entradas pero conserva la sesión
+    const session = localStorage.getItem('session')
+    localStorage.clear()
+    if (session) localStorage.setItem('session', session)
+    setErrorStorage(false)
+    setEntradas([])
+    setResumen({ ingresos: 0, gastos: 0, pendientes: 0 })
+  }
 
   function handleFiltroChange(f: Filtro) {
     setFiltro(f)
@@ -99,6 +118,20 @@ export default function DashboardPage() {
           <p className="text-gray-800 font-medium">Hola, {email}</p>
           <p className="text-gray-400 text-sm capitalize">{getFechaFormateada()}</p>
         </div>
+
+        {/* Banner de error de datos */}
+        {errorStorage && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex flex-col gap-2">
+            <p className="text-sm font-medium text-red-700">⚠️ Hubo un problema al leer tus datos guardados.</p>
+            <p className="text-xs text-red-500">Puedes limpiar los datos locales para continuar — tus entradas anteriores se perderán.</p>
+            <button
+              onClick={handleResetStorage}
+              className="text-xs font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg py-2 px-3 w-fit transition-colors"
+            >
+              Limpiar datos y continuar
+            </button>
+          </div>
+        )}
 
         {/* Filtros */}
         <FiltrosPeriodo filtroActivo={filtro} onChange={handleFiltroChange} />
