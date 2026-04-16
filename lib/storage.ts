@@ -20,6 +20,15 @@ export function guardarEntrada(entrada: EntradaDia): void {
   localStorage.setItem(getLlaveEntradas(entrada.fecha), JSON.stringify(entradas))
 }
 
+export function actualizarEntrada(entradaActualizada: EntradaDia): void {
+  const entradas = cargarEntradasDia(entradaActualizada.fecha)
+  const idx = entradas.findIndex((e) => e.id === entradaActualizada.id)
+  if (idx !== -1) {
+    entradas[idx] = entradaActualizada
+    localStorage.setItem(getLlaveEntradas(entradaActualizada.fecha), JSON.stringify(entradas))
+  }
+}
+
 export function calcularResumenDia(entradas: EntradaDia[]): ResumenDia {
   let ingresos = 0
   let gastos = 0

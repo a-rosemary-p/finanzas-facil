@@ -51,6 +51,11 @@ export default function DashboardPage() {
     setResumen(calcularResumenDia(actualizadas))
   }
 
+  function handleEntradaActualizada(actualizada: EntradaDia) {
+    const actualizadas = entradas.map((e) => (e.id === actualizada.id ? actualizada : e))
+    setEntradas(actualizadas)
+  }
+
   function handleLogout() {
     localStorage.removeItem('session')
     router.replace('/')
@@ -89,7 +94,7 @@ export default function DashboardPage() {
         <EntradaForm onNuevaEntrada={handleNuevaEntrada} />
 
         {/* Historial */}
-        <HistorialEntradas entradas={entradas} />
+        <HistorialEntradas entradas={entradas} onEntradaActualizada={handleEntradaActualizada} />
       </main>
     </div>
   )
