@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       return Response.json({ error: 'La imagen es demasiado grande (máx. 5 MB)' }, { status: 400 })
     }
 
-    const validMime = PHOTO_LIMITS.acceptedFormats.includes(mimeType as string)
+    const validMime = (PHOTO_LIMITS.acceptedFormats as readonly string[]).includes(mimeType as string)
     if (!validMime) {
       return Response.json({ error: 'Formato de imagen no soportado' }, { status: 400 })
     }
