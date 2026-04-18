@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { getTodayString } from '@/lib/utils'
+import { VoiceButton } from './voice-button'
+import { PhotoButton } from './photo-button'
 import type { PendingMovement } from '@/types'
 
 interface EntryFormProps {
@@ -16,6 +18,7 @@ export function EntryForm({ onMovementsExtracted }: EntryFormProps) {
   const [texto, setTexto] = useState('')
   const [fecha, setFecha] = useState(getTodayString())
   const [loading, setLoading] = useState(false)
+  const [photoLoading, setPhotoLoading] = useState(false)
   const [error, setError] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
@@ -45,13 +48,15 @@ export function EntryForm({ onMovementsExtracted }: EntryFormProps) {
 
       const { movements } = data as { movements: PendingMovement[] }
       onMovementsExtracted({ rawText: texto.trim(), entryDate: fecha, movements })
-      // No limpiamos el form aquí — se limpia después de confirmar
+      setTexto('')
     } catch {
       setError('No pudimos conectar con el servidor. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }
   }
+
+  const busy = loading || photoLoading
 
   return (
     <div
@@ -68,23 +73,42 @@ export function EntryForm({ onMovementsExtracted }: EntryFormProps) {
           onChange={e => setTexto(e.target.value)}
           placeholder="Ej: vendí 1,500 en tacos, gasté 300 en tortillas y 120 en gas. Mañana debo pagar 400 de renta."
           rows={3}
-          disabled={loading}
+          disabled={busy}
           className="w-full border rounded-lg p-3 text-sm resize-none focus:outline-none focus:ring-2"
           style={{ borderColor: '#E0E0E0', color: '#1A2B3A' }}
         />
 
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium" style={{ color: '#5A7A8A' }}>
-            ¿Cuándo ocurrió?
-          </label>
-          <input
-            type="date"
-            value={fecha}
-            max={getTodayString()}
-            onChange={e => setFecha(e.target.value)}
+        {/* Fila: fecha + botones de entrada por voz/foto */}
+        <div className="flex gap-2 items-end">
+          <div className="flex flex-col gap-1 flex-1">
+            <label className="text-xs font-medium" style={{ color: '#5A7A8A' }}>
+              ¿Cuándo ocurrió?
+            </label>
+            <input
+              type="date"
+              value={fecha}
+              max={getTodayString()}
+              onChange={e => setFecha(e.target.value)}
+              disabled={busy}
+              className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 w-full"
+              style={{ borderColor: '#E0E0E0', color: '#1A2B3A' }}
+            />
+          </div>
+
+          {/* Voz */}
+          <VoiceButton
+            onTranscript={t => setTexto(prev => prev ? `${prev} ${t}` : t)}
+            disabled={busy}
+          />
+
+          {/* Foto */}
+          <PhotoButton
+            fecha={fecha}
+            onMovementsExtracted={onMovementsExtracted}
+            onError={setError}
             disabled={loading}
-            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 w-full"
-            style={{ borderColor: '#E0E0E0', color: '#1A2B3A' }}
+            loading={photoLoading}
+            onLoadingChange={setPhotoLoading}
           />
         </div>
 
@@ -96,7 +120,7 @@ export function EntryForm({ onMovementsExtracted }: EntryFormProps) {
 
         <button
           type="submit"
-          disabled={loading || !texto.trim()}
+          disabled={busy || !texto.trim()}
           className="text-white rounded-xl py-3.5 font-bold text-base transition-opacity disabled:opacity-50 min-h-[52px] flex items-center justify-center gap-2"
           style={{ background: '#2E7D32' }}
         >

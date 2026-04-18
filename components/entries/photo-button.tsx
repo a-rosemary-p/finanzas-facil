@@ -1,0 +1,162 @@
+'use client'
+
+import { useRef } from 'react'
+import { PHOTO_LIMITS } from '@/lib/constants'
+import type { PendingMovement } from '@/types'
+import { getTodayString } from '@/lib/utils'
+
+interface PhotoButtonProps {
+  fecha: string
+  onMovementsExtracted: (data: {
+    rawText: string
+    entryDate: string
+    movements: PendingMovement[]
+  }) => void
+  onError: (msg: string) => void
+  disabled?: boolean
+  loading?: boolean
+  onLoadingChange: (v: boolean) => void
+}
+
+// Comprime y redimensiona la imagen en el cliente antes de enviarla
+async function processImage(file: File): Promise<{ base64: string; mimeType: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = reject
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onerror = reject
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let { width, height } = img
+        const max = PHOTO_LIMITS.maxDimensionPx
+
+        if (width > max || height > max) {
+          if (width >= height) {
+            height = Math.round((height * max) / width)
+            width = max
+          } else {
+            width = Math.round((width * max) / height)
+            height = max
+          }
+        }
+
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { reject(new Error('Canvas no disponible')); return }
+        ctx.drawImage(img, 0, 0, width, height)
+
+        const dataUrl = canvas.toDataURL('image/jpeg', PHOTO_LIMITS.compressionQuality)
+        const base64 = dataUrl.split(',')[1]
+        resolve({ base64, mimeType: 'image/jpeg' })
+      }
+      img.src = e.target!.result as string
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
+export function PhotoButton({
+  fecha,
+  onMovementsExtracted,
+  onError,
+  disabled,
+  loading,
+  onLoadingChange,
+}: PhotoButtonProps) {
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!e.target) return
+    // Limpiar para permitir seleccionar el mismo archivo de nuevo
+    e.target.value = ''
+    if (!file) return
+
+    // Validar formato
+    if (!PHOTO_LIMITS.acceptedFormats.includes(file.type as typeof PHOTO_LIMITS.acceptedFormats[number])) {
+      onError('Formato no soportado. Usa JPG, PNG o WebP.')
+      return
+    }
+
+    // Validar tamaño antes de comprimir
+    if (file.size > PHOTO_LIMITS.maxFileSizeMB * 1024 * 1024 * 3) {
+      onError('La imagen es demasiado grande.')
+      return
+    }
+
+    onLoadingChange(true)
+    onError('')
+
+    try {
+      const { base64, mimeType } = await processImage(file)
+
+      const res = await fetch('/api/entry/photo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64, mimeType, fechaMovimiento: fecha || getTodayString() }),
+      })
+
+      const data: unknown = await res.json()
+
+      if (!res.ok) {
+        const err = data as Record<string, unknown>
+        if (err['error'] === 'LIMIT_EXCEEDED') {
+          onError(err['message'] as string)
+        } else {
+          onError((err['error'] as string) || 'Error al analizar la imagen.')
+        }
+        return
+      }
+
+      const { movements } = data as { movements: PendingMovement[] }
+      onMovementsExtracted({
+        rawText: `📷 Foto analizada con IA`,
+        entryDate: fecha || getTodayString(),
+        movements,
+      })
+    } catch {
+      onError('No pudimos conectar con el servidor. Intenta de nuevo.')
+    } finally {
+      onLoadingChange(false)
+    }
+  }
+
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        capture="environment"
+        className="hidden"
+        onChange={handleFile}
+      />
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={disabled || loading}
+        title="Tomar foto o subir imagen"
+        className="flex items-center justify-center rounded-xl transition-all min-h-[44px] min-w-[44px]"
+        style={{
+          background: loading ? '#F5F5F5' : '#F0FAF4',
+          border: `1px solid ${loading ? '#E0E0E0' : '#2E7D32'}`,
+          color: loading ? '#5A7A8A' : '#2E7D32',
+        }}
+      >
+        {loading ? (
+          <span className="flex items-center gap-1.5 px-3 text-sm font-medium">
+            <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+            Analizando...
+          </span>
+        ) : (
+          <span className="text-xl">📷</span>
+        )}
+      </button>
+    </>
+  )
+}
