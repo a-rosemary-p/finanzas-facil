@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-type Mode = 'login' | 'register'
+type Mode = 'login' | 'register' | 'forgot'
 
 function traducirError(msg: string): string {
   if (msg.includes('Invalid login credentials')) return 'Correo o contraseña incorrectos'
@@ -34,6 +34,30 @@ export default function LoginPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+
+    // Modo "olvidé mi contraseña"
+    if (mode === 'forgot') {
+      if (!email.trim()) {
+        setError('Por favor ingresa tu correo')
+        return
+      }
+      setLoading(true)
+      setError('')
+      setSuccessMsg('')
+      const supabase = createClient()
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        email.trim(),
+        { redirectTo: `${window.location.origin}/auth/confirm` }
+      )
+      setLoading(false)
+      if (resetError) {
+        setError('No pudimos enviar el correo. Intenta de nuevo.')
+      } else {
+        setSuccessMsg('¡Listo! Revisa tu correo — te mandamos un link para restablecer tu contraseña.')
+      }
+      return
+    }
+
     if (!email.trim() || !password.trim()) {
       setError('Por favor ingresa tu correo y contraseña')
       return
@@ -66,7 +90,7 @@ export default function LoginPage() {
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
+          emailRedirectTo: `${window.location.origin}/auth/confirm`,
           data: { display_name: nombre.trim() },
         },
       })
@@ -98,7 +122,7 @@ export default function LoginPage() {
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-sm p-6" style={{ border: '1px solid #E0E0E0' }}>
           <h2 className="font-bold text-lg mb-5" style={{ color: '#1A2B3A' }}>
-            {mode === 'login' ? 'Entrar' : 'Crear cuenta'}
+            {mode === 'login' ? 'Entrar' : mode === 'register' ? 'Crear cuenta' : 'Restablecer contraseña'}
           </h2>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -140,25 +164,46 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Contraseña */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium" style={{ color: '#1A2B3A' }}>
-                Contraseña
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                disabled={loading}
-                className="border rounded-lg px-3 py-3 min-h-[44px] focus:outline-none focus:ring-2"
-                style={{ borderColor: '#E0E0E0', color: '#1A2B3A' }}
-              />
-              {mode === 'register' && (
-                <p className="text-xs" style={{ color: '#5A7A8A' }}>Mínimo 6 caracteres</p>
-              )}
-            </div>
+            {/* Contraseña — oculta en modo forgot */}
+            {mode !== 'forgot' && (
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium" style={{ color: '#1A2B3A' }}>
+                    Contraseña
+                  </label>
+                  {mode === 'login' && (
+                    <button
+                      type="button"
+                      onClick={() => switchMode('forgot')}
+                      className="text-xs underline"
+                      style={{ color: '#5A7A8A' }}
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                  disabled={loading}
+                  className="border rounded-lg px-3 py-3 min-h-[44px] focus:outline-none focus:ring-2"
+                  style={{ borderColor: '#E0E0E0', color: '#1A2B3A' }}
+                />
+                {mode === 'register' && (
+                  <p className="text-xs" style={{ color: '#5A7A8A' }}>Mínimo 6 caracteres</p>
+                )}
+              </div>
+            )}
+
+            {/* Descripción en modo forgot */}
+            {mode === 'forgot' && (
+              <p className="text-sm" style={{ color: '#5A7A8A' }}>
+                Escribe tu correo y te mandamos un link para restablecer tu contraseña.
+              </p>
+            )}
 
             {error && <p className="text-sm" style={{ color: '#C62828' }}>{error}</p>}
             {successMsg && <p className="text-sm font-medium" style={{ color: '#2E7D32' }}>{successMsg}</p>}
@@ -169,19 +214,51 @@ export default function LoginPage() {
               className="text-white rounded-xl py-3.5 font-bold text-base transition-opacity disabled:opacity-50 min-h-[52px]"
               style={{ background: '#2E7D32' }}
             >
-              {loading ? 'Un momento...' : mode === 'login' ? 'Entrar' : 'Crear cuenta'}
+              {loading
+                ? 'Un momento...'
+                : mode === 'login'
+                  ? 'Entrar'
+                  : mode === 'register'
+                    ? 'Crear cuenta'
+                    : 'Enviar link'}
             </button>
           </form>
 
           <p className="text-center text-sm mt-4" style={{ color: '#5A7A8A' }}>
-            {mode === 'login' ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? '}
-            <button
-              onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
-              className="font-medium underline"
-              style={{ color: '#2E7D32' }}
-            >
-              {mode === 'login' ? 'Regístrate' : 'Entra aquí'}
-            </button>
+            {mode === 'forgot' ? (
+              <>
+                {'¿Ya recordaste? '}
+                <button
+                  onClick={() => switchMode('login')}
+                  className="font-medium underline"
+                  style={{ color: '#2E7D32' }}
+                >
+                  Entrar
+                </button>
+              </>
+            ) : mode === 'login' ? (
+              <>
+                {'¿No tienes cuenta? '}
+                <button
+                  onClick={() => switchMode('register')}
+                  className="font-medium underline"
+                  style={{ color: '#2E7D32' }}
+                >
+                  Regístrate
+                </button>
+              </>
+            ) : (
+              <>
+                {'¿Ya tienes cuenta? '}
+                <button
+                  onClick={() => switchMode('login')}
+                  className="font-medium underline"
+                  style={{ color: '#2E7D32' }}
+                >
+                  Entra aquí
+                </button>
+              </>
+            )}
           </p>
         </div>
       </div>

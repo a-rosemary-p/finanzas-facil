@@ -37,6 +37,8 @@ export async function updateSession(request: NextRequest) {
   const isPublicRoute =
     pathname === '/' ||
     pathname.startsWith('/login') ||
+    pathname.startsWith('/reset-password') ||
+    pathname.startsWith('/auth/') ||
     pathname.startsWith('/api/webhooks')
 
   // Usuario no autenticado en ruta protegida → redirige a /login
