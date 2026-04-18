@@ -16,7 +16,7 @@ interface ISpeechRecognition extends EventTarget {
   stop(): void
   onstart: (() => void) | null
   onend: (() => void) | null
-  onerror: (() => void) | null
+  onerror: ((event: { error?: string }) => void) | null
   onresult: ((event: ISpeechRecognitionEvent) => void) | null
 }
 
@@ -54,9 +54,9 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
 
     rec.onstart = () => setRecording(true)
     rec.onend = () => setRecording(false)
-    rec.onerror = (e: unknown) => {
+    rec.onerror = (e) => {
       setRecording(false)
-      const code = (e as { error?: string })?.error
+      const code = e?.error
       if (code === 'not-allowed') {
         setErrorMsg('Permiso de micrófono denegado')
       } else if (code === 'network') {

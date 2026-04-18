@@ -48,12 +48,17 @@ export function getDateRange(filter: DateFilter): { start: string; end: string }
       start.setDate(today.getDate() - 6)
       return { start: fmt(start), end }
     }
-    case 'month':
+    case 'month': {
+      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
       return {
         start: `${today.getFullYear()}-${pad(today.getMonth() + 1)}-01`,
-        end,
+        end: fmt(lastDay),
       }
+    }
     case 'year':
-      return { start: `${today.getFullYear()}-01-01`, end }
+      return {
+        start: `${today.getFullYear()}-01-01`,
+        end: `${today.getFullYear()}-12-31`,
+      }
   }
 }

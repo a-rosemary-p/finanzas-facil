@@ -80,7 +80,7 @@ export function EntryForm({ onMovementsExtracted }: EntryFormProps) {
 
         {/* Fila: fecha + botones de entrada por voz/foto */}
         <div className="flex gap-2 items-end">
-          <div className="flex flex-col gap-1 flex-1">
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
             <label className="text-xs font-medium" style={{ color: '#5A7A8A' }}>
               ¿Cuándo ocurrió?
             </label>
@@ -95,21 +95,23 @@ export function EntryForm({ onMovementsExtracted }: EntryFormProps) {
             />
           </div>
 
-          {/* Voz */}
-          <VoiceButton
-            onTranscript={t => setTexto(prev => prev ? `${prev} ${t}` : t)}
-            disabled={busy}
-          />
+          <div className="flex gap-2 shrink-0 items-end">
+            {/* Voz */}
+            <VoiceButton
+              onTranscript={t => setTexto(prev => prev ? `${prev} ${t}` : t)}
+              disabled={busy}
+            />
 
-          {/* Foto */}
-          <PhotoButton
-            fecha={fecha}
-            onMovementsExtracted={onMovementsExtracted}
-            onError={setError}
-            disabled={loading}
-            loading={photoLoading}
-            onLoadingChange={setPhotoLoading}
-          />
+            {/* Foto */}
+            <PhotoButton
+              fecha={fecha}
+              onMovementsExtracted={onMovementsExtracted}
+              onError={setError}
+              disabled={loading}
+              loading={photoLoading}
+              onLoadingChange={setPhotoLoading}
+            />
+          </div>
         </div>
 
         {error && (
