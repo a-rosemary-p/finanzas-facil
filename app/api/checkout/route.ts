@@ -4,11 +4,13 @@ import { getStripe } from '@/lib/stripe/client'
 import { STRIPE_CONFIG } from '@/lib/stripe/config'
 
 function getBaseUrl(req: NextRequest): string {
-  // 1. Env var explícita (si está configurada)
+  // 1. Env var explícita
   if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL
-  // 2. Vercel inyecta VERCEL_URL automáticamente (sin https://)
+  // 2. Vercel inyecta VERCEL_PROJECT_PRODUCTION_URL = dominio de producción (sin https://)
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  // 3. VERCEL_URL = URL del deploy específico (útil en preview)
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
-  // 3. Fallback: origen de la petición
+  // 4. Fallback local
   const { origin } = new URL(req.url)
   return origin
 }

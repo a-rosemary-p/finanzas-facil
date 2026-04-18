@@ -4,6 +4,7 @@ import { getStripe } from '@/lib/stripe/client'
 
 function getBaseUrl(req: NextRequest): string {
   if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
   const { origin } = new URL(req.url)
   return origin
