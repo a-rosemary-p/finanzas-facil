@@ -105,7 +105,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(145deg, #0F1F2E 0%, #1A3A28 45%, #2E7D32 100%)' }}>
       <div className="w-full max-w-sm">
 
         {/* Logo */}

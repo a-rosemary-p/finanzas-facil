@@ -124,7 +124,7 @@ function DashboardInner() {
   const neto = metrics.net
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #EEF4EE 0%, #E4F0E4 100%)' }}>
       {/* Header */}
       <header
         className="bg-white sticky top-0 z-10 flex items-center justify-between px-4 h-14"
@@ -139,14 +139,14 @@ function DashboardInner() {
 
         <div className="flex items-center gap-3">
           <span
-            className="text-xs font-bold px-2 py-1 rounded-full"
+            className="text-sm font-medium px-3 py-2 rounded-full min-h-[44px] flex items-center"
             style={
               profile?.plan === 'pro'
-                ? { background: '#2E7D32', color: '#fff' }
-                : { background: '#E0E0E0', color: '#5A7A8A' }
+                ? { background: '#2E7D32', color: '#fff', border: '1px solid #2E7D32' }
+                : { background: '#E0E0E0', color: '#5A7A8A', border: '1px solid #E0E0E0' }
             }
           >
-            {profile?.plan === 'pro' ? 'Pro ✓' : 'Free'}
+            {profile?.plan === 'pro' ? 'Pro' : 'Free'}
           </span>
           <button
             onClick={logout}
@@ -212,13 +212,14 @@ function DashboardInner() {
 
             {/* Métricas */}
             <div className="grid grid-cols-3 gap-3">
-              <MetricCard label="Ingresos" value={metrics.income} color="#2E7D32" bg="#F0FAF4" sign="+" />
-              <MetricCard label="Gastos" value={metrics.expenses} color="#C62828" bg="#FFF5F5" sign="−" />
+              <MetricCard label="Ingresos" value={metrics.income} color="#1B5E20" bg="#C8E6C9" border="#A5D6A7" sign="+" />
+              <MetricCard label="Gastos" value={metrics.expenses} color="#B71C1C" bg="#FFCDD2" border="#EF9A9A" sign="−" />
               <MetricCard
                 label="Neto"
                 value={neto}
-                color={neto >= 0 ? '#2E7D32' : '#C62828'}
-                bg={neto >= 0 ? '#F0FAF4' : '#FFF5F5'}
+                color={neto >= 0 ? '#1B5E20' : '#B71C1C'}
+                bg={neto >= 0 ? '#C8E6C9' : '#FFCDD2'}
+                border={neto >= 0 ? '#A5D6A7' : '#EF9A9A'}
                 sign={neto >= 0 ? '+' : '−'}
               />
             </div>
@@ -369,13 +370,13 @@ export default function DashboardPage() {
 }
 
 function MetricCard({
-  label, value, color, bg, sign,
+  label, value, color, bg, border, sign,
 }: {
-  label: string; value: number; color: string; bg: string; sign: string
+  label: string; value: number; color: string; bg: string; border: string; sign: string
 }) {
   return (
-    <div className="rounded-xl p-3 flex flex-col gap-1 min-w-0" style={{ background: bg }}>
-      <span className="text-[10px] font-bold uppercase tracking-wide truncate" style={{ color: '#5A7A8A' }}>
+    <div className="rounded-xl p-3 flex flex-col gap-1 min-w-0" style={{ background: bg, border: `1px solid ${border}` }}>
+      <span className="text-[10px] font-bold uppercase tracking-wide truncate" style={{ color }}>
         {label}
       </span>
       <span className="text-base font-bold truncate leading-tight" style={{ color }}>
