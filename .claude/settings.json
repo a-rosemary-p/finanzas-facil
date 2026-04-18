@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__7e8fa88a-b9ce-46e3-842f-defccc3f38fd__list_projects",
+      "mcp__7e8fa88a-b9ce-46e3-842f-defccc3f38fd__list_tables",
+      "mcp__7e8fa88a-b9ce-46e3-842f-defccc3f38fd__list_migrations",
+      "mcp__7e8fa88a-b9ce-46e3-842f-defccc3f38fd__get_project",
+      "mcp__7e8fa88a-b9ce-46e3-842f-defccc3f38fd__get_project_url",
+      "mcp__7e8fa88a-b9ce-46e3-842f-defccc3f38fd__get_logs",
+      "mcp__7e8fa88a-b9ce-46e3-842f-defccc3f38fd__search_docs",
+      "mcp__d60f6d41-0bc2-4add-af1c-b32a5d4a8546__list_projects",
+      "mcp__d60f6d41-0bc2-4add-af1c-b32a5d4a8546__list_deployments",
+      "mcp__d60f6d41-0bc2-4add-af1c-b32a5d4a8546__get_project",
+      "mcp__d60f6d41-0bc2-4add-af1c-b32a5d4a8546__get_deployment",
+      "mcp__d60f6d41-0bc2-4add-af1c-b32a5d4a8546__get_runtime_logs",
+      "mcp__d60f6d41-0bc2-4add-af1c-b32a5d4a8546__get_deployment_build_logs",
+      "mcp__d60f6d41-0bc2-4add-af1c-b32a5d4a8546__search_vercel_documentation"
+    ]
+  }
+}

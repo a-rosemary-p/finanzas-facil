@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
 import { useEntries } from '@/hooks/use-entries'
 import { EntryCard } from '@/components/entries/entry-card'
@@ -29,7 +30,7 @@ function getFechaFormateada(): string {
   })
 }
 
-export default function DashboardPage() {
+function DashboardInner() {
   const { profile, loading: authLoading, logout } = useAuth()
   const {
     entries,
@@ -44,12 +45,54 @@ export default function DashboardPage() {
     prependEntry,
   } = useEntries()
 
+  const searchParams = useSearchParams()
   const [mode, setMode] = useState<Mode>('dashboard')
   const [pendingData, setPendingData] = useState<PendingData | null>(null)
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const [portalLoading, setPortalLoading] = useState(false)
+  const [upgradedBanner, setUpgradedBanner] = useState(false)
 
   useEffect(() => {
     if (profile) loadData('today')
   }, [profile, loadData])
+
+  useEffect(() => {
+    if (searchParams.get('upgraded') === '1') {
+      setUpgradedBanner(true)
+      // Clean the URL without reload
+      window.history.replaceState({}, '', '/dashboard')
+    }
+  }, [searchParams])
+
+  const handleUpgrade = useCallback(async () => {
+    setCheckoutLoading(true)
+    try {
+      const res = await fetch('/api/checkout', { method: 'POST' })
+      const data = await res.json() as { url?: string; error?: string }
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch {
+      // silently ignore — user can retry
+    } finally {
+      setCheckoutLoading(false)
+    }
+  }, [])
+
+  const handlePortal = useCallback(async () => {
+    setPortalLoading(true)
+    try {
+      const res = await fetch('/api/portal', { method: 'POST' })
+      const data = await res.json() as { url?: string; error?: string }
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch {
+      // silently ignore
+    } finally {
+      setPortalLoading(false)
+    }
+  }, [])
 
   function handleMovementsExtracted(data: PendingData) {
     setPendingData(data)
@@ -218,6 +261,31 @@ export default function DashboardPage() {
               )}
             </section>
 
+            {/* Banner upgrade exitoso */}
+            {upgradedBanner && (
+              <div
+                className="rounded-xl p-4 flex items-center gap-3"
+                style={{ background: '#F0FAF4', border: '1px solid #2E7D32' }}
+              >
+                <span className="text-xl">🎉</span>
+                <div className="flex-1">
+                  <p className="text-sm font-bold" style={{ color: '#2E7D32' }}>
+                    ¡Bienvenido al plan Pro!
+                  </p>
+                  <p className="text-xs" style={{ color: '#5A7A8A' }}>
+                    Ya tienes movimientos ilimitados.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setUpgradedBanner(false)}
+                  className="text-lg leading-none min-w-[36px] min-h-[36px] flex items-center justify-center"
+                  style={{ color: '#5A7A8A' }}
+                >
+                  ×
+                </button>
+              </div>
+            )}
+
             {/* Banner plan Free */}
             {profile?.plan === 'free' && (
               <div
@@ -242,10 +310,37 @@ export default function DashboardPage() {
                   />
                 </div>
                 <button
-                  className="w-full text-white rounded-xl py-3 font-bold text-sm min-h-[44px]"
+                  onClick={handleUpgrade}
+                  disabled={checkoutLoading}
+                  className="w-full text-white rounded-xl py-3 font-bold text-sm min-h-[44px] transition-opacity disabled:opacity-60"
                   style={{ background: '#2E7D32' }}
                 >
-                  Actualizar a Pro — $99/mes
+                  {checkoutLoading ? 'Redirigiendo...' : 'Actualizar a Pro — $99/mes'}
+                </button>
+              </div>
+            )}
+
+            {/* Panel plan Pro */}
+            {profile?.plan === 'pro' && (
+              <div
+                className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between"
+                style={{ border: '1px solid #E0E0E0' }}
+              >
+                <div>
+                  <p className="text-sm font-bold" style={{ color: '#2E7D32' }}>
+                    Plan Pro activo ✓
+                  </p>
+                  <p className="text-xs" style={{ color: '#5A7A8A' }}>
+                    Movimientos ilimitados
+                  </p>
+                </div>
+                <button
+                  onClick={handlePortal}
+                  disabled={portalLoading}
+                  className="text-xs font-medium px-3 py-2 rounded-lg border min-h-[36px] transition-opacity disabled:opacity-60"
+                  style={{ borderColor: '#E0E0E0', color: '#5A7A8A', background: '#F5F5F5' }}
+                >
+                  {portalLoading ? '...' : 'Gestionar'}
                 </button>
               </div>
             )}
@@ -253,6 +348,18 @@ export default function DashboardPage() {
         )}
       </main>
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-sm" style={{ color: '#5A7A8A' }}>Cargando...</p>
+      </div>
+    }>
+      <DashboardInner />
+    </Suspense>
   )
 }
 
