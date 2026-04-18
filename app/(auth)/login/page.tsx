@@ -110,11 +110,11 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">💰</div>
-          <h1 className="text-3xl font-bold" style={{ color: '#fff' }}>
+          <div className="text-6xl mb-3">💰</div>
+          <h1 className="text-5xl font-bold" style={{ color: '#fff' }}>
             FinanzasFácil
           </h1>
-          <p className="text-base italic mt-1" style={{ color: '#fff' }}>
+          <p className="text-xl italic mt-2" style={{ color: '#fff' }}>
             Tus cuentas, sin cuentos
           </p>
         </div>
