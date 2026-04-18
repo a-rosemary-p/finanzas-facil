@@ -71,8 +71,14 @@ export async function POST(request: Request) {
     const movements = parseGeminiResponse(raw, fechaMovimiento)
 
     if (movements.length === 0) {
+      // Intentar dar una pista según lo que falta en el texto
+      const t = texto.trim().toLowerCase()
+      let hint = 'Incluye el monto, si fue venta o gasto, y qué fue.'
+      if (!/\d/.test(t)) hint = 'No encontré ningún monto. Escribe la cantidad, ej: "vendí 500" o "gasté 200".'
+      else if (!/(vendí|cobré|entró|ingresé|gasté|pagué|compré|salió|debo|me deben)/.test(t))
+        hint = 'No queda claro si fue venta o gasto. Ej: "vendí 500 en tacos" o "gasté 300 en aceite".'
       return Response.json(
-        { error: 'No encontré movimientos financieros en tu texto. Intenta ser más específico.' },
+        { error: `No encontré movimientos financieros. ${hint}` },
         { status: 422 }
       )
     }
