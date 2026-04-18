@@ -127,10 +127,12 @@ function DashboardInner() {
     <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #EEF4EE 0%, #E4F0E4 100%)' }}>
       {/* Header */}
       <header
-        className="bg-white sticky top-0 z-10 flex items-center justify-between px-4 h-14"
+        className="bg-white sticky top-0 z-10 flex items-center justify-between px-4"
         style={{
           borderBottom: '1px solid #E0E0E0',
-          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 10px)',
+          paddingBottom: '10px',
+          minHeight: '56px',
         }}
       >
         <span className="font-bold text-lg" style={{ color: '#1A2B3A' }}>

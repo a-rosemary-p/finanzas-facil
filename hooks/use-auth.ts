@@ -38,6 +38,17 @@ export function useAuth() {
           subscriptionStatus: data.subscription_status as Profile['subscriptionStatus'],
           movementsToday: data.movements_today as number,
         })
+      } else {
+        // Perfil no encontrado (cuenta nueva o trigger demorado) — perfil mínimo
+        // para que el dashboard cargue y loadData se dispare
+        setProfile({
+          id: user.id,
+          email: user.email ?? '',
+          displayName: (user.email ?? '').split('@')[0],
+          plan: 'free',
+          subscriptionStatus: 'none',
+          movementsToday: 0,
+        })
       }
       setLoading(false)
     }

@@ -34,6 +34,7 @@ declare global {
 export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
   const [supported, setSupported] = useState(false)
   const [recording, setRecording] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
   const recognitionRef = useRef<ISpeechRecognition | null>(null)
 
   useEffect(() => {
@@ -45,6 +46,7 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
   function start() {
     const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition
     if (!SR) return
+    setErrorMsg('')
     const rec = new SR()
     rec.lang = 'es-MX'
     rec.continuous = false
@@ -52,14 +54,31 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
 
     rec.onstart = () => setRecording(true)
     rec.onend = () => setRecording(false)
-    rec.onerror = () => setRecording(false)
+    rec.onerror = (e: unknown) => {
+      setRecording(false)
+      const code = (e as { error?: string })?.error
+      if (code === 'not-allowed') {
+        setErrorMsg('Permiso de micrófono denegado')
+      } else if (code === 'network') {
+        setErrorMsg('Sin conexión para voz')
+      } else {
+        setErrorMsg('Micrófono no disponible')
+      }
+      setTimeout(() => setErrorMsg(''), 3000)
+    }
     rec.onresult = (e) => {
       const transcript = e.results[0][0].transcript
       onTranscript(transcript)
     }
 
     recognitionRef.current = rec
-    rec.start()
+    try {
+      rec.start()
+    } catch {
+      setRecording(false)
+      setErrorMsg('No se pudo activar el micrófono')
+      setTimeout(() => setErrorMsg(''), 3000)
+    }
   }
 
   function stop() {
@@ -67,27 +86,31 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
   }
 
   return (
-    <button
-      type="button"
-      onClick={recording ? stop : start}
-      disabled={disabled}
-      title={recording ? 'Detener grabación' : 'Dictar por voz'}
-      className="flex items-center justify-center rounded-xl transition-all min-h-[44px] min-w-[44px]"
-      style={{
-        background: recording ? '#FFF5F5' : '#F0FAF4',
-        border: `1px solid ${recording ? '#C62828' : '#2E7D32'}`,
-        color: recording ? '#C62828' : '#2E7D32',
-      }}
-    >
-      {recording ? (
-        // Ícono de stop con animación de pulso
-        <span className="flex items-center gap-1.5 px-3 text-sm font-medium">
-          <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
-          Grabando...
-        </span>
-      ) : (
-        <span className="text-xl">🎤</span>
+    <div className="flex flex-col items-start gap-1">
+      <button
+        type="button"
+        onClick={recording ? stop : start}
+        disabled={disabled}
+        title={recording ? 'Detener grabación' : 'Dictar por voz'}
+        className="flex items-center justify-center rounded-xl transition-all min-h-[44px] min-w-[44px]"
+        style={{
+          background: recording ? '#FFF5F5' : '#F0FAF4',
+          border: `1px solid ${recording ? '#C62828' : '#2E7D32'}`,
+          color: recording ? '#C62828' : '#2E7D32',
+        }}
+      >
+        {recording ? (
+          <span className="flex items-center gap-1.5 px-3 text-sm font-medium">
+            <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
+            Grabando...
+          </span>
+        ) : (
+          <span className="text-xl">🎤</span>
+        )}
+      </button>
+      {errorMsg && (
+        <p className="text-xs" style={{ color: '#C62828' }}>{errorMsg}</p>
       )}
-    </button>
+    </div>
   )
 }
