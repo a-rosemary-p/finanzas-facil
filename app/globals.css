@@ -1,48 +1,47 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-text-primary:   #1A2B3A;
+  --color-text-secondary: #5A7A8A;
+  --color-accent:         #2E7D32;
+  --color-danger:         #C62828;
+  --color-pending:        #F57F17;
+  --color-border:         #E0E0E0;
+  --color-bg-top:         #F0FAF4;
+  --color-bg-bottom:      #E8F5E9;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-lato), Arial, Helvetica, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  min-height: 100%;
   font-family: var(--font-lato), Arial, Helvetica, sans-serif;
-  /* Safe area for notched phones (iPhone X+) */
+  color: var(--color-text-primary);
+  /* Gradiente sutil verde — aplicado solo aquí, no en componentes */
+  background: linear-gradient(to bottom, var(--color-bg-top), var(--color-bg-bottom)) fixed;
+  /* Safe area para iPhone con notch */
   padding-bottom: env(safe-area-inset-bottom, 0px);
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Prevent iOS auto-zoom on input focus (requires font-size >= 16px) */
+/* Previene auto-zoom en iOS al enfocar inputs (requiere font-size >= 16px) */
 input,
 textarea,
 select {
   font-size: 16px !important;
 }
 
-/* Remove double-tap zoom delay on all interactive elements */
+/* Elimina delay de doble-tap en elementos interactivos */
 button,
 a,
 label,
 [role="button"] {
   touch-action: manipulation;
-}
-
-/* Smooth scroll everywhere */
-html {
-  scroll-behavior: smooth;
 }
