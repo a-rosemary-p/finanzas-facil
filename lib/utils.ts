@@ -20,15 +20,16 @@ export function getTodayString(): string {
   return `${y}-${m}-${day}`
 }
 
-// Formatea YYYY-MM-DD → "sáb. 17 abr." (timezone-safe)
+// Formatea YYYY-MM-DD → "17 de abril de 2026" (timezone-safe, siempre en español)
+// .toLowerCase() normaliza ambientes donde Intl capitaliza preposiciones ("De Abril")
 export function formatEntryDate(dateStr: string): string {
   const [y, m, d] = dateStr.split('-').map(Number)
   const date = new Date(y, (m ?? 1) - 1, d ?? 1)
   return date.toLocaleDateString('es-MX', {
-    weekday: 'short',
     day: 'numeric',
-    month: 'short',
-  })
+    month: 'long',
+    year: 'numeric',
+  }).toLowerCase()
 }
 
 // Devuelve el rango de fechas { start, end } para un filtro dado

@@ -35,12 +35,15 @@ function flatMovements(entries: Entry[]): Movement[] {
 }
 
 function getFechaFormateada(): string {
-  return new Date().toLocaleDateString('es-MX', {
+  // toLowerCase normaliza entornos que capitalizan "De Abril" → "de abril"
+  // luego capitalizamos solo la primera letra del día de la semana
+  const raw = new Date().toLocaleDateString('es-MX', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  })
+  }).toLowerCase()
+  return raw.charAt(0).toUpperCase() + raw.slice(1)
 }
 
 function DashboardInner() {
