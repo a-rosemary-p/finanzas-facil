@@ -39,9 +39,9 @@ export function MovementCard({ movement }: MovementCardProps) {
       className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center gap-3"
       style={{ border: '1px solid #E0E0E0' }}
     >
-      {/* Badge de tipo */}
+      {/* Badge de tipo — min-w basado en "Pendiente" (más largo), centrado */}
       <span
-        className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0"
+        className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 min-w-[5rem] text-center"
         style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}
       >
         {cfg.label}
