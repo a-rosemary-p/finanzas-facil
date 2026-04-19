@@ -180,7 +180,7 @@ export default function HomePage() {
       {/* ── Hero ── */}
       <section
         className="flex flex-col items-center text-center px-5 pt-20 pb-16"
-        style={{ background: 'linear-gradient(115deg, #578466 25%, #DAE68F 75%)' }}
+        style={{ background: 'linear-gradient(115deg, #92C3A5 25%, #DAE68F 75%)' }}
       >
         <h1
           className="font-bold leading-tight mb-5"

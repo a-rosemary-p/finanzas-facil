@@ -91,7 +91,7 @@ function LoginInner() {
   if (registered) {
     const isForgot = mode === 'forgot'
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(115deg, #578466 25%, #DAE68F 75%)' }}>
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(115deg, #92C3A5 25%, #DAE68F 75%)' }}>
         <div className="w-full max-w-sm flex flex-col items-center gap-6">
           <div className="text-center">
             <div className="text-7xl mb-4">✉️</div>
@@ -126,7 +126,7 @@ function LoginInner() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(115deg, #578466 25%, #DAE68F 75%)' }}>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(115deg, #92C3A5 25%, #DAE68F 75%)' }}>
       <div className="w-full max-w-sm">
 
         {/* Logo */}
@@ -242,7 +242,7 @@ function LoginInner() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(115deg, #578466 25%, #DAE68F 75%)' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(115deg, #92C3A5 25%, #DAE68F 75%)' }}>
         <p className="text-white text-sm">Cargando...</p>
       </div>
     }>
