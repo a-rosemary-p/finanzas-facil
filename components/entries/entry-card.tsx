@@ -1,74 +1,66 @@
 'use client'
 
 import { formatCurrency, formatEntryDate } from '@/lib/utils'
-import type { Entry, Movement } from '@/types'
+import type { Movement } from '@/types'
 
-interface EntryCardProps {
-  entry: Entry
+interface MovementCardProps {
+  movement: Movement
 }
 
-function movementColor(type: Movement['type']): string {
-  if (type === 'ingreso') return '#2E7D32'
-  if (type === 'gasto') return '#C62828'
-  return '#F57F17' // pendiente
-}
+const TYPE_CONFIG = {
+  ingreso: {
+    label: 'Ingreso',
+    bg: '#C8E6C9',
+    color: '#1B5E20',
+    border: '#A5D6A7',
+    sign: '+',
+  },
+  gasto: {
+    label: 'Gasto',
+    bg: '#FFCDD2',
+    color: '#B71C1C',
+    border: '#EF9A9A',
+    sign: '−',
+  },
+  pendiente: {
+    label: 'Pendiente',
+    bg: '#FFF8E1',
+    color: '#E65100',
+    border: '#FFE082',
+    sign: '⏳ ',
+  },
+} as const
 
-function movementSign(type: Movement['type']): string {
-  if (type === 'ingreso') return '+'
-  if (type === 'gasto') return '−'
-  return '⏳ '
-}
+export function MovementCard({ movement }: MovementCardProps) {
+  const cfg = TYPE_CONFIG[movement.type]
 
-export function EntryCard({ entry }: EntryCardProps) {
   return (
     <div
-      className="bg-white rounded-xl shadow-sm p-4 flex flex-col gap-2"
+      className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center gap-3"
       style={{ border: '1px solid #E0E0E0' }}
     >
-      {/* Texto original del usuario */}
-      <p
-        className="text-sm italic leading-snug line-clamp-2"
-        style={{ color: '#5A7A8A' }}
+      {/* Badge de tipo */}
+      <span
+        className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0"
+        style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}
       >
-        "{entry.rawText}"
-      </p>
+        {cfg.label}
+      </span>
 
-      {/* Fecha */}
-      <p className="text-xs" style={{ color: '#5A7A8A' }}>
-        {formatEntryDate(entry.entryDate)}
-      </p>
-
-      {/* Movimientos */}
-      <div className="flex flex-col gap-1 pt-1" style={{ borderTop: '1px solid #E0E0E0' }}>
-        {entry.movements.length === 0 ? (
-          <p className="text-xs" style={{ color: '#5A7A8A' }}>
-            Sin movimientos
-          </p>
-        ) : (
-          entry.movements.map(m => (
-            <div key={m.id} className="flex items-center justify-between gap-2">
-              <span className="text-xs" style={{ color: '#5A7A8A' }}>
-                {m.description}
-                <span
-                  className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full"
-                  style={{
-                    background: '#F0FAF4',
-                    color: '#5A7A8A',
-                  }}
-                >
-                  {m.category}
-                </span>
-              </span>
-              <span
-                className="text-sm font-bold shrink-0"
-                style={{ color: movementColor(m.type) }}
-              >
-                {movementSign(m.type)}{formatCurrency(m.amount)}
-              </span>
-            </div>
-          ))
-        )}
+      {/* Descripción + fecha */}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium leading-snug truncate" style={{ color: '#1A2B3A' }}>
+          {movement.description}
+        </p>
+        <p className="text-xs mt-0.5" style={{ color: '#5A7A8A' }}>
+          {formatEntryDate(movement.movementDate)}
+        </p>
       </div>
+
+      {/* Monto */}
+      <span className="text-base font-bold shrink-0" style={{ color: cfg.color }}>
+        {cfg.sign}{formatCurrency(movement.amount)}
+      </span>
     </div>
   )
 }

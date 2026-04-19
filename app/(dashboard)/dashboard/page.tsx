@@ -4,12 +4,12 @@ import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
 import { useEntries } from '@/hooks/use-entries'
-import { EntryCard } from '@/components/entries/entry-card'
+import { MovementCard } from '@/components/entries/entry-card'
 import { EntryForm } from '@/components/entries/entry-form'
 import { ConfirmationScreen } from '@/components/entries/confirmation-screen'
 import { formatCurrency } from '@/lib/utils'
 import { DATE_FILTER_LABELS } from '@/lib/constants'
-import type { DateFilter, Entry, PendingMovement } from '@/types'
+import type { DateFilter, Entry, Movement, PendingMovement } from '@/types'
 
 const FILTERS: DateFilter[] = ['today', '7days', 'month', 'year']
 
@@ -19,6 +19,19 @@ interface PendingData {
   rawText: string
   entryDate: string
   movements: PendingMovement[]
+}
+
+// Aplana entries → movements ordenados por movementDate DESC,
+// con createdAt de la entry como tiebreaker (orden consistente entre refresh y post-confirm)
+function flatMovements(entries: Entry[]): Movement[] {
+  return entries
+    .flatMap(e => e.movements.map(m => ({ ...m, _entryCreatedAt: e.createdAt })))
+    .sort((a, b) => {
+      if (b.movementDate !== a.movementDate) {
+        return b.movementDate.localeCompare(a.movementDate)
+      }
+      return b._entryCreatedAt.localeCompare(a._entryCreatedAt)
+    })
 }
 
 function getFechaFormateada(): string {
@@ -252,8 +265,8 @@ function DashboardInner() {
                 </div>
               ) : (
                 <>
-                  {entries.map(entry => (
-                    <EntryCard key={entry.id} entry={entry} />
+                  {flatMovements(entries).map(m => (
+                    <MovementCard key={m.id} movement={m} />
                   ))}
                   {hasMore && (
                     <button
