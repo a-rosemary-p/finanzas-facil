@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getDateRange } from '@/lib/utils'
 import type { Entry, Movement, DateFilter, DashboardMetrics } from '@/types'
@@ -18,136 +18,126 @@ function toMovement(row: Record<string, unknown>): Movement {
   }
 }
 
-function calcMetrics(movements: Movement[]): DashboardMetrics {
+function calcMetrics(rows: { type: string; amount: number }[]): DashboardMetrics {
   let income = 0
   let expenses = 0
-  for (const m of movements) {
+  for (const m of rows) {
     if (m.type === 'ingreso') income += m.amount
     else if (m.type === 'gasto') expenses += m.amount
   }
   return { income, expenses, net: income - expenses }
 }
 
-// Construye Entry[] preservando el orden de entryIds (que viene de movement_date DESC)
-function buildEntriesOrdered(
-  ids: string[],
-  entryRows: Record<string, unknown>[],
-  movRows: Record<string, unknown>[]
-): Entry[] {
-  const byId = new Map(entryRows.map(e => [e['id'] as string, e]))
-  return ids
-    .filter(id => byId.has(id))
-    .map(id => {
-      const e = byId.get(id)!
-      return {
-        id: e['id'] as string,
-        rawText: e['raw_text'] as string,
-        entryDate: e['entry_date'] as string,
-        createdAt: e['created_at'] as string,
-        movements: movRows
-          .filter(m => m['entry_id'] === id)
-          .map(m => toMovement(m)),
-      }
-    })
-}
-
 export function useEntries() {
-  const [entries, setEntries] = useState<Entry[]>([])
+  const [movements, setMovements] = useState<Movement[]>([])
   const [metrics, setMetrics] = useState<DashboardMetrics>({ income: 0, expenses: 0, net: 0 })
   const [filter, setFilterState] = useState<DateFilter>('today')
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(false)
-  const [allEntryIds, setAllEntryIds] = useState<string[]>([])
-  const [allMovRows, setAllMovRows] = useState<Record<string, unknown>[]>([])
+
+  // Guardamos el rango actual para reutilizarlo en loadMore sin re-calcular
+  const rangeRef = useRef<{ start: string; end: string } | null>(null)
+  // Total de movimientos en el rango (para saber si hay más páginas)
+  const totalRef = useRef(0)
 
   const loadData = useCallback(async (f: DateFilter) => {
     setLoading(true)
-    setEntries([])
+    setMovements([])
     setHasMore(false)
 
     const supabase = createClient()
-    const { start, end } = getDateRange(f)
+    const range = getDateRange(f)
+    rangeRef.current = range
+    const { start, end } = range
 
-    // 1. Todos los movimientos del rango → métricas
-    const { data: movRows } = await supabase
+    // 1. Query ligera para métricas — solo type + amount, sin límite de filas
+    const { data: metricsRows } = await supabase
       .from('movements')
-      .select('id, entry_id, type, amount, description, category, movement_date')
+      .select('type, amount')
+      .gte('movement_date', start)
+      .lte('movement_date', end)
+
+    setMetrics(calcMetrics(
+      (metricsRows ?? []).map(r => ({
+        type: r['type'] as string,
+        amount: Number(r['amount']),
+      }))
+    ))
+
+    // 2. Primera página de movimientos completos con conteo total
+    const { data: pageRows, count } = await supabase
+      .from('movements')
+      .select('id, type, amount, description, category, movement_date', { count: 'exact' })
       .gte('movement_date', start)
       .lte('movement_date', end)
       .order('movement_date', { ascending: false })
+      .order('id', { ascending: false })
+      .range(0, PAGE_SIZE - 1)
 
-    const rows = movRows ?? []
-    setAllMovRows(rows)
-    const movements = rows.map(r => toMovement(r as Record<string, unknown>))
-    setMetrics(calcMetrics(movements))
-
-    // 2. IDs únicos de entries en el orden de movement_date DESC
-    const seen = new Set<string>()
-    const orderedIds: string[] = []
-    for (const m of rows) {
-      const eid = (m as Record<string, unknown>)['entry_id'] as string
-      if (eid && !seen.has(eid)) { seen.add(eid); orderedIds.push(eid) }
-    }
-    setAllEntryIds(orderedIds)
-
-    if (orderedIds.length === 0) { setLoading(false); return }
-
-    // 3. Primera página de entries (sin re-ordenar en Supabase — el orden lo manejamos nosotros)
-    const pageIds = orderedIds.slice(0, PAGE_SIZE)
-    const { data: entryRows } = await supabase
-      .from('entries')
-      .select('id, raw_text, entry_date, created_at')
-      .in('id', pageIds)
-
-    const built = buildEntriesOrdered(pageIds, entryRows ?? [], rows)
-    setEntries(built)
-    setHasMore(orderedIds.length > PAGE_SIZE)
+    const total = count ?? 0
+    totalRef.current = total
+    setMovements((pageRows ?? []).map(r => toMovement(r as Record<string, unknown>)))
+    setHasMore(total > PAGE_SIZE)
     setLoading(false)
   }, [])
 
   const loadMore = useCallback(async () => {
+    const range = rangeRef.current
+    if (!range) return
+
     setLoadingMore(true)
     const supabase = createClient()
-    const offset = entries.length
-    const pageIds = allEntryIds.slice(offset, offset + PAGE_SIZE)
-    if (pageIds.length === 0) { setLoadingMore(false); return }
 
-    const { data: entryRows } = await supabase
-      .from('entries')
-      .select('id, raw_text, entry_date, created_at')
-      .in('id', pageIds)
+    // Usamos el conteo de filas actuales como offset
+    setMovements(prev => {
+      const offset = prev.length
 
-    const built = buildEntriesOrdered(pageIds, entryRows ?? [], allMovRows)
-    setEntries(prev => [...prev, ...built])
-    setHasMore(allEntryIds.length > offset + PAGE_SIZE)
-    setLoadingMore(false)
-  }, [entries.length, allEntryIds, allMovRows])
+      supabase
+        .from('movements')
+        .select('id, type, amount, description, category, movement_date')
+        .gte('movement_date', range.start)
+        .lte('movement_date', range.end)
+        .order('movement_date', { ascending: false })
+        .order('id', { ascending: false })
+        .range(offset, offset + PAGE_SIZE - 1)
+        .then(({ data: moreRows }) => {
+          const rows = (moreRows ?? []).map(r => toMovement(r as Record<string, unknown>))
+          setMovements(p => {
+            const updated = [...p, ...rows]
+            setHasMore(updated.length < totalRef.current)
+            return updated
+          })
+          setLoadingMore(false)
+        })
+
+      return prev // estado sin cambio mientras carga
+    })
+  }, [])
 
   function setFilter(f: DateFilter) {
     setFilterState(f)
     loadData(f)
   }
 
+  // Añade los movimientos de una entrada recién confirmada al tope
   function prependEntry(entry: Entry) {
-    setEntries(prev => [entry, ...prev])
-    // Recalcular métricas con los nuevos movimientos
-    const newRows = [
-      ...entry.movements.map(m => ({
-        id: m.id, entry_id: entry.id,
-        type: m.type, amount: m.amount,
-        description: m.description, category: m.category,
-        movement_date: m.movementDate,
-      })),
-      ...allMovRows,
-    ]
-    setAllMovRows(newRows)
-    setMetrics(calcMetrics(newRows.map(r => toMovement(r as Record<string, unknown>))))
-    setAllEntryIds(prev => [entry.id, ...prev])
+    const newMovs = entry.movements
+    setMovements(prev => [...newMovs, ...prev])
+    totalRef.current += newMovs.length
+    // Actualiza métricas incrementalmente sin re-query
+    setMetrics(prev => {
+      const delta = calcMetrics(newMovs.map(m => ({ type: m.type, amount: m.amount })))
+      return {
+        income: prev.income + delta.income,
+        expenses: prev.expenses + delta.expenses,
+        net: prev.net + delta.net,
+      }
+    })
   }
 
   return {
-    entries, metrics, filter, setFilter,
+    movements, metrics, filter, setFilter,
     loadData, loadMore, loading, loadingMore, hasMore, prependEntry,
   }
 }

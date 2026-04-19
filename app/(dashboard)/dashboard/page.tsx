@@ -9,7 +9,7 @@ import { EntryForm } from '@/components/entries/entry-form'
 import { ConfirmationScreen } from '@/components/entries/confirmation-screen'
 import { formatCurrency } from '@/lib/utils'
 import { DATE_FILTER_LABELS } from '@/lib/constants'
-import type { DateFilter, Entry, Movement, PendingMovement } from '@/types'
+import type { DateFilter, Entry, PendingMovement } from '@/types'
 
 const FILTERS: DateFilter[] = ['today', '7days', 'month', 'year']
 
@@ -21,18 +21,6 @@ interface PendingData {
   movements: PendingMovement[]
 }
 
-// Aplana entries → movements ordenados por movementDate DESC,
-// con createdAt de la entry como tiebreaker (orden consistente entre refresh y post-confirm)
-function flatMovements(entries: Entry[]): Movement[] {
-  return entries
-    .flatMap(e => e.movements.map(m => ({ ...m, _entryCreatedAt: e.createdAt })))
-    .sort((a, b) => {
-      if (b.movementDate !== a.movementDate) {
-        return b.movementDate.localeCompare(a.movementDate)
-      }
-      return b._entryCreatedAt.localeCompare(a._entryCreatedAt)
-    })
-}
 
 function getFechaFormateada(): string {
   // toLowerCase normaliza entornos que capitalizan "De Abril" → "de abril"
@@ -49,7 +37,7 @@ function getFechaFormateada(): string {
 function DashboardInner() {
   const { profile, loading: authLoading, logout } = useAuth()
   const {
-    entries,
+    movements,
     metrics,
     filter,
     setFilter,
@@ -254,7 +242,7 @@ function DashboardInner() {
                 <p className="text-sm text-center py-8" style={{ color: '#5A7A8A' }}>
                   Cargando...
                 </p>
-              ) : entries.length === 0 ? (
+              ) : movements.length === 0 ? (
                 <div
                   className="bg-white rounded-xl shadow-sm p-6 text-center"
                   style={{ border: '1px solid #E0E0E0' }}
@@ -268,7 +256,7 @@ function DashboardInner() {
                 </div>
               ) : (
                 <>
-                  {flatMovements(entries).map(m => (
+                  {movements.map(m => (
                     <MovementCard key={m.id} movement={m} />
                   ))}
                   {hasMore && (
