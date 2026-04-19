@@ -7,12 +7,21 @@ import { createClient } from '@/lib/supabase/client'
 type Mode = 'login' | 'register' | 'forgot'
 
 function traducirError(msg: string): string {
-  if (msg.includes('Invalid login credentials')) return 'Correo o contraseña incorrectos'
-  if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('User already registered')) return 'Este correo ya está registrado. ¿Quieres entrar?'
-  if (msg.includes('Password should be at least')) return 'La contraseña debe tener al menos 6 caracteres'
-  if (msg.includes('Email not confirmed')) return 'Confirma tu correo antes de entrar. Revisa tu bandeja de entrada.'
-  if (msg.includes('rate limit') || msg.includes('too many')) return 'Demasiados intentos. Espera un momento.'
-  if (msg.includes('Unable to validate email address')) return 'El formato del correo no es válido'
+  const m = msg.toLowerCase()
+  if (m.includes('invalid login credentials') || m.includes('invalid credentials')) return 'Correo o contraseña incorrectos'
+  if (m.includes('already registered') || m.includes('already exists') || m.includes('email already') || m.includes('already been registered')) return 'Este correo ya está registrado. ¿Quieres entrar?'
+  if (m.includes('password should be at least') || m.includes('password must be')) return 'La contraseña debe tener al menos 6 caracteres'
+  if (m.includes('email not confirmed')) return 'Confirma tu correo antes de entrar. Revisa tu bandeja de entrada.'
+  if (m.includes('security purposes') || m.includes('over_email_send_rate_limit') || m.includes('email rate limit')) return 'Demasiados intentos. Espera 60 segundos e intenta de nuevo.'
+  if (m.includes('rate limit') || m.includes('too many requests') || m.includes('too many')) return 'Demasiados intentos. Espera un momento.'
+  if (m.includes('unable to validate email') || m.includes('valid email') || m.includes('invalid email')) return 'El formato del correo no es válido'
+  if (m.includes('signup') && m.includes('disabled')) return 'El registro no está habilitado en este momento.'
+  if (m.includes('database error') || m.includes('unexpected error')) return 'Error en el servidor. Intenta de nuevo en un momento.'
+  if (m.includes('network') || m.includes('failed to fetch')) return 'Sin conexión. Revisa tu internet e intenta de nuevo.'
+  // Fallback: si el mensaje no es técnico mostrarlo, si es un código interno usar genérico
+  if (msg.length > 0 && msg.length < 120 && !msg.includes('{') && !msg.includes('undefined')) {
+    return `Error: ${msg}`
+  }
   return 'Ocurrió un error. Intenta de nuevo.'
 }
 

@@ -136,8 +136,46 @@ export function useEntries() {
     })
   }
 
+  // Reemplaza un movimiento en estado y ajusta métricas
+  function updateMovement(updated: Movement) {
+    setMovements(prev => {
+      const old = prev.find(m => m.id === updated.id)
+      if (!old) return prev
+      setMetrics(m => {
+        const next = { ...m }
+        // Revertir contribución anterior
+        if (old.type === 'ingreso') next.income -= old.amount
+        else if (old.type === 'gasto') next.expenses -= old.amount
+        // Agregar nueva contribución
+        if (updated.type === 'ingreso') next.income += updated.amount
+        else if (updated.type === 'gasto') next.expenses += updated.amount
+        next.net = next.income - next.expenses
+        return next
+      })
+      return prev.map(m => m.id === updated.id ? updated : m)
+    })
+  }
+
+  // Elimina un movimiento del estado y ajusta métricas
+  function deleteMovement(id: string) {
+    setMovements(prev => {
+      const target = prev.find(m => m.id === id)
+      if (!target) return prev
+      setMetrics(m => {
+        const next = { ...m }
+        if (target.type === 'ingreso') next.income -= target.amount
+        else if (target.type === 'gasto') next.expenses -= target.amount
+        next.net = next.income - next.expenses
+        return next
+      })
+      totalRef.current = Math.max(0, totalRef.current - 1)
+      return prev.filter(m => m.id !== id)
+    })
+  }
+
   return {
     movements, metrics, filter, setFilter,
-    loadData, loadMore, loading, loadingMore, hasMore, prependEntry,
+    loadData, loadMore, loading, loadingMore, hasMore,
+    prependEntry, updateMovement, deleteMovement,
   }
 }

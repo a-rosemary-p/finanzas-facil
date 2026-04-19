@@ -47,6 +47,8 @@ function DashboardInner() {
     loadingMore,
     hasMore,
     prependEntry,
+    updateMovement,
+    deleteMovement,
   } = useEntries()
 
   const searchParams = useSearchParams()
@@ -257,7 +259,12 @@ function DashboardInner() {
               ) : (
                 <>
                   {movements.map(m => (
-                    <MovementCard key={m.id} movement={m} />
+                    <MovementCard
+                      key={m.id}
+                      movement={m}
+                      onUpdated={updateMovement}
+                      onDeleted={deleteMovement}
+                    />
                   ))}
                   {hasMore && (
                     <button
