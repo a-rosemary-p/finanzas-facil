@@ -83,13 +83,32 @@ export async function POST(request: Request) {
     // 6. Devolver movimientos pendientes (NO se guardan aquí — eso es /api/entry/confirm)
     return Response.json({ movements })
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : ''
+    const msg = error instanceof Error ? error.message : String(error)
     console.error('[POST /api/entry]', msg)
 
-    if (msg.includes('429') || msg.includes('quota') || msg.includes('rate')) {
+    if (msg.includes('429') || msg.includes('rate_limit') || msg.includes('quota')) {
       return Response.json(
-        { error: 'El servicio de IA está saturado. Espera un momento e intenta de nuevo.' },
+        { error: 'La IA está saturada. Espera unos segundos e intenta de nuevo.' },
         { status: 429 }
+      )
+    }
+    if (msg.includes('timeout') || msg.includes('timed out') || msg.includes('ETIMEDOUT')) {
+      return Response.json(
+        { error: 'La IA tardó demasiado. Intenta con un texto más corto.' },
+        { status: 504 }
+      )
+    }
+    if (msg.includes('JSON') || msg.includes('Formato') || msg.includes('No se encontró JSON')) {
+      return Response.json(
+        { error: 'La IA respondió de forma inesperada. Intenta de nuevo.' },
+        { status: 500 }
+      )
+    }
+    if (msg.includes('OPENAI_API_KEY') || msg.includes('authentication') || msg.includes('api_key')) {
+      console.error('[POST /api/entry] Error de configuración de API key')
+      return Response.json(
+        { error: 'Error de configuración del servicio. Contacta al soporte.' },
+        { status: 500 }
       )
     }
     return Response.json(

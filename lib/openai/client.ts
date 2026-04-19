@@ -6,7 +6,10 @@ function getClient(): OpenAI {
   if (!_client) {
     const apiKey = process.env.OPENAI_API_KEY
     if (!apiKey) throw new Error('OPENAI_API_KEY no configurada')
-    _client = new OpenAI({ apiKey })
+    _client = new OpenAI({
+      apiKey,
+      timeout: 20_000, // 20s por intento — conservador para Vercel Pro (60s límite)
+    })
   }
   return _client
 }

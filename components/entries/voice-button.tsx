@@ -31,8 +31,14 @@ declare global {
   }
 }
 
+// Compatibilidad real de Web Speech API:
+// ✅ Chrome (desktop + Android)   ✅ Safari (iOS 14.5+, macOS 14.1+)
+// ✅ Edge / Samsung Internet       ❌ Firefox (desktop + Android) — no soportado
+// ❌ Algunos WebViews de Android   ⚠️  Requiere HTTPS y permiso de micrófono
+
 export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
-  const [supported, setSupported] = useState(false)
+  // null = aún no hidratado (SSR), evita flash de contenido incorrecto
+  const [supported, setSupported] = useState<boolean | null>(null)
   const [recording, setRecording] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const recognitionRef = useRef<ISpeechRecognition | null>(null)
@@ -41,12 +47,35 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
     setSupported(!!(window.SpeechRecognition || window.webkitSpeechRecognition))
   }, [])
 
-  if (!supported) return null
+  // Durante SSR no renderiza nada (evita mismatch de hidratación)
+  if (supported === null) return null
+
+  // Browser sin soporte → botón deshabilitado con tooltip explicativo
+  // (mejor que desaparecer sin avisar)
+  if (!supported) {
+    return (
+      <button
+        type="button"
+        disabled
+        title="Dictado no disponible en este navegador. Usa Chrome o Safari."
+        className="flex items-center justify-center rounded-xl min-h-[44px] min-w-[44px] opacity-40 cursor-not-allowed"
+        style={{ background: '#F5F5F5', border: '1px solid #E0E0E0', color: '#5A7A8A' }}
+      >
+        <span className="text-xl">🎤</span>
+      </button>
+    )
+  }
+
+  function showError(msg: string) {
+    setErrorMsg(msg)
+    setTimeout(() => setErrorMsg(''), 4000)
+  }
 
   function start() {
     const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition
     if (!SR) return
     setErrorMsg('')
+
     const rec = new SR()
     rec.lang = 'es-MX'
     rec.continuous = false
@@ -54,21 +83,31 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
 
     rec.onstart = () => setRecording(true)
     rec.onend = () => setRecording(false)
+
     rec.onerror = (e) => {
       setRecording(false)
       const code = e?.error
-      if (code === 'not-allowed') {
-        setErrorMsg('Permiso de micrófono denegado')
+      // Códigos de error del Web Speech API
+      if (code === 'not-allowed' || code === 'permission-denied') {
+        showError('Permiso denegado — habilita el micrófono en tu navegador')
       } else if (code === 'network') {
-        setErrorMsg('Sin conexión para voz')
+        showError('Sin conexión para voz')
+      } else if (code === 'no-speech') {
+        showError('No se detectó audio. Habla más cerca del micrófono.')
+      } else if (code === 'audio-capture') {
+        showError('No se encontró micrófono en este dispositivo')
+      } else if (code === 'service-not-allowed') {
+        showError('Dictado no disponible. Usa Chrome o Safari.')
+      } else if (code === 'aborted') {
+        // El usuario detuvo manualmente — no mostrar error
       } else {
-        setErrorMsg('Micrófono no disponible')
+        showError('Micrófono no disponible. Intenta de nuevo.')
       }
-      setTimeout(() => setErrorMsg(''), 3000)
     }
+
     rec.onresult = (e) => {
-      const transcript = e.results[0][0].transcript
-      onTranscript(transcript)
+      const transcript = e.results[0]?.[0]?.transcript ?? ''
+      if (transcript) onTranscript(transcript)
     }
 
     recognitionRef.current = rec
@@ -76,8 +115,7 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
       rec.start()
     } catch {
       setRecording(false)
-      setErrorMsg('No se pudo activar el micrófono')
-      setTimeout(() => setErrorMsg(''), 3000)
+      showError('No se pudo activar el micrófono. Recarga la página.')
     }
   }
 
@@ -109,7 +147,7 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
         )}
       </button>
       {errorMsg && (
-        <p className="text-xs" style={{ color: '#C62828' }}>{errorMsg}</p>
+        <p className="text-xs max-w-[160px]" style={{ color: '#C62828' }}>{errorMsg}</p>
       )}
     </div>
   )

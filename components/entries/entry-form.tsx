@@ -41,6 +41,12 @@ export function EntryForm({ onMovementsExtracted }: EntryFormProps) {
         const err = data as Record<string, unknown>
         if (err['error'] === 'LIMIT_EXCEEDED') {
           setError(err['message'] as string)
+        } else if (res.status === 429) {
+          setError('La IA está saturada. Espera unos segundos e intenta de nuevo.')
+        } else if (res.status === 504) {
+          setError('La IA tardó demasiado. Intenta con un texto más corto.')
+        } else if (res.status === 422) {
+          setError((err['error'] as string) || 'No encontré movimientos financieros en ese texto.')
         } else {
           setError((err['error'] as string) || 'Error al procesar. Intenta de nuevo.')
         }
@@ -81,7 +87,13 @@ export function EntryForm({ onMovementsExtracted }: EntryFormProps) {
       const data: unknown = await res.json()
       if (!res.ok) {
         const err = data as Record<string, unknown>
-        setError((err['error'] as string) || 'Error al analizar la imagen pegada.')
+        if (res.status === 429) {
+          setError('La IA está saturada. Espera unos segundos e intenta de nuevo.')
+        } else if (res.status === 504) {
+          setError('La IA tardó demasiado. Intenta con una imagen más sencilla.')
+        } else {
+          setError((err['error'] as string) || 'Error al analizar la imagen pegada.')
+        }
         return
       }
       const { movements } = data as { movements: PendingMovement[] }
