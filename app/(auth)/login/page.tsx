@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 type Mode = 'login' | 'register' | 'forgot'
@@ -25,9 +25,12 @@ function traducirError(msg: string): string {
   return 'Ocurrió un error. Intenta de nuevo.'
 }
 
-export default function LoginPage() {
+function LoginInner() {
   const router = useRouter()
-  const [mode, setMode] = useState<Mode>('login')
+  const searchParams = useSearchParams()
+  const [mode, setMode] = useState<Mode>(() =>
+    searchParams.get('mode') === 'register' ? 'register' : 'login'
+  )
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -341,5 +344,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(145deg, #2CB03B 0%, #D6EDC2 100%)' }}>
+        <p className="text-white text-sm">Cargando...</p>
+      </div>
+    }>
+      <LoginInner />
+    </Suspense>
   )
 }

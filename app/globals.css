@@ -38,6 +38,9 @@ select {
   font-size: 16px !important;
 }
 
+/* Oculta scrollbar del carousel en WebKit/Blink */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
 /* Elimina delay de doble-tap en elementos interactivos */
 button,
 a,
