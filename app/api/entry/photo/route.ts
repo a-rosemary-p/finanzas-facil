@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { getExtractionModel } from '@/lib/gemini/client'
+import { extractFromImage } from '@/lib/openai/client'
 import { PHOTO_EXTRACTION_PROMPT } from '@/lib/gemini/prompts'
 import { parseGeminiResponse } from '@/lib/gemini/parser'
 import { PLANS, PHOTO_LIMITS } from '@/lib/constants'
@@ -64,15 +64,9 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4. Llamar a Gemini Vision (multimodal)
-    const model = getExtractionModel()
+    // 4. Llamar a OpenAI Vision (multimodal)
     const prompt = `${PHOTO_EXTRACTION_PROMPT}\n\nFecha base: ${fechaMovimiento}`
-
-    const result = await model.generateContent([
-      { text: prompt },
-      { inlineData: { mimeType: mimeType as string, data: base64 } },
-    ])
-    const raw = result.response.text()
+    const raw = await extractFromImage(prompt, base64 as string, mimeType as string)
 
     // 5. Parsear y validar respuesta
     const movements = parseGeminiResponse(raw, fechaMovimiento)

@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { getExtractionModel } from '@/lib/gemini/client'
+import { extractFromText } from '@/lib/openai/client'
 import { EXTRACTION_SYSTEM_PROMPT } from '@/lib/gemini/prompts'
 import { parseGeminiResponse } from '@/lib/gemini/parser'
 import { PLANS } from '@/lib/constants'
@@ -60,12 +60,9 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4. Llamar a Gemini para extraer movimientos
-    const model = getExtractionModel()
-    const prompt = `${EXTRACTION_SYSTEM_PROMPT}\n\nFecha base: ${fechaMovimiento}\n\nTexto del usuario:\n${texto.trim()}`
-
-    const result = await model.generateContent(prompt)
-    const raw = result.response.text()
+    // 4. Llamar a OpenAI para extraer movimientos
+    const userContent = `Fecha base: ${fechaMovimiento}\n\nTexto del usuario:\n${texto.trim()}`
+    const raw = await extractFromText(EXTRACTION_SYSTEM_PROMPT, userContent)
 
     // 5. Parsear y validar respuesta
     const movements = parseGeminiResponse(raw, fechaMovimiento)
