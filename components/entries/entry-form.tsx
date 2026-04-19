@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { getTodayString, formatEntryDate } from '@/lib/utils'
+import { getTodayString } from '@/lib/utils'
 import { processImage } from '@/lib/image-utils'
 import { VoiceButton } from './voice-button'
 import { PhotoButton } from './photo-button'
@@ -145,11 +145,6 @@ export function EntryForm({ onMovementsExtracted }: EntryFormProps) {
               className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 w-full"
               style={{ borderColor: '#E0E0E0', color: '#1A2B3A' }}
             />
-            {fecha && (
-              <span className="text-xs" style={{ color: '#5A7A8A' }}>
-                {formatEntryDate(fecha)}
-              </span>
-            )}
           </div>
 
           <div className="flex gap-2 shrink-0 items-end">
