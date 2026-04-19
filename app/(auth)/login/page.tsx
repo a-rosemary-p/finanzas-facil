@@ -131,7 +131,7 @@ function LoginInner() {
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-7xl font-bold" style={{ color: '#fff' }}>FinanzasFácil</h1>
+          <h1 className="font-bold text-center" style={{ color: '#fff', fontSize: 'clamp(2.5rem, 13vw, 4.5rem)' }}>FinanzasFácil</h1>
           <p className="text-xl italic mt-2" style={{ color: 'rgba(255,255,255,0.85)' }}>Tus cuentas, sin cuentos</p>
         </div>
 

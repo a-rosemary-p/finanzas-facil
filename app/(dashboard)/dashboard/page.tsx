@@ -217,7 +217,7 @@ function DashboardInner() {
   const yesterday = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().split('T')[0] })()
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(115deg, #B3D5C0 25%, #E5EEB1 75%)' }}>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(115deg, #BFDACB 25%, #E8F0B9 75%)' }}>
       {/* Header */}
       <header className="bg-white sticky top-0 z-10 flex items-center justify-between px-4"
         style={{
