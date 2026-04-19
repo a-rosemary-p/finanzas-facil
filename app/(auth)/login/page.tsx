@@ -91,7 +91,7 @@ function LoginInner() {
   if (registered) {
     const isForgot = mode === 'forgot'
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(145deg, #578466 0%, #92C3A5 100%)' }}>
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(115deg, #578466 25%, #DAE68F 75%)' }}>
         <div className="w-full max-w-sm flex flex-col items-center gap-6">
           <div className="text-center">
             <div className="text-7xl mb-4">✉️</div>
@@ -126,13 +126,12 @@ function LoginInner() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(145deg, #578466 0%, #92C3A5 100%)' }}>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(115deg, #578466 25%, #DAE68F 75%)' }}>
       <div className="w-full max-w-sm">
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="text-6xl mb-3">💰</div>
-          <h1 className="text-5xl font-bold" style={{ color: '#fff' }}>FinanzasFácil</h1>
+          <h1 className="text-7xl font-bold" style={{ color: '#fff' }}>FinanzasFácil</h1>
           <p className="text-xl italic mt-2" style={{ color: 'rgba(255,255,255,0.85)' }}>Tus cuentas, sin cuentos</p>
         </div>
 
@@ -243,7 +242,7 @@ function LoginInner() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(145deg, #578466 0%, #92C3A5 100%)' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(115deg, #578466 25%, #DAE68F 75%)' }}>
         <p className="text-white text-sm">Cargando...</p>
       </div>
     }>

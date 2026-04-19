@@ -165,8 +165,8 @@ export default function HomePage() {
           paddingTop: 'env(safe-area-inset-top, 0px)',
         }}
       >
-        <span className="font-bold text-lg" style={{ color: '#578466' }}>
-          💰 FinanzasFácil
+        <span className="font-bold text-2xl" style={{ color: '#578466' }}>
+          FinanzasFácil
         </span>
         <Link
           href="/login"
@@ -180,10 +180,8 @@ export default function HomePage() {
       {/* ── Hero ── */}
       <section
         className="flex flex-col items-center text-center px-5 pt-20 pb-16"
-        style={{ background: 'linear-gradient(145deg, #578466 0%, #92C3A5 100%)' }}
+        style={{ background: 'linear-gradient(115deg, #578466 25%, #DAE68F 75%)' }}
       >
-        <div className="text-6xl mb-5">💰</div>
-
         <h1
           className="font-bold leading-tight mb-5"
           style={{ color: '#fff', fontSize: 'clamp(2rem, 8vw, 2.75rem)', maxWidth: '340px' }}
@@ -403,7 +401,7 @@ export default function HomePage() {
       {/* ── Footer ── */}
       <footer className="py-8 text-center mt-auto" style={{ background: '#578466' }}>
         <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.72)' }}>
-          💰 FinanzasFácil &nbsp;·&nbsp; © 2026 finanzasfacil.mx
+          FinanzasFácil &nbsp;·&nbsp; © 2026 finanzasfacil.mx
         </p>
       </footer>
 

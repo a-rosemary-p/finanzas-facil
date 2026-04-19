@@ -24,7 +24,7 @@ body {
   min-height: 100%;
   font-family: var(--font-outfit), Arial, Helvetica, sans-serif;
   color: var(--color-text-primary);
-  background: linear-gradient(to bottom, var(--color-bg-top), var(--color-bg-bottom)) fixed;
+  background: linear-gradient(115deg, #92C3A5 25%, #DAE68F 75%) fixed;
   padding-bottom: env(safe-area-inset-bottom, 0px);
   -webkit-tap-highlight-color: transparent;
 }
