@@ -1,7 +1,7 @@
 // Constantes de negocio centralizadas.
 // Si alguien quiere cambiar un límite o precio, solo toca este archivo.
 
-export const AI_MODEL = 'gpt-4o-mini' as const
+export const AI_MODEL = 'gpt-4.1-mini' as const
 
 export const EXCHANGE_RATES = {
   USD_TO_MXN: 17,
@@ -43,10 +43,10 @@ export const DATE_FILTER_LABELS: Record<string, string> = {
 }
 
 export const TYPE_FILTER_CONFIG = [
-  { value: 'all',       label: 'Todos',      bg: '#F5F5F5', color: '#5A7A8A', border: '#E0E0E0', activeBg: '#1A2B3A', activeColor: '#fff', activeBorder: '#1A2B3A' },
-  { value: 'ingreso',   label: 'Ingresos',   bg: '#F5F5F5', color: '#5A7A8A', border: '#E0E0E0', activeBg: '#C8E6C9', activeColor: '#1B5E20', activeBorder: '#A5D6A7' },
-  { value: 'gasto',     label: 'Gastos',     bg: '#F5F5F5', color: '#5A7A8A', border: '#E0E0E0', activeBg: '#FFCDD2', activeColor: '#B71C1C', activeBorder: '#EF9A9A' },
-  { value: 'pendiente', label: 'Pendientes', bg: '#F5F5F5', color: '#5A7A8A', border: '#E0E0E0', activeBg: '#FFF8E1', activeColor: '#E65100', activeBorder: '#FFE082' },
+  { value: 'all',       label: 'Todos',      bg: '#F4F6EB', color: '#6B8C78', border: '#D9E8D0', activeBg: '#578466', activeColor: '#fff',    activeBorder: '#578466' },
+  { value: 'ingreso',   label: 'Ingresos',   bg: '#F4F6EB', color: '#6B8C78', border: '#D9E8D0', activeBg: '#DAE68F', activeColor: '#578466', activeBorder: '#92C3A5' },
+  { value: 'gasto',     label: 'Gastos',     bg: '#F4F6EB', color: '#6B8C78', border: '#D9E8D0', activeBg: '#FAD5BF', activeColor: '#D0481A', activeBorder: '#F79366' },
+  { value: 'pendiente', label: 'Pendientes', bg: '#F4F6EB', color: '#6B8C78', border: '#D9E8D0', activeBg: '#FFF5CC', activeColor: '#B89010', activeBorder: '#FFCE57' },
 ] as const
 
 export const PHOTO_LIMITS = {

@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --color-text-primary:   #1A2B3A;
-  --color-text-secondary: #5A7A8A;
-  --color-accent:         #2E7D32;
-  --color-danger:         #C62828;
-  --color-pending:        #F57F17;
-  --color-border:         #E0E0E0;
-  --color-bg-top:         #F0FAF4;
-  --color-bg-bottom:      #E8F5E9;
+  --color-text-primary:   #578466;
+  --color-text-secondary: #6B8C78;
+  --color-accent:         #578466;
+  --color-danger:         #D0481A;
+  --color-pending:        #B89010;
+  --color-border:         #D9E8D0;
+  --color-bg-top:         #F4F6EB;
+  --color-bg-bottom:      #E8EDD8;
 }
 
 @theme inline {
-  --font-sans: var(--font-lato), Arial, Helvetica, sans-serif;
+  --font-sans: var(--font-outfit), Arial, Helvetica, sans-serif;
 }
 
 html {
@@ -22,11 +22,9 @@ html {
 
 body {
   min-height: 100%;
-  font-family: var(--font-lato), Arial, Helvetica, sans-serif;
+  font-family: var(--font-outfit), Arial, Helvetica, sans-serif;
   color: var(--color-text-primary);
-  /* Gradiente sutil verde — aplicado solo aquí, no en componentes */
   background: linear-gradient(to bottom, var(--color-bg-top), var(--color-bg-bottom)) fixed;
-  /* Safe area para iPhone con notch */
   padding-bottom: env(safe-area-inset-bottom, 0px);
   -webkit-tap-highlight-color: transparent;
 }

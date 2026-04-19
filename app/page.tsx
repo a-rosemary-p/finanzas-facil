@@ -9,19 +9,19 @@ import Link from 'next/link'
 
 function MockInput() {
   return (
-    <div aria-hidden="true" className="h-40 rounded-xl p-3 flex flex-col gap-2.5" style={{ background: '#F0FAF4' }}>
-      <div className="flex-1 rounded-lg p-3" style={{ background: '#fff', border: '1px solid #E0E0E0' }}>
-        <p className="text-[11px] leading-relaxed" style={{ color: '#1A2B3A' }}>
+    <div aria-hidden="true" className="h-40 rounded-xl p-3 flex flex-col gap-2.5" style={{ background: '#F4F6EB' }}>
+      <div className="flex-1 rounded-lg p-3" style={{ background: '#fff', border: '1px solid #D9E8D0' }}>
+        <p className="text-[11px] leading-relaxed" style={{ color: '#578466' }}>
           Vendí $1,500 de tacos, gasté $300 en tortillas y $120 en gas...
         </p>
-        <span className="inline-block w-0.5 h-3 mt-1 align-middle rounded-full" style={{ background: '#2E7D32', opacity: 0.7 }} />
+        <span className="inline-block w-0.5 h-3 mt-1 align-middle rounded-full" style={{ background: '#578466', opacity: 0.7 }} />
       </div>
       <div className="flex gap-2 justify-center">
         {['✏️', '🎤', '📷'].map(icon => (
           <span
             key={icon}
             className="text-base rounded-xl px-3 py-1.5"
-            style={{ background: '#fff', border: '1px solid #E0E0E0' }}
+            style={{ background: '#fff', border: '1px solid #D9E8D0' }}
           >
             {icon}
           </span>
@@ -33,17 +33,17 @@ function MockInput() {
 
 function MockAI() {
   const rows = [
-    { badge: 'Ingreso',   badgeBg: '#C8E6C9', badgeColor: '#1B5E20', text: 'Ventas del día', amount: '+$1,500', amountColor: '#1B5E20' },
-    { badge: 'Gasto',     badgeBg: '#FFCDD2', badgeColor: '#B71C1C', text: 'Tortillas',       amount: '−$300',   amountColor: '#B71C1C' },
-    { badge: 'Pendiente', badgeBg: '#FFF8E1', badgeColor: '#E65100', text: 'Renta (lunes)',   amount: '⏳$400',  amountColor: '#E65100' },
+    { badge: 'Ingreso',   badgeBg: '#DAE68F', badgeColor: '#578466', text: 'Ventas del día', amount: '+$1,500', amountColor: '#578466' },
+    { badge: 'Gasto',     badgeBg: '#FAD5BF', badgeColor: '#D0481A', text: 'Tortillas',       amount: '−$300',   amountColor: '#D0481A' },
+    { badge: 'Pendiente', badgeBg: '#FFF5CC', badgeColor: '#B89010', text: 'Renta (lunes)',   amount: '⏳$400',  amountColor: '#B89010' },
   ]
   return (
-    <div aria-hidden="true" className="h-40 rounded-xl p-3 flex flex-col gap-1.5" style={{ background: '#F0FAF4' }}>
+    <div aria-hidden="true" className="h-40 rounded-xl p-3 flex flex-col gap-1.5" style={{ background: '#F4F6EB' }}>
       {rows.map(r => (
         <div
           key={r.badge}
           className="flex items-center gap-1.5 rounded-lg px-2 py-1.5"
-          style={{ background: '#fff', border: '1px solid #E0E0E0' }}
+          style={{ background: '#fff', border: '1px solid #D9E8D0' }}
         >
           <span
             className="text-[9px] font-bold rounded px-1.5 py-0.5 shrink-0"
@@ -51,7 +51,7 @@ function MockAI() {
           >
             {r.badge}
           </span>
-          <span className="flex-1 text-[11px] truncate" style={{ color: '#1A2B3A' }}>{r.text}</span>
+          <span className="flex-1 text-[11px] truncate" style={{ color: '#578466' }}>{r.text}</span>
           <span className="text-[11px] font-bold shrink-0" style={{ color: r.amountColor }}>{r.amount}</span>
         </div>
       ))}
@@ -61,12 +61,12 @@ function MockAI() {
 
 function MockDashboard() {
   const cards = [
-    { label: 'INGRESOS', value: '$1,500', bg: '#C8E6C9', color: '#1B5E20', border: '#A5D6A7' },
-    { label: 'GASTOS',   value: '$300',   bg: '#FFCDD2', color: '#B71C1C', border: '#EF9A9A' },
-    { label: 'NETO',     value: '$1,200', bg: '#C8E6C9', color: '#1B5E20', border: '#A5D6A7' },
+    { label: 'INGRESOS', value: '$1,500', bg: '#DAE68F', color: '#578466', border: '#92C3A5' },
+    { label: 'GASTOS',   value: '$300',   bg: '#FAD5BF', color: '#D0481A', border: '#F79366' },
+    { label: 'NETO',     value: '$1,200', bg: '#DAE68F', color: '#578466', border: '#92C3A5' },
   ]
   return (
-    <div aria-hidden="true" className="h-40 rounded-xl p-3 flex flex-col gap-2.5" style={{ background: '#F0FAF4' }}>
+    <div aria-hidden="true" className="h-40 rounded-xl p-3 flex flex-col gap-2.5" style={{ background: '#F4F6EB' }}>
       <div className="grid grid-cols-3 gap-1.5">
         {cards.map(c => (
           <div
@@ -79,12 +79,12 @@ function MockDashboard() {
           </div>
         ))}
       </div>
-      <div className="rounded-lg p-2.5" style={{ background: '#fff', border: '1px solid #E0E0E0' }}>
+      <div className="rounded-lg p-2.5" style={{ background: '#fff', border: '1px solid #D9E8D0' }}>
         <div className="flex gap-1 mb-1.5 items-center">
-          <div className="h-1.5 rounded-full" style={{ flex: 5, background: '#2E7D32' }} />
-          <div className="h-1.5 rounded-full" style={{ flex: 2, background: '#E0E0E0' }} />
+          <div className="h-1.5 rounded-full" style={{ flex: 5, background: '#578466' }} />
+          <div className="h-1.5 rounded-full" style={{ flex: 2, background: '#D9E8D0' }} />
         </div>
-        <p className="text-[9px]" style={{ color: '#5A7A8A' }}>Balance del mes — 71% de meta</p>
+        <p className="text-[9px]" style={{ color: '#6B8C78' }}>Balance del mes — 71% de meta</p>
       </div>
     </div>
   )
@@ -160,18 +160,18 @@ export default function HomePage() {
       <header
         className="sticky top-0 z-20 bg-white flex items-center justify-between px-4 shrink-0"
         style={{
-          borderBottom: '1px solid #E0E0E0',
+          borderBottom: '1px solid #D9E8D0',
           height: '56px',
           paddingTop: 'env(safe-area-inset-top, 0px)',
         }}
       >
-        <span className="font-bold text-lg" style={{ color: '#1B5E20' }}>
+        <span className="font-bold text-lg" style={{ color: '#578466' }}>
           💰 FinanzasFácil
         </span>
         <Link
           href="/login"
           className="text-sm font-semibold px-4 py-2 rounded-lg border transition-colors min-h-[40px] flex items-center"
-          style={{ borderColor: '#2E7D32', color: '#2E7D32' }}
+          style={{ borderColor: '#578466', color: '#578466' }}
         >
           Iniciar sesión
         </Link>
@@ -180,7 +180,7 @@ export default function HomePage() {
       {/* ── Hero ── */}
       <section
         className="flex flex-col items-center text-center px-5 pt-20 pb-16"
-        style={{ background: 'linear-gradient(145deg, #2CB03B 0%, #D6EDC2 100%)' }}
+        style={{ background: 'linear-gradient(145deg, #578466 0%, #92C3A5 100%)' }}
       >
         <div className="text-6xl mb-5">💰</div>
 
@@ -205,7 +205,7 @@ export default function HomePage() {
             className="w-full py-4 rounded-xl font-bold text-lg text-center min-h-[56px] flex items-center justify-center gap-2"
             style={{
               background: '#fff',
-              color: '#2E7D32',
+              color: '#578466',
               boxShadow: '0 4px 20px rgba(0,0,0,0.13)',
             }}
           >
@@ -225,12 +225,11 @@ export default function HomePage() {
       <section className="pt-12 pb-2 bg-white">
         <p
           className="text-xs font-bold text-center mb-7 px-4"
-          style={{ color: '#5A7A8A', letterSpacing: '0.12em' }}
+          style={{ color: '#6B8C78', letterSpacing: '0.12em' }}
         >
           CÓMO FUNCIONA
         </p>
 
-        {/* Wrapper que centra y limita ancho en desktop */}
         <div className="md:max-w-4xl md:mx-auto md:px-8">
           <div
             ref={carouselRef}
@@ -254,21 +253,21 @@ export default function HomePage() {
                 style={{
                   width: '240px',
                   scrollSnapAlign: 'start',
-                  border: '1px solid #E8F0E8',
-                  boxShadow: '0 2px 12px rgba(46,125,50,0.07)',
+                  border: '1px solid #D9E8D0',
+                  boxShadow: '0 2px 12px rgba(87,132,102,0.08)',
                 }}
               >
                 <step.Visual />
                 <div className="flex items-start gap-2.5">
                   <span
                     className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                    style={{ background: '#2E7D32' }}
+                    style={{ background: '#578466' }}
                   >
                     {step.num}
                   </span>
                   <div>
-                    <p className="text-sm font-bold mb-0.5" style={{ color: '#1A2B3A' }}>{step.title}</p>
-                    <p className="text-xs italic leading-snug" style={{ color: '#5A7A8A' }}>{step.body}</p>
+                    <p className="text-sm font-bold mb-0.5" style={{ color: '#578466' }}>{step.title}</p>
+                    <p className="text-xs italic leading-snug" style={{ color: '#6B8C78' }}>{step.body}</p>
                   </div>
                 </div>
               </div>
@@ -285,32 +284,31 @@ export default function HomePage() {
               style={{
                 width:      activeStep === i ? '20px' : '8px',
                 height:     '8px',
-                background: activeStep === i ? '#2E7D32' : '#D0E8D0',
+                background: activeStep === i ? '#578466' : '#D9E8D0',
               }}
             />
           ))}
         </div>
-        {/* Espaciado inferior en desktop (reemplaza el pb de los dots) */}
         <div className="hidden md:block pb-10" />
       </section>
 
       {/* ── Para quién es ── */}
-      <section className="px-4 py-12" style={{ background: '#F7FBF7' }}>
+      <section className="px-4 py-12" style={{ background: '#F4F6EB' }}>
         <div className="max-w-lg mx-auto">
           <div
             className="bg-white rounded-2xl p-8"
-            style={{ border: '1px solid #E0E0E0', boxShadow: '0 2px 16px rgba(46,125,50,0.06)' }}
+            style={{ border: '1px solid #D9E8D0', boxShadow: '0 2px 16px rgba(87,132,102,0.07)' }}
           >
-            <h2 className="text-xl font-bold mb-4" style={{ color: '#1B5E20' }}>
+            <h2 className="text-xl font-bold mb-4" style={{ color: '#578466' }}>
               Para negocios como el tuyo
             </h2>
-            <p className="text-sm leading-relaxed mb-5" style={{ color: '#5A7A8A' }}>
+            <p className="text-sm leading-relaxed mb-5" style={{ color: '#6B8C78' }}>
               Taquerías &nbsp;·&nbsp; Tiendas de abarrotes &nbsp;·&nbsp; Talleres &nbsp;·&nbsp;
               Estéticas &nbsp;·&nbsp; Food trucks &nbsp;·&nbsp; Vendedores de cualquier cosa
             </p>
             <p
               className="text-sm italic leading-relaxed pt-5"
-              style={{ color: '#1A2B3A', borderTop: '1px solid #E8F0E8' }}
+              style={{ color: '#578466', borderTop: '1px solid #D9E8D0' }}
             >
               Si llevas tus cuentas en un cuaderno, en tu cabeza, o en el WhatsApp de tu familia
               — FinanzasFácil es para ti.
@@ -322,36 +320,35 @@ export default function HomePage() {
       {/* ── Precios ── */}
       <section className="px-4 py-12 bg-white">
         <div className="max-w-lg mx-auto">
-          <h2 className="text-xl font-bold text-center mb-7" style={{ color: '#1A2B3A' }}>
+          <h2 className="text-xl font-bold text-center mb-7" style={{ color: '#578466' }}>
             Simple y sin sorpresas
           </h2>
 
-          {/* CRÍTICO: siempre 2 columnas en mobile */}
           <div className="grid grid-cols-2 gap-3">
 
             {/* Free */}
             <div
               className="rounded-xl p-4 flex flex-col gap-3"
-              style={{ background: '#fff', border: '1px solid #E0E0E0' }}
+              style={{ background: '#fff', border: '1px solid #D9E8D0' }}
             >
               <div>
-                <p className="text-[10px] font-bold tracking-widest mb-1.5" style={{ color: '#9E9E9E' }}>
+                <p className="text-[10px] font-bold tracking-widest mb-1.5" style={{ color: '#8AAB94' }}>
                   GRATIS
                 </p>
-                <p className="text-2xl font-bold" style={{ color: '#1A2B3A' }}>$0</p>
+                <p className="text-2xl font-bold" style={{ color: '#578466' }}>$0</p>
               </div>
               <ul className="flex flex-col gap-2 flex-1">
                 {FREE_FEATURES.map(f => (
                   <li key={f} className="flex items-start gap-1.5">
-                    <span className="text-xs shrink-0 mt-px font-bold" style={{ color: '#2E7D32' }}>✓</span>
-                    <span className="text-xs leading-snug" style={{ color: '#1A2B3A' }}>{f}</span>
+                    <span className="text-xs shrink-0 mt-px font-bold" style={{ color: '#578466' }}>✓</span>
+                    <span className="text-xs leading-snug" style={{ color: '#578466' }}>{f}</span>
                   </li>
                 ))}
               </ul>
               <Link
                 href="/login?mode=register"
                 className="w-full py-2.5 rounded-xl text-sm font-semibold text-center border min-h-[40px] flex items-center justify-center"
-                style={{ borderColor: '#2E7D32', color: '#2E7D32' }}
+                style={{ borderColor: '#578466', color: '#578466' }}
               >
                 Empieza gratis
               </Link>
@@ -360,52 +357,52 @@ export default function HomePage() {
             {/* Pro */}
             <div
               className="rounded-xl p-4 flex flex-col gap-3"
-              style={{ background: '#F1F8E9', border: '2px solid #2E7D32' }}
+              style={{ background: '#EEFBE8', border: '2px solid #578466' }}
             >
               <div className="text-center -mt-1">
                 <span
                   className="text-[9px] font-bold px-2 py-0.5 rounded-full text-white"
-                  style={{ background: '#2E7D32' }}
+                  style={{ background: '#578466' }}
                 >
                   MÁS POPULAR
                 </span>
               </div>
               <div>
-                <p className="text-[10px] font-bold tracking-widest mb-1.5" style={{ color: '#2E7D32' }}>
+                <p className="text-[10px] font-bold tracking-widest mb-1.5" style={{ color: '#578466' }}>
                   PRO
                 </p>
-                <p className="text-2xl font-bold" style={{ color: '#1B5E20' }}>
+                <p className="text-2xl font-bold" style={{ color: '#578466' }}>
                   $99
-                  <span className="text-sm font-normal ml-0.5" style={{ color: '#5A7A8A' }}>/mes</span>
+                  <span className="text-sm font-normal ml-0.5" style={{ color: '#6B8C78' }}>/mes</span>
                 </p>
               </div>
               <ul className="flex flex-col gap-2 flex-1">
                 {PRO_FEATURES.map(f => (
                   <li key={f} className="flex items-start gap-1.5">
-                    <span className="text-xs shrink-0 mt-px font-bold" style={{ color: '#2E7D32' }}>✓</span>
-                    <span className="text-xs leading-snug" style={{ color: '#1A2B3A' }}>{f}</span>
+                    <span className="text-xs shrink-0 mt-px font-bold" style={{ color: '#578466' }}>✓</span>
+                    <span className="text-xs leading-snug" style={{ color: '#578466' }}>{f}</span>
                   </li>
                 ))}
               </ul>
               <Link
                 href="/login?mode=register"
                 className="w-full py-2.5 rounded-xl text-sm font-bold text-center text-white min-h-[40px] flex items-center justify-center"
-                style={{ background: '#2E7D32' }}
+                style={{ background: '#578466' }}
               >
                 Suscribirme
               </Link>
             </div>
           </div>
 
-          <p className="text-xs text-center mt-4" style={{ color: '#9E9E9E' }}>
+          <p className="text-xs text-center mt-4" style={{ color: '#8AAB94' }}>
             Cancela cuando quieras. Sin permanencia.
           </p>
         </div>
       </section>
 
       {/* ── Footer ── */}
-      <footer className="py-8 text-center mt-auto" style={{ background: '#1B5E20' }}>
-        <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.62)' }}>
+      <footer className="py-8 text-center mt-auto" style={{ background: '#578466' }}>
+        <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.72)' }}>
           💰 FinanzasFácil &nbsp;·&nbsp; © 2026 finanzasfacil.mx
         </p>
       </footer>

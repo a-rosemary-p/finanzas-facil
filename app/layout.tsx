@@ -1,12 +1,11 @@
 import type { Metadata, Viewport } from 'next'
-import { Lato } from 'next/font/google'
+import { Outfit } from 'next/font/google'
 import './globals.css'
 
-const lato = Lato({
+const outfit = Outfit({
   subsets: ['latin'],
-  weight: ['400', '700'],
-  style: ['normal', 'italic'],
-  variable: '--font-lato',
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-outfit',
   display: 'swap',
 })
 
@@ -24,7 +23,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#2E7D32',
+  themeColor: '#578466',
 }
 
 export default function RootLayout({
@@ -33,8 +32,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es" className={`h-full ${lato.variable}`}>
-      <body className="font-[family-name:var(--font-lato)]">{children}</body>
+    <html lang="es" className={`h-full ${outfit.variable}`}>
+      <body className="font-[family-name:var(--font-outfit)]">{children}</body>
     </html>
   )
 }

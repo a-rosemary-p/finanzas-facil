@@ -1,4 +1,5 @@
 import OpenAI from 'openai'
+import { AI_MODEL } from '@/lib/constants'
 
 let _client: OpenAI | null = null
 
@@ -43,7 +44,7 @@ export async function extractFromText(
   const client = getClient()
   return withRetry(async () => {
     const res = await client.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: AI_MODEL,
       response_format: { type: 'json_object' },
       temperature: 0.1,
       messages: [
@@ -64,7 +65,7 @@ export async function extractFromImage(
   const client = getClient()
   return withRetry(async () => {
     const res = await client.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: AI_MODEL,
       response_format: { type: 'json_object' },
       temperature: 0.1,
       messages: [
