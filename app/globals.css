@@ -41,6 +41,21 @@ select {
 /* Oculta scrollbar del carousel en WebKit/Blink */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
+/* En desktop el carousel se convierte en grid de 3 columnas */
+@media (min-width: 768px) {
+  .ff-carousel {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    overflow-x: visible !important;
+    scroll-snap-type: none !important;
+    padding: 4px 0 24px !important;
+  }
+  .ff-carousel > * {
+    width: auto !important;
+    scroll-snap-align: none !important;
+  }
+}
+
 /* Elimina delay de doble-tap en elementos interactivos */
 button,
 a,

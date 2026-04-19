@@ -230,51 +230,54 @@ export default function HomePage() {
           CÓMO FUNCIONA
         </p>
 
-        <div
-          ref={carouselRef}
-          role="list"
-          aria-label="Cómo funciona FinanzasFácil"
-          className="no-scrollbar flex gap-4"
-          style={{
-            overflowX: 'auto',
-            scrollSnapType: 'x mandatory',
-            WebkitOverflowScrolling: 'touch',
-            scrollbarWidth: 'none',
-            padding: '4px 24px 20px',
-            paddingRight: '52px',
-          }}
-        >
-          {STEPS.map(step => (
-            <div
-              key={step.num}
-              role="listitem"
-              className="flex flex-col gap-3 bg-white rounded-2xl p-4 shrink-0"
-              style={{
-                width: '240px',
-                scrollSnapAlign: 'start',
-                border: '1px solid #E8F0E8',
-                boxShadow: '0 2px 12px rgba(46,125,50,0.07)',
-              }}
-            >
-              <step.Visual />
-              <div className="flex items-start gap-2.5">
-                <span
-                  className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                  style={{ background: '#2E7D32' }}
-                >
-                  {step.num}
-                </span>
-                <div>
-                  <p className="text-sm font-bold mb-0.5" style={{ color: '#1A2B3A' }}>{step.title}</p>
-                  <p className="text-xs italic leading-snug" style={{ color: '#5A7A8A' }}>{step.body}</p>
+        {/* Wrapper que centra y limita ancho en desktop */}
+        <div className="md:max-w-4xl md:mx-auto md:px-8">
+          <div
+            ref={carouselRef}
+            role="list"
+            aria-label="Cómo funciona FinanzasFácil"
+            className="ff-carousel no-scrollbar flex gap-4"
+            style={{
+              overflowX: 'auto',
+              scrollSnapType: 'x mandatory',
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none',
+              padding: '4px 24px 20px',
+              paddingRight: '52px',
+            }}
+          >
+            {STEPS.map(step => (
+              <div
+                key={step.num}
+                role="listitem"
+                className="flex flex-col gap-3 bg-white rounded-2xl p-4 shrink-0"
+                style={{
+                  width: '240px',
+                  scrollSnapAlign: 'start',
+                  border: '1px solid #E8F0E8',
+                  boxShadow: '0 2px 12px rgba(46,125,50,0.07)',
+                }}
+              >
+                <step.Visual />
+                <div className="flex items-start gap-2.5">
+                  <span
+                    className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                    style={{ background: '#2E7D32' }}
+                  >
+                    {step.num}
+                  </span>
+                  <div>
+                    <p className="text-sm font-bold mb-0.5" style={{ color: '#1A2B3A' }}>{step.title}</p>
+                    <p className="text-xs italic leading-snug" style={{ color: '#5A7A8A' }}>{step.body}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
-        {/* Dots */}
-        <div className="flex justify-center gap-2 pb-10">
+        {/* Dots — solo visibles en mobile */}
+        <div className="flex md:hidden justify-center gap-2 pb-10">
           {STEPS.map((_, i) => (
             <div
               key={i}
@@ -287,6 +290,8 @@ export default function HomePage() {
             />
           ))}
         </div>
+        {/* Espaciado inferior en desktop (reemplaza el pb de los dots) */}
+        <div className="hidden md:block pb-10" />
       </section>
 
       {/* ── Para quién es ── */}
