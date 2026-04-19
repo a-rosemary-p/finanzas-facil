@@ -130,9 +130,9 @@ function LoginInner() {
       <div className="w-full max-w-sm">
 
         {/* Logo */}
-        <div className="text-center mb-8">
-          <h1 className="font-bold w-full text-center" style={{ color: '#fff', fontSize: 'clamp(2.5rem, 13vw, 4.5rem)' }}>FinanzasFácil</h1>
-          <p className="text-xl italic mt-2" style={{ color: 'rgba(255,255,255,0.85)' }}>Tus cuentas, sin cuentos</p>
+        <div className="flex flex-col items-center mb-8">
+          <h1 className="font-bold" style={{ color: '#fff', fontSize: 'clamp(2.5rem, 13vw, 4.5rem)', textAlign: 'center' }}>FinanzasFácil</h1>
+          <p className="text-xl italic mt-2" style={{ color: 'rgba(255,255,255,0.85)', textAlign: 'center' }}>Tus cuentas, sin cuentos</p>
         </div>
 
         {/* Card */}

@@ -12,12 +12,24 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: 'FinanzasFácil',
   description: 'Control de ingresos y gastos para tu negocio',
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/favicon.svg',
+    shortcut: '/favicon.svg',
+  },
   appleWebApp: {
     capable: true,
     title: 'FinanzasFácil',
     statusBarStyle: 'default',
   },
   formatDetection: { telephone: false },
+  openGraph: {
+    title: 'FinanzasFácil',
+    description: 'Control de ingresos y gastos para tu negocio',
+    images: [{ url: '/favicon.svg' }],
+  },
 }
 
 export const viewport: Viewport = {
