@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getDateRange } from '@/lib/utils'
-import type { Entry, Movement, DateFilter, DashboardMetrics } from '@/types'
+import type { Entry, Movement, DateFilter, TypeFilter, DashboardMetrics } from '@/types'
 
 const PAGE_SIZE = 20
 
@@ -32,26 +32,27 @@ export function useEntries() {
   const [movements, setMovements] = useState<Movement[]>([])
   const [metrics, setMetrics] = useState<DashboardMetrics>({ income: 0, expenses: 0, net: 0 })
   const [filter, setFilterState] = useState<DateFilter>('today')
+  const [typeFilter, setTypeFilterState] = useState<TypeFilter>('all')
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(false)
 
-  // Guardamos el rango actual para reutilizarlo en loadMore sin re-calcular
   const rangeRef = useRef<{ start: string; end: string } | null>(null)
-  // Total de movimientos en el rango (para saber si hay más páginas)
+  const typeFilterRef = useRef<TypeFilter>('all')
   const totalRef = useRef(0)
 
-  const loadData = useCallback(async (f: DateFilter) => {
+  const loadData = useCallback(async (f: DateFilter, tf: TypeFilter = 'all') => {
     setLoading(true)
     setMovements([])
     setHasMore(false)
+    typeFilterRef.current = tf
 
     const supabase = createClient()
     const range = getDateRange(f)
     rangeRef.current = range
     const { start, end } = range
 
-    // 1. Query ligera para métricas — solo type + amount, sin límite de filas
+    // 1. Métricas — siempre sin filtro de tipo para mostrar el cuadro completo
     const { data: metricsRows } = await supabase
       .from('movements')
       .select('type, amount')
@@ -65,12 +66,16 @@ export function useEntries() {
       }))
     ))
 
-    // 2. Primera página de movimientos completos con conteo total
-    const { data: pageRows, count } = await supabase
+    // 2. Primera página de movimientos — con filtro de tipo si aplica
+    const baseQuery = supabase
       .from('movements')
       .select('id, type, amount, description, category, movement_date', { count: 'exact' })
       .gte('movement_date', start)
       .lte('movement_date', end)
+
+    const filteredQuery = tf !== 'all' ? baseQuery.eq('type', tf) : baseQuery
+
+    const { data: pageRows, count } = await filteredQuery
       .order('movement_date', { ascending: false })
       .order('id', { ascending: false })
       .range(0, PAGE_SIZE - 1)
@@ -85,20 +90,23 @@ export function useEntries() {
   const loadMore = useCallback(async () => {
     const range = rangeRef.current
     if (!range) return
+    const tf = typeFilterRef.current
 
     setLoadingMore(true)
     const supabase = createClient()
 
-    // Usamos el conteo de filas actuales como offset
     setMovements(prev => {
       const offset = prev.length
 
-      supabase
+      const base = supabase
         .from('movements')
         .select('id, type, amount, description, category, movement_date')
         .gte('movement_date', range.start)
         .lte('movement_date', range.end)
-        .order('movement_date', { ascending: false })
+
+      const q = tf !== 'all' ? base.eq('type', tf) : base
+
+      q.order('movement_date', { ascending: false })
         .order('id', { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1)
         .then(({ data: moreRows }) => {
@@ -111,13 +119,19 @@ export function useEntries() {
           setLoadingMore(false)
         })
 
-      return prev // estado sin cambio mientras carga
+      return prev
     })
   }, [])
 
   function setFilter(f: DateFilter) {
     setFilterState(f)
-    loadData(f)
+    loadData(f, typeFilter)
+  }
+
+  function setTypeFilter(tf: TypeFilter) {
+    setTypeFilterState(tf)
+    typeFilterRef.current = tf
+    loadData(filter, tf)
   }
 
   // Añade los movimientos de una entrada recién confirmada al tope
@@ -125,7 +139,6 @@ export function useEntries() {
     const newMovs = entry.movements
     setMovements(prev => [...newMovs, ...prev])
     totalRef.current += newMovs.length
-    // Actualiza métricas incrementalmente sin re-query
     setMetrics(prev => {
       const delta = calcMetrics(newMovs.map(m => ({ type: m.type, amount: m.amount })))
       return {
@@ -143,10 +156,8 @@ export function useEntries() {
       if (!old) return prev
       setMetrics(m => {
         const next = { ...m }
-        // Revertir contribución anterior
         if (old.type === 'ingreso') next.income -= old.amount
         else if (old.type === 'gasto') next.expenses -= old.amount
-        // Agregar nueva contribución
         if (updated.type === 'ingreso') next.income += updated.amount
         else if (updated.type === 'gasto') next.expenses += updated.amount
         next.net = next.income - next.expenses
@@ -174,7 +185,7 @@ export function useEntries() {
   }
 
   return {
-    movements, metrics, filter, setFilter,
+    movements, metrics, filter, typeFilter, setFilter, setTypeFilter,
     loadData, loadMore, loading, loadingMore, hasMore,
     prependEntry, updateMovement, deleteMovement,
   }

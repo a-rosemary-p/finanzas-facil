@@ -61,5 +61,7 @@ export function getDateRange(filter: DateFilter): { start: string; end: string }
         start: `${today.getFullYear()}-01-01`,
         end: `${today.getFullYear()}-12-31`,
       }
+    case 'all':
+      return { start: '2000-01-01', end: '2099-12-31' }
   }
 }

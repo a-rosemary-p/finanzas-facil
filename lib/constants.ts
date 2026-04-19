@@ -25,14 +25,22 @@ export const CATEGORIES = [
 
 export const MOVEMENT_TYPES = ['ingreso', 'gasto', 'pendiente'] as const
 
-export const DATE_FILTERS = ['today', '7days', 'month', 'year'] as const
+export const DATE_FILTERS = ['today', '7days', 'month', 'year', 'all'] as const
 
 export const DATE_FILTER_LABELS: Record<string, string> = {
   today: 'Hoy',
   '7days': 'Últimos 7 días',
   month: 'Este mes',
   year: 'Este año',
+  all: 'Histórico',
 }
+
+export const TYPE_FILTER_CONFIG = [
+  { value: 'all',       label: 'Todos',      bg: '#F5F5F5', color: '#5A7A8A', border: '#E0E0E0', activeBg: '#1A2B3A', activeColor: '#fff', activeBorder: '#1A2B3A' },
+  { value: 'ingreso',   label: 'Ingresos',   bg: '#F5F5F5', color: '#5A7A8A', border: '#E0E0E0', activeBg: '#C8E6C9', activeColor: '#1B5E20', activeBorder: '#A5D6A7' },
+  { value: 'gasto',     label: 'Gastos',     bg: '#F5F5F5', color: '#5A7A8A', border: '#E0E0E0', activeBg: '#FFCDD2', activeColor: '#B71C1C', activeBorder: '#EF9A9A' },
+  { value: 'pendiente', label: 'Pendientes', bg: '#F5F5F5', color: '#5A7A8A', border: '#E0E0E0', activeBg: '#FFF8E1', activeColor: '#E65100', activeBorder: '#FFE082' },
+] as const
 
 export const PHOTO_LIMITS = {
   maxFileSizeMB: 5,

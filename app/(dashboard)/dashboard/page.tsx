@@ -8,10 +8,10 @@ import { MovementCard } from '@/components/entries/entry-card'
 import { EntryForm } from '@/components/entries/entry-form'
 import { ConfirmationScreen } from '@/components/entries/confirmation-screen'
 import { formatCurrency } from '@/lib/utils'
-import { DATE_FILTER_LABELS } from '@/lib/constants'
-import type { DateFilter, Entry, PendingMovement } from '@/types'
+import { DATE_FILTER_LABELS, TYPE_FILTER_CONFIG } from '@/lib/constants'
+import type { DateFilter, TypeFilter, Entry, PendingMovement } from '@/types'
 
-const FILTERS: DateFilter[] = ['today', '7days', 'month', 'year']
+const FILTERS: DateFilter[] = ['today', '7days', 'month', 'year', 'all']
 
 type Mode = 'dashboard' | 'confirming'
 
@@ -40,7 +40,9 @@ function DashboardInner() {
     movements,
     metrics,
     filter,
+    typeFilter,
     setFilter,
+    setTypeFilter,
     loadData,
     loadMore,
     loading,
@@ -200,7 +202,7 @@ function DashboardInner() {
             {/* Formulario de entrada */}
             <EntryForm onMovementsExtracted={handleMovementsExtracted} />
 
-            {/* Filtros */}
+            {/* Filtro de período */}
             <div className="flex gap-2 flex-wrap">
               {FILTERS.map(f => (
                 <button
@@ -216,6 +218,27 @@ function DashboardInner() {
                   {DATE_FILTER_LABELS[f]}
                 </button>
               ))}
+            </div>
+
+            {/* Filtro de tipo */}
+            <div className="flex gap-2">
+              {TYPE_FILTER_CONFIG.map(tf => {
+                const active = typeFilter === tf.value
+                return (
+                  <button
+                    key={tf.value}
+                    onClick={() => setTypeFilter(tf.value as TypeFilter)}
+                    className="flex-1 py-2 rounded-full text-xs font-bold transition-colors border min-h-[36px]"
+                    style={
+                      active
+                        ? { background: tf.activeBg, color: tf.activeColor, borderColor: tf.activeBorder }
+                        : { background: tf.bg, color: tf.color, borderColor: tf.border }
+                    }
+                  >
+                    {tf.label}
+                  </button>
+                )
+              })}
             </div>
 
             {/* Métricas */}
@@ -235,9 +258,12 @@ function DashboardInner() {
             {/* Historial */}
             <section className="flex flex-col gap-3">
               <h2 className="font-bold" style={{ color: '#1A2B3A' }}>
-                {filter === 'today'
-                  ? 'Registros de hoy'
-                  : `Registros — ${DATE_FILTER_LABELS[filter]}`}
+                {filter === 'today' ? 'Registros de hoy' : `Registros — ${DATE_FILTER_LABELS[filter]}`}
+                {typeFilter !== 'all' && (
+                  <span className="ml-2 text-sm font-medium" style={{ color: '#5A7A8A' }}>
+                    · {TYPE_FILTER_CONFIG.find(t => t.value === typeFilter)?.label}
+                  </span>
+                )}
               </h2>
 
               {loading ? (

@@ -12,7 +12,8 @@ export type Category =
   | 'Renta'
   | 'Servicios básicos'
   | 'Otro'
-export type DateFilter = 'today' | '7days' | 'month' | 'year'
+export type DateFilter = 'today' | '7days' | 'month' | 'year' | 'all'
+export type TypeFilter = 'all' | 'ingreso' | 'gasto' | 'pendiente'
 export type InputMode = 'text' | 'voice' | 'photo'
 
 export interface Profile {

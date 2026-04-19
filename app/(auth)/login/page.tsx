@@ -33,13 +33,13 @@ export default function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [nombre, setNombre] = useState('')
   const [error, setError] = useState('')
-  const [successMsg, setSuccessMsg] = useState('')
   const [loading, setLoading] = useState(false)
+  const [registered, setRegistered] = useState(false)
 
   function switchMode(next: Mode) {
     setMode(next)
     setError('')
-    setSuccessMsg('')
+    setRegistered(false)
     setConfirmPassword('')
   }
 
@@ -54,7 +54,6 @@ export default function LoginPage() {
       }
       setLoading(true)
       setError('')
-      setSuccessMsg('')
       const supabase = createClient()
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email.trim(),
@@ -64,7 +63,9 @@ export default function LoginPage() {
       if (resetError) {
         setError('No pudimos enviar el correo. Intenta de nuevo.')
       } else {
-        setSuccessMsg('¡Listo! Revisa tu correo — te mandamos un link para restablecer tu contraseña.')
+        setError('')
+        // Reutilizamos el estado registered para mostrar la pantalla de "revisa tu correo"
+        setRegistered(true)
       }
       return
     }
@@ -88,7 +89,6 @@ export default function LoginPage() {
 
     setLoading(true)
     setError('')
-    setSuccessMsg('')
 
     const supabase = createClient()
 
@@ -118,9 +118,50 @@ export default function LoginPage() {
         setLoading(false)
         return
       }
-      setSuccessMsg('¡Listo! Revisa tu correo — te mandamos un link para confirmar tu cuenta.')
+      setRegistered(true)
       setLoading(false)
     }
+  }
+
+  /* ── Pantalla de "revisa tu correo" (registro o reset) ── */
+  if (registered) {
+    const isForgot = mode === 'forgot'
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(145deg, #2CB03B 0%, #D6EDC2 100%)' }}>
+        <div className="w-full max-w-sm flex flex-col items-center gap-6">
+          <div className="text-center">
+            <div className="text-7xl mb-4">✉️</div>
+            <h1 className="text-3xl font-bold mb-2" style={{ color: '#fff' }}>
+              {isForgot ? '¡Correo enviado!' : '¡Cuenta creada!'}
+            </h1>
+            <p className="text-base" style={{ color: '#E8F5E9' }}>
+              {isForgot ? 'Mandamos un link de restablecimiento a:' : 'Mandamos un link de confirmación a:'}
+            </p>
+            <p className="text-base font-bold mt-1" style={{ color: '#fff' }}>
+              {email}
+            </p>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm p-6 w-full" style={{ border: '1px solid #E0E0E0' }}>
+            <p className="text-sm text-center mb-1" style={{ color: '#1A2B3A' }}>
+              {isForgot
+                ? 'Haz clic en el link del correo para restablecer tu contraseña.'
+                : 'Haz clic en el link del correo para activar tu cuenta.'}
+            </p>
+            <p className="text-xs text-center mb-5" style={{ color: '#5A7A8A' }}>
+              Si no lo ves, revisa tu carpeta de spam.
+            </p>
+            <button
+              onClick={() => { setRegistered(false); switchMode('login') }}
+              className="w-full text-white rounded-xl py-3.5 font-bold text-base min-h-[52px]"
+              style={{ background: '#2E7D32' }}
+            >
+              {isForgot ? 'Volver a entrar' : 'Ya confirmé — entrar →'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -244,7 +285,6 @@ export default function LoginPage() {
             )}
 
             {error && <p className="text-sm" style={{ color: '#C62828' }}>{error}</p>}
-            {successMsg && <p className="text-sm font-medium" style={{ color: '#2E7D32' }}>{successMsg}</p>}
 
             <button
               type="submit"
