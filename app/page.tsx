@@ -165,7 +165,7 @@ export default function HomePage() {
           paddingTop: 'env(safe-area-inset-top, 0px)',
         }}
       >
-        <span className="font-bold text-2xl" style={{ color: '#578466' }}>
+        <span className="font-bold text-2xl" style={{ color: '#578466', fontFamily: 'var(--font-funnel-display)' }}>
           FinanzasFácil
         </span>
         <Link

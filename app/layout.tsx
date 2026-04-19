@@ -1,11 +1,18 @@
 import type { Metadata, Viewport } from 'next'
-import { Outfit } from 'next/font/google'
+import { Outfit, Funnel_Display } from 'next/font/google'
 import './globals.css'
 
 const outfit = Outfit({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-outfit',
+  display: 'swap',
+})
+
+const funnelDisplay = Funnel_Display({
+  subsets: ['latin'],
+  weight: ['700'],
+  variable: '--font-funnel-display',
   display: 'swap',
 })
 
@@ -32,7 +39,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es" className={`h-full ${outfit.variable}`}>
+    <html lang="es" className={`h-full ${outfit.variable} ${funnelDisplay.variable}`}>
       <body className="font-[family-name:var(--font-outfit)]">{children}</body>
     </html>
   )
