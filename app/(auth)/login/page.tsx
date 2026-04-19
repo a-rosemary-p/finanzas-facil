@@ -21,6 +21,7 @@ export default function LoginPage() {
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [nombre, setNombre] = useState('')
   const [error, setError] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
@@ -30,6 +31,7 @@ export default function LoginPage() {
     setMode(next)
     setError('')
     setSuccessMsg('')
+    setConfirmPassword('')
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -64,6 +66,14 @@ export default function LoginPage() {
     }
     if (mode === 'register' && !nombre.trim()) {
       setError('Por favor ingresa tu nombre o el nombre de tu negocio')
+      return
+    }
+    if (mode === 'register' && password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres')
+      return
+    }
+    if (mode === 'register' && password !== confirmPassword) {
+      setError('Las contraseñas no coinciden')
       return
     }
 
@@ -195,6 +205,25 @@ export default function LoginPage() {
                 {mode === 'register' && (
                   <p className="text-xs" style={{ color: '#5A7A8A' }}>Mínimo 6 caracteres</p>
                 )}
+              </div>
+            )}
+
+            {/* Confirmar contraseña — solo en registro */}
+            {mode === 'register' && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium" style={{ color: '#1A2B3A' }}>
+                  Confirmar contraseña
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  disabled={loading}
+                  className="border rounded-lg px-3 py-3 min-h-[44px] focus:outline-none focus:ring-2"
+                  style={{ borderColor: '#E0E0E0', color: '#1A2B3A' }}
+                />
               </div>
             )}
 

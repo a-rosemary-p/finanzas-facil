@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { getTodayString } from '@/lib/utils'
+import { processImage } from '@/lib/image-utils'
 import { VoiceButton } from './voice-button'
 import { PhotoButton } from './photo-button'
 import type { PendingMovement } from '@/types'
@@ -58,10 +59,49 @@ export function EntryForm({ onMovementsExtracted }: EntryFormProps) {
 
   const busy = loading || photoLoading
 
+  // Permite pegar imágenes desde el clipboard (Ctrl+V / ⌘V)
+  async function handlePaste(e: React.ClipboardEvent) {
+    const imageItem = Array.from(e.clipboardData.items).find(
+      item => item.type.startsWith('image/')
+    )
+    if (!imageItem) return
+    e.preventDefault()
+    const file = imageItem.getAsFile()
+    if (!file) return
+
+    setPhotoLoading(true)
+    setError('')
+    try {
+      const { base64, mimeType } = await processImage(file)
+      const res = await fetch('/api/entry/photo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64, mimeType, fechaMovimiento: fecha || getTodayString() }),
+      })
+      const data: unknown = await res.json()
+      if (!res.ok) {
+        const err = data as Record<string, unknown>
+        setError((err['error'] as string) || 'Error al analizar la imagen pegada.')
+        return
+      }
+      const { movements } = data as { movements: PendingMovement[] }
+      onMovementsExtracted({
+        rawText: '📋 Imagen pegada',
+        entryDate: fecha || getTodayString(),
+        movements,
+      })
+    } catch {
+      setError('No pudimos analizar la imagen pegada. Intenta de nuevo.')
+    } finally {
+      setPhotoLoading(false)
+    }
+  }
+
   return (
     <div
       className="bg-white rounded-xl shadow-sm p-4"
       style={{ border: '1px solid #E0E0E0' }}
+      onPaste={handlePaste}
     >
       <p className="font-bold mb-3" style={{ color: '#1A2B3A' }}>
         ¿Qué pasó hoy en tu negocio?
