@@ -1,6 +1,13 @@
 // Constantes de negocio centralizadas.
 // Si alguien quiere cambiar un límite o precio, solo toca este archivo.
 
+export const AI_MODEL = 'gpt-4o-mini' as const
+
+export const EXCHANGE_RATES = {
+  USD_TO_MXN: 17,
+  EUR_TO_MXN: 18.5,
+} as const
+
 export const PLANS = {
   FREE: {
     maxMovementsPerDay: 10,

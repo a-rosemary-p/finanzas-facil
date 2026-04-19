@@ -203,6 +203,19 @@ export function ConfirmationScreen({
               style={{ borderColor: '#E0E0E0', color: '#1A2B3A' }}
             />
           </div>
+
+          {/* Toggle inversión */}
+          <label className="flex items-center gap-2 cursor-pointer py-1">
+            <input
+              type="checkbox"
+              checked={m.isInvestment ?? false}
+              onChange={e => update(m.tempId, { isInvestment: e.target.checked })}
+              className="w-4 h-4 accent-amber-500"
+            />
+            <span className="text-xs" style={{ color: '#5A7A8A' }}>
+              📈 Marcar como inversión (activo a largo plazo)
+            </span>
+          </label>
         </div>
       ))}
 

@@ -2,7 +2,7 @@ import { CATEGORIES, MOVEMENT_TYPES } from '@/lib/constants'
 import type { PendingMovement } from '@/types'
 
 // Extrae el primer bloque JSON válido de un string
-// (maneja casos donde Gemini incluye texto extra o markdown)
+// (maneja casos donde el modelo incluye texto extra o markdown)
 function extractJSON(raw: string): string {
   const start = raw.indexOf('{')
   const end = raw.lastIndexOf('}')
@@ -12,7 +12,7 @@ function extractJSON(raw: string): string {
   return raw.slice(start, end + 1)
 }
 
-// Parsea y valida la respuesta de Gemini → PendingMovement[]
+// Parsea y valida la respuesta de la IA → PendingMovement[]
 export function parseGeminiResponse(
   raw: string,
   fallbackDate: string
@@ -64,6 +64,24 @@ export function parseGeminiResponse(
         ? movementDate
         : fallbackDate
 
+    // Campos de conversión de moneda (opcionales, con defaults)
+    const originalAmount =
+      typeof m['originalAmount'] === 'number' && isFinite(m['originalAmount'] as number)
+        ? (m['originalAmount'] as number)
+        : Math.round(amount * 100) / 100
+
+    const rawCurrency = m['originalCurrency']
+    const originalCurrency: 'MXN' | 'USD' | 'EUR' =
+      rawCurrency === 'USD' ? 'USD' : rawCurrency === 'EUR' ? 'EUR' : 'MXN'
+
+    const exchangeRateUsed =
+      typeof m['exchangeRateUsed'] === 'number' && isFinite(m['exchangeRateUsed'] as number)
+        ? (m['exchangeRateUsed'] as number)
+        : 1
+
+    // Campo de inversión
+    const isInvestment = m['isInvestment'] === true
+
     valid.push({
       tempId: crypto.randomUUID(),
       type: type as PendingMovement['type'],
@@ -71,6 +89,10 @@ export function parseGeminiResponse(
       description: description.trim().slice(0, 60),
       category: cat,
       movementDate: date,
+      isInvestment,
+      originalAmount,
+      originalCurrency,
+      exchangeRateUsed,
     })
   }
 

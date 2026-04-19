@@ -51,6 +51,13 @@ export async function POST(request: Request) {
           typeof m['movementDate'] === 'string' && dateRegex.test(m['movementDate'] as string)
             ? (m['movementDate'] as string)
             : entryDate,
+        isInvestment: m['isInvestment'] === true,
+        originalAmount:
+          typeof m['originalAmount'] === 'number' ? (m['originalAmount'] as number) : (m['amount'] as number),
+        originalCurrency:
+          m['originalCurrency'] === 'USD' ? 'USD' : m['originalCurrency'] === 'EUR' ? 'EUR' : 'MXN',
+        exchangeRateUsed:
+          typeof m['exchangeRateUsed'] === 'number' ? (m['exchangeRateUsed'] as number) : 1,
       }))
 
     if (sanitized.length === 0) {
@@ -108,12 +115,16 @@ export async function POST(request: Request) {
       description: m.description,
       category: m.category,
       movement_date: m.movementDate,
+      is_investment: m.isInvestment,
+      original_amount: m.originalAmount,
+      original_currency: m.originalCurrency,
+      exchange_rate_used: m.exchangeRateUsed,
     }))
 
     const { data: savedMovements, error: movError } = await supabase
       .from('movements')
       .insert(movementRows)
-      .select('id, type, amount, description, category, movement_date')
+      .select('id, type, amount, description, category, movement_date, is_investment')
 
     if (movError || !savedMovements) {
       console.error('[confirm] movements insert error', movError)
@@ -133,6 +144,7 @@ export async function POST(request: Request) {
         description: m.description as string,
         category: m.category as Movement['category'],
         movementDate: m.movement_date as string,
+        isInvestment: (m.is_investment as boolean) ?? false,
       })),
     }
 

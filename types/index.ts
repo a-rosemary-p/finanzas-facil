@@ -12,8 +12,19 @@ export type Category =
   | 'Renta'
   | 'Servicios básicos'
   | 'Otro'
-export type DateFilter = 'today' | '7days' | 'month' | 'year' | 'all'
+export type DateFilter = 'today' | '7days' | 'month' | 'year' | 'all' | 'custom'
 export type TypeFilter = 'all' | 'ingreso' | 'gasto' | 'pendiente'
+
+export interface FilterState {
+  type: DateFilter
+  selectedMonth?: Date   // para 'month': qué mes específico (null = mes actual)
+  customRange?: { from: Date; to: Date } // para 'custom' (futuro)
+}
+
+export interface DashboardFilters {
+  dateFilter: FilterState
+  showInvestments: boolean
+}
 export type InputMode = 'text' | 'voice' | 'photo'
 
 export interface Profile {
@@ -40,6 +51,7 @@ export interface Movement {
   description: string
   category: Category
   movementDate: string   // YYYY-MM-DD
+  isInvestment: boolean
 }
 
 // Movimiento pendiente de confirmación (antes de guardar en DB)
@@ -51,6 +63,10 @@ export interface PendingMovement {
   category: Category
   movementDate: string
   dayLabel?: string       // "Lunes 14", "Martes 15" — para multi-día
+  isInvestment?: boolean
+  originalAmount?: number
+  originalCurrency?: 'MXN' | 'USD' | 'EUR'
+  exchangeRateUsed?: number
 }
 
 export interface DashboardMetrics {

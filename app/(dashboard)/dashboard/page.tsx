@@ -4,14 +4,12 @@ import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
 import { useEntries } from '@/hooks/use-entries'
-import { MovementCard } from '@/components/entries/entry-card'
+import { MovementDayGroup } from '@/components/entries/movement-day-group'
 import { EntryForm } from '@/components/entries/entry-form'
 import { ConfirmationScreen } from '@/components/entries/confirmation-screen'
-import { formatCurrency } from '@/lib/utils'
-import { DATE_FILTER_LABELS, TYPE_FILTER_CONFIG } from '@/lib/constants'
+import { formatCurrency, getPeriodLabel, groupMovementsByDate } from '@/lib/utils'
+import { TYPE_FILTER_CONFIG } from '@/lib/constants'
 import type { DateFilter, TypeFilter, Entry, PendingMovement } from '@/types'
-
-const FILTERS: DateFilter[] = ['today', '7days', 'month', 'year', 'all']
 
 type Mode = 'dashboard' | 'confirming'
 
@@ -21,10 +19,7 @@ interface PendingData {
   movements: PendingMovement[]
 }
 
-
 function getFechaFormateada(): string {
-  // toLowerCase normaliza entornos que capitalizan "De Abril" → "de abril"
-  // luego capitalizamos solo la primera letra del día de la semana
   const raw = new Date().toLocaleDateString('es-MX', {
     weekday: 'long',
     year: 'numeric',
@@ -34,15 +29,223 @@ function getFechaFormateada(): string {
   return raw.charAt(0).toUpperCase() + raw.slice(1)
 }
 
+// ─── Componente de la caja de filtros (Cambio 4) ────────────────────────────
+
+const DATE_OPTIONS: { value: DateFilter; label: string }[] = [
+  { value: 'today', label: 'Hoy' },
+  { value: '7days', label: '7 días' },
+  { value: 'month', label: 'Este mes' },
+  { value: 'year', label: 'Este año' },
+  { value: 'all', label: 'Histórico' },
+]
+
+const MONTHS_ES = [
+  'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+  'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
+]
+
+function FilterBox({
+  filter,
+  selectedMonth,
+  onSetFilter,
+  onSetMonth,
+}: {
+  filter: DateFilter
+  selectedMonth: Date | undefined
+  onSetFilter: (f: DateFilter) => void
+  onSetMonth: (d: Date) => void
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [pickerYear, setPickerYear] = useState(() =>
+    selectedMonth ? selectedMonth.getFullYear() : new Date().getFullYear()
+  )
+
+  const periodLabel = getPeriodLabel(filter, selectedMonth)
+
+  function selectFilter(f: DateFilter) {
+    onSetFilter(f)
+    setExpanded(false)
+    setPickerOpen(false)
+  }
+
+  function selectMonth(month: number) {
+    const d = new Date(pickerYear, month, 1)
+    onSetMonth(d)
+    setPickerOpen(false)
+    setExpanded(false)
+  }
+
+  // Años disponibles: desde 2023 hasta el año actual
+  const currentYear = new Date().getFullYear()
+  const years: number[] = []
+  for (let y = currentYear; y >= 2023; y--) years.push(y)
+
+  return (
+    <div
+      className="bg-white rounded-xl shadow-sm overflow-hidden"
+      style={{ border: '1px solid #E0E0E0' }}
+    >
+      {/* Fila colapsada: muestra período activo */}
+      <div className="flex items-center justify-between px-4 py-3">
+        {/* Label tappable — abre picker de mes si el filtro es 'month' */}
+        <button
+          type="button"
+          onClick={() => {
+            if (filter === 'month' || !expanded) {
+              setPickerOpen(v => !v)
+              if (!expanded) setExpanded(true)
+            }
+          }}
+          className="flex items-center gap-2 text-sm font-bold min-h-[36px]"
+          style={{ color: '#1B5E20' }}
+        >
+          <span>📅</span>
+          <span>{periodLabel}</span>
+        </button>
+
+        {/* Botón expandir/colapsar opciones */}
+        <button
+          type="button"
+          onClick={() => { setExpanded(v => !v); setPickerOpen(false) }}
+          className="p-2 rounded-lg min-h-[36px] min-w-[36px] flex items-center justify-center"
+          style={{ color: '#5A7A8A', background: '#F5F5F5' }}
+          aria-label={expanded ? 'Colapsar filtros' : 'Expandir filtros'}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{
+              transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s ease',
+            }}
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Picker de mes — aparece cuando pickerOpen */}
+      {pickerOpen && (
+        <div className="px-4 pb-3 border-t" style={{ borderColor: '#F0F0F0' }}>
+          {/* Navegación de año */}
+          <div className="flex items-center justify-between py-2">
+            <button
+              type="button"
+              onClick={() => setPickerYear(y => y + 1)}
+              disabled={pickerYear >= currentYear}
+              className="p-1.5 rounded min-h-[36px] min-w-[36px] disabled:opacity-30"
+              style={{ color: '#5A7A8A' }}
+              aria-label="Año siguiente"
+            >
+              ◀
+            </button>
+            <span className="text-sm font-bold" style={{ color: '#1A2B3A' }}>{pickerYear}</span>
+            <button
+              type="button"
+              onClick={() => setPickerYear(y => y - 1)}
+              disabled={pickerYear <= 2023}
+              className="p-1.5 rounded min-h-[36px] min-w-[36px] disabled:opacity-30"
+              style={{ color: '#5A7A8A' }}
+              aria-label="Año anterior"
+            >
+              ▶
+            </button>
+          </div>
+          {/* Grid de meses */}
+          <div className="grid grid-cols-4 gap-1.5">
+            {MONTHS_ES.map((label, idx) => {
+              const isActive =
+                filter === 'month' &&
+                selectedMonth &&
+                selectedMonth.getMonth() === idx &&
+                selectedMonth.getFullYear() === pickerYear
+              const isCurrentMonth =
+                !selectedMonth &&
+                filter === 'month' &&
+                new Date().getMonth() === idx &&
+                new Date().getFullYear() === pickerYear
+              const active = isActive || isCurrentMonth
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => selectMonth(idx)}
+                  className="py-2 rounded-lg text-xs font-medium min-h-[36px] transition-colors"
+                  style={
+                    active
+                      ? { background: '#2E7D32', color: '#fff' }
+                      : { background: '#F5F5F5', color: '#5A7A8A' }
+                  }
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Opciones expandidas */}
+      {expanded && !pickerOpen && (
+        <div className="px-4 pb-3 border-t" style={{ borderColor: '#F0F0F0' }}>
+          <div className="flex flex-wrap gap-2 pt-3">
+            {DATE_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => selectFilter(opt.value)}
+                className="px-3 py-2 rounded-full text-sm font-medium border min-h-[40px] transition-colors"
+                style={
+                  filter === opt.value && opt.value !== 'month'
+                    ? { background: '#2E7D32', color: '#fff', borderColor: '#2E7D32' }
+                    : { background: '#fff', color: '#5A7A8A', borderColor: '#E0E0E0' }
+                }
+              >
+                {opt.label}
+              </button>
+            ))}
+            {/* Rango avanzado — solo UI */}
+            <button
+              type="button"
+              onClick={() => {
+                setExpanded(false)
+                // Mostrar mensaje simple via alert — en producción sería un toast
+                alert('Próximamente: filtros por fecha personalizada')
+              }}
+              className="px-3 py-2 rounded-full text-sm font-medium border min-h-[40px] transition-colors"
+              style={{ background: '#fff', color: '#9E9E9E', borderColor: '#E0E0E0' }}
+            >
+              ⚙ Rango avanzado...
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Dashboard principal ─────────────────────────────────────────────────────
+
 function DashboardInner() {
   const { profile, loading: authLoading, logout } = useAuth()
   const {
     movements,
     metrics,
     filter,
+    selectedMonth,
     typeFilter,
+    showInvestments,
     setFilter,
     setTypeFilter,
+    setSelectedMonth,
+    setShowInvestments,
     loadData,
     loadMore,
     loading,
@@ -61,13 +264,12 @@ function DashboardInner() {
   const [upgradedBanner, setUpgradedBanner] = useState(false)
 
   useEffect(() => {
-    if (profile) loadData('today')
+    if (profile) loadData('month')
   }, [profile, loadData])
 
   useEffect(() => {
     if (searchParams.get('upgraded') === '1') {
       setUpgradedBanner(true)
-      // Clean the URL without reload
       window.history.replaceState({}, '', '/dashboard')
     }
   }, [searchParams])
@@ -77,14 +279,9 @@ function DashboardInner() {
     try {
       const res = await fetch('/api/checkout', { method: 'POST' })
       const data = await res.json() as { url?: string; error?: string }
-      if (data.url) {
-        window.location.href = data.url
-      }
-    } catch {
-      // silently ignore — user can retry
-    } finally {
-      setCheckoutLoading(false)
-    }
+      if (data.url) window.location.href = data.url
+    } catch { /* silently ignore */ }
+    finally { setCheckoutLoading(false) }
   }, [])
 
   const handlePortal = useCallback(async () => {
@@ -92,20 +289,14 @@ function DashboardInner() {
     try {
       const res = await fetch('/api/portal', { method: 'POST' })
       const data = await res.json() as { url?: string; error?: string }
-      if (data.url) {
-        window.location.href = data.url
-      }
-    } catch {
-      // silently ignore
-    } finally {
-      setPortalLoading(false)
-    }
+      if (data.url) window.location.href = data.url
+    } catch { /* silently ignore */ }
+    finally { setPortalLoading(false) }
   }, [])
 
   function handleMovementsExtracted(data: PendingData) {
     setPendingData(data)
     setMode('confirming')
-    // Scroll al tope para mostrar la pantalla de confirmación
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -130,6 +321,18 @@ function DashboardInner() {
   }
 
   const neto = metrics.net
+  const periodLabel = getPeriodLabel(filter, selectedMonth)
+
+  // Agrupar movimientos por fecha para Cambio 5
+  const grouped = groupMovementsByDate(movements)
+  const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
+
+  // Últimas 2 fechas expandidas por default, el resto colapsado
+  const today = new Date().toISOString().split('T')[0]
+  const yesterday = (() => {
+    const d = new Date(); d.setDate(d.getDate() - 1)
+    return d.toISOString().split('T')[0]
+  })()
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #EEF4EE 0%, #E4F0E4 100%)' }}>
@@ -174,11 +377,10 @@ function DashboardInner() {
       </header>
 
       <main
-        className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-6"
+        className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-5"
         style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}
       >
         {mode === 'confirming' && pendingData ? (
-          /* ── Pantalla de confirmación ── */
           <ConfirmationScreen
             rawText={pendingData.rawText}
             entryDate={pendingData.entryDate}
@@ -187,9 +389,8 @@ function DashboardInner() {
             onCancel={handleCancel}
           />
         ) : (
-          /* ── Dashboard normal ── */
           <>
-            {/* Saludo */}
+            {/* 1. Saludo */}
             <div>
               <p className="font-bold text-lg" style={{ color: '#1A2B3A' }}>
                 Hola, {profile?.displayName} 👋
@@ -199,66 +400,81 @@ function DashboardInner() {
               </p>
             </div>
 
-            {/* Formulario de entrada */}
+            {/* 2. Formulario de entrada */}
             <EntryForm onMovementsExtracted={handleMovementsExtracted} />
 
-            {/* Filtro de período */}
-            <div className="flex gap-2 flex-wrap">
-              {FILTERS.map(f => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className="px-4 py-2.5 rounded-full text-sm font-medium transition-colors border min-h-[44px] flex items-center"
-                  style={
-                    filter === f
-                      ? { background: '#2E7D32', color: '#fff', borderColor: '#2E7D32' }
-                      : { background: '#fff', color: '#5A7A8A', borderColor: '#E0E0E0' }
-                  }
-                >
-                  {DATE_FILTER_LABELS[f]}
-                </button>
-              ))}
-            </div>
-
-            {/* Filtro de tipo */}
-            <div className="flex gap-2">
-              {TYPE_FILTER_CONFIG.map(tf => {
-                const active = typeFilter === tf.value
-                return (
-                  <button
-                    key={tf.value}
-                    onClick={() => setTypeFilter(tf.value as TypeFilter)}
-                    className="flex-1 py-2 rounded-full text-xs font-bold transition-colors border min-h-[36px]"
-                    style={
-                      active
-                        ? { background: tf.activeBg, color: tf.activeColor, borderColor: tf.activeBorder }
-                        : { background: tf.bg, color: tf.color, borderColor: tf.border }
-                    }
-                  >
-                    {tf.label}
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* Métricas */}
-            <div className="grid grid-cols-3 gap-3">
-              <MetricCard label="Ingresos" value={metrics.income} color="#1B5E20" bg="#C8E6C9" border="#A5D6A7" sign="+" />
-              <MetricCard label="Gastos" value={metrics.expenses} color="#B71C1C" bg="#FFCDD2" border="#EF9A9A" sign="−" />
-              <MetricCard
-                label="Neto"
-                value={neto}
-                color={neto >= 0 ? '#1B5E20' : '#B71C1C'}
-                bg={neto >= 0 ? '#C8E6C9' : '#FFCDD2'}
-                border={neto >= 0 ? '#A5D6A7' : '#EF9A9A'}
-                sign={neto >= 0 ? '+' : '−'}
+            {/* 3. Etiqueta de período + métricas */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold" style={{ color: '#1B5E20' }}>
+                  {periodLabel}
+                </p>
+                {/* Toggle inversiones */}
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showInvestments}
+                    onChange={e => setShowInvestments(e.target.checked)}
+                    className="w-3.5 h-3.5 accent-amber-500"
+                  />
+                  <span className="text-xs" style={{ color: '#9E9E9E' }}>📈 Incluir inversiones</span>
+                </label>
+              </div>
+              <div
+                className="w-full"
+                style={{ height: '1px', background: '#C8E6C9' }}
               />
+
+              {/* Tarjetas de métricas */}
+              <div className="grid grid-cols-3 gap-3">
+                <MetricCard label="Ingresos" value={metrics.income} color="#1B5E20" bg="#C8E6C9" border="#A5D6A7" sign="+" />
+                <MetricCard label="Gastos" value={metrics.expenses} color="#B71C1C" bg="#FFCDD2" border="#EF9A9A" sign="−" />
+                <MetricCard
+                  label="Neto"
+                  value={neto}
+                  color={neto >= 0 ? '#1B5E20' : '#B71C1C'}
+                  bg={neto >= 0 ? '#C8E6C9' : '#FFCDD2'}
+                  border={neto >= 0 ? '#A5D6A7' : '#EF9A9A'}
+                  sign={neto >= 0 ? '+' : '−'}
+                />
+              </div>
             </div>
 
-            {/* Historial */}
-            <section className="flex flex-col gap-3">
+            {/* 4. Caja de filtros (fecha + tipo) */}
+            <div className="flex flex-col gap-3">
+              <FilterBox
+                filter={filter}
+                selectedMonth={selectedMonth}
+                onSetFilter={(f: DateFilter) => setFilter(f)}
+                onSetMonth={(d: Date) => setSelectedMonth(d)}
+              />
+
+              {/* Filtro de tipo */}
+              <div className="flex gap-2">
+                {TYPE_FILTER_CONFIG.map(tf => {
+                  const active = typeFilter === tf.value
+                  return (
+                    <button
+                      key={tf.value}
+                      onClick={() => setTypeFilter(tf.value as TypeFilter)}
+                      className="flex-1 py-2 rounded-full text-xs font-bold transition-colors border min-h-[36px]"
+                      style={
+                        active
+                          ? { background: tf.activeBg, color: tf.activeColor, borderColor: tf.activeBorder }
+                          : { background: tf.bg, color: tf.color, borderColor: tf.border }
+                      }
+                    >
+                      {tf.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* 5. Historial agrupado por fecha */}
+            <section className="flex flex-col gap-4">
               <h2 className="font-bold" style={{ color: '#1A2B3A' }}>
-                {filter === 'today' ? 'Registros de hoy' : `Registros — ${DATE_FILTER_LABELS[filter]}`}
+                Registros
                 {typeFilter !== 'all' && (
                   <span className="ml-2 text-sm font-medium" style={{ color: '#5A7A8A' }}>
                     · {TYPE_FILTER_CONFIG.find(t => t.value === typeFilter)?.label}
@@ -270,7 +486,7 @@ function DashboardInner() {
                 <p className="text-sm text-center py-8" style={{ color: '#5A7A8A' }}>
                   Cargando...
                 </p>
-              ) : movements.length === 0 ? (
+              ) : sortedDates.length === 0 ? (
                 <div
                   className="bg-white rounded-xl shadow-sm p-6 text-center"
                   style={{ border: '1px solid #E0E0E0' }}
@@ -279,15 +495,17 @@ function DashboardInner() {
                     Sin registros para este período.
                   </p>
                   <p className="text-xs mt-1" style={{ color: '#5A7A8A' }}>
-                    Escribe arriba lo que pasó en tu negocio hoy.
+                    Escribe arriba lo que pasó en tu negocio.
                   </p>
                 </div>
               ) : (
                 <>
-                  {movements.map(m => (
-                    <MovementCard
-                      key={m.id}
-                      movement={m}
+                  {sortedDates.map(date => (
+                    <MovementDayGroup
+                      key={date}
+                      date={date}
+                      movements={grouped[date]}
+                      defaultExpanded={date === today || date === yesterday}
                       onUpdated={updateMovement}
                       onDeleted={deleteMovement}
                     />

@@ -55,12 +55,18 @@ export async function PATCH(
       return Response.json({ error: 'Nada que actualizar' }, { status: 400 })
     }
 
+    // También permitir actualizar is_investment si se envía
+    const { isInvestment } = body as Record<string, unknown>
+    if (isInvestment !== undefined) {
+      updates['is_investment'] = isInvestment === true
+    }
+
     const { data, error } = await supabase
       .from('movements')
       .update(updates)
       .eq('id', id)
       .eq('user_id', user.id)
-      .select('id, type, amount, description, category, movement_date')
+      .select('id, type, amount, description, category, movement_date, is_investment')
       .single()
 
     if (error || !data) {
@@ -75,6 +81,7 @@ export async function PATCH(
       description: data.description as string,
       category: data.category as Movement['category'],
       movementDate: data.movement_date as string,
+      isInvestment: (data.is_investment as boolean) ?? false,
     }
 
     return Response.json({ movement })

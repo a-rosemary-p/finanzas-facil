@@ -9,6 +9,8 @@ interface MovementCardProps {
   movement: Movement
   onUpdated: (updated: Movement) => void
   onDeleted: (id: string) => void
+  /** Cuando está dentro de un grupo de fecha, ocultar la fecha individual */
+  hideDate?: boolean
 }
 
 const TYPE_CONFIG = {
@@ -35,7 +37,7 @@ const TYPE_CONFIG = {
   },
 } as const
 
-export function MovementCard({ movement, onUpdated, onDeleted }: MovementCardProps) {
+export function MovementCard({ movement, onUpdated, onDeleted, hideDate = false }: MovementCardProps) {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -47,15 +49,20 @@ export function MovementCard({ movement, onUpdated, onDeleted }: MovementCardPro
   const [editDescription, setEditDescription] = useState(movement.description)
   const [editAmount, setEditAmount] = useState(String(movement.amount))
   const [editDate, setEditDate] = useState(movement.movementDate)
+  const [editIsInvestment, setEditIsInvestment] = useState(movement.isInvestment)
 
   const cfg = TYPE_CONFIG[movement.type]
   const busy = saving || deleting
+
+  // Si es inversión, override visual del borde a ámbar
+  const cardBorder = movement.isInvestment ? '1.5px solid #FFB300' : '1px solid #E0E0E0'
 
   function openEdit() {
     setEditType(movement.type)
     setEditDescription(movement.description)
     setEditAmount(String(movement.amount))
     setEditDate(movement.movementDate)
+    setEditIsInvestment(movement.isInvestment)
     setError('')
     setConfirmDelete(false)
     setEditing(true)
@@ -89,6 +96,7 @@ export function MovementCard({ movement, onUpdated, onDeleted }: MovementCardPro
           amount: amountNum,
           description: editDescription.trim(),
           movementDate: editDate,
+          isInvestment: editIsInvestment,
         }),
       })
       const data = await res.json() as { movement?: Movement; error?: string }
@@ -198,6 +206,20 @@ export function MovementCard({ movement, onUpdated, onDeleted }: MovementCardPro
           />
         </div>
 
+        {/* Toggle inversión */}
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={editIsInvestment}
+            onChange={e => setEditIsInvestment(e.target.checked)}
+            disabled={busy}
+            className="w-4 h-4 accent-amber-500"
+          />
+          <span className="text-xs" style={{ color: '#5A7A8A' }}>
+            📈 Marcar como inversión (activo a largo plazo)
+          </span>
+        </label>
+
         {error && (
           <p className="text-xs" style={{ color: '#C62828' }}>
             {error}
@@ -267,8 +289,13 @@ export function MovementCard({ movement, onUpdated, onDeleted }: MovementCardPro
   return (
     <div
       className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center gap-3"
-      style={{ border: '1px solid #E0E0E0' }}
+      style={{ border: cardBorder }}
     >
+      {/* Ícono inversión */}
+      {movement.isInvestment && (
+        <span className="text-base shrink-0" title="Inversión">📈</span>
+      )}
+
       {/* Badge de tipo */}
       <span
         className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 min-w-[5rem] text-center"
@@ -282,9 +309,16 @@ export function MovementCard({ movement, onUpdated, onDeleted }: MovementCardPro
         <p className="text-sm font-medium leading-snug truncate" style={{ color: '#1A2B3A' }}>
           {movement.description}
         </p>
-        <p className="text-xs mt-0.5" style={{ color: '#5A7A8A' }}>
-          {formatEntryDate(movement.movementDate)}
-        </p>
+        {!hideDate && (
+          <p className="text-xs mt-0.5" style={{ color: '#5A7A8A' }}>
+            {formatEntryDate(movement.movementDate)}
+          </p>
+        )}
+        {movement.isInvestment && (
+          <p className="text-[10px] mt-0.5 font-medium" style={{ color: '#E65100' }}>
+            Inversión
+          </p>
+        )}
       </div>
 
       {/* Monto */}
