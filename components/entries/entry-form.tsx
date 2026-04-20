@@ -112,10 +112,10 @@ export function EntryForm({ onMovementsExtracted }: EntryFormProps) {
   return (
     <div
       className="bg-white rounded-xl shadow-sm p-4"
-      style={{ border: '1px solid #E0E0E0' }}
+      style={{ border: '1px solid var(--brand-border)' }}
       onPaste={handlePaste}
     >
-      <p className="font-bold mb-3" style={{ color: '#1A2B3A' }}>
+      <p className="font-bold mb-3" style={{ color: 'var(--brand)' }}>
         ¿Qué pasó hoy en tu negocio?
       </p>
 
@@ -127,13 +127,13 @@ export function EntryForm({ onMovementsExtracted }: EntryFormProps) {
           rows={3}
           disabled={busy}
           className="w-full border rounded-lg p-3 text-sm resize-none focus:outline-none focus:ring-2"
-          style={{ borderColor: '#E0E0E0', color: '#1A2B3A' }}
+          style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
         />
 
         {/* Fila: fecha + botones de entrada por voz/foto */}
         <div className="flex gap-2 items-end">
           <div className="flex flex-col gap-1 flex-1 min-w-0">
-            <label className="text-xs font-medium" style={{ color: '#5A7A8A' }}>
+            <label className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>
               ¿Cuándo ocurrió?
             </label>
             <input
@@ -143,18 +143,15 @@ export function EntryForm({ onMovementsExtracted }: EntryFormProps) {
               onChange={e => setFecha(e.target.value)}
               disabled={busy}
               className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 w-full"
-              style={{ borderColor: '#E0E0E0', color: '#1A2B3A' }}
+              style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
             />
           </div>
 
           <div className="flex gap-2 shrink-0 items-end">
-            {/* Voz */}
             <VoiceButton
               onTranscript={t => setTexto(prev => prev ? `${prev} ${t}` : t)}
               disabled={busy}
             />
-
-            {/* Foto */}
             <PhotoButton
               fecha={fecha}
               onMovementsExtracted={onMovementsExtracted}
@@ -167,7 +164,7 @@ export function EntryForm({ onMovementsExtracted }: EntryFormProps) {
         </div>
 
         {error && (
-          <p className="text-sm" style={{ color: '#C62828' }}>
+          <p className="text-sm" style={{ color: 'var(--danger)' }}>
             {error}
           </p>
         )}
@@ -176,7 +173,7 @@ export function EntryForm({ onMovementsExtracted }: EntryFormProps) {
           type="submit"
           disabled={busy || !texto.trim()}
           className="text-white rounded-xl py-3.5 font-bold text-base transition-opacity disabled:opacity-50 min-h-[52px] flex items-center justify-center gap-2"
-          style={{ background: '#2E7D32' }}
+          style={{ background: 'var(--brand)' }}
         >
           {loading ? (
             <>

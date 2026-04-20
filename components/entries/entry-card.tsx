@@ -15,23 +15,23 @@ interface MovementCardProps {
 const TYPE_CONFIG = {
   ingreso: {
     label: 'Ingreso',
-    bg: '#DAE68F',
-    color: '#578466',
-    border: '#92C3A5',
+    bg: 'var(--income-bg)',
+    color: 'var(--income-text)',
+    border: 'var(--income-border)',
     sign: '+',
   },
   gasto: {
     label: 'Gasto',
-    bg: '#FAD5BF',
-    color: '#D0481A',
-    border: '#F79366',
+    bg: 'var(--expense-bg)',
+    color: 'var(--expense-text)',
+    border: 'var(--expense-border)',
     sign: '−',
   },
   pendiente: {
     label: 'Pendiente',
-    bg: '#FFF5CC',
-    color: '#B89010',
-    border: '#FFCE57',
+    bg: 'var(--pending-bg)',
+    color: 'var(--pending-text)',
+    border: 'var(--pending-border)',
     sign: '⏳ ',
   },
 } as const
@@ -51,7 +51,7 @@ export function MovementCard({ movement, onUpdated, onDeleted, hideDate = false 
 
   const cfg = TYPE_CONFIG[movement.type]
   const busy = saving || deleting
-  const cardBorder = movement.isInvestment ? '1.5px solid #FFCE57' : '1px solid #D9E8D0'
+  const cardBorder = movement.isInvestment ? '1.5px solid var(--investment)' : '1px solid var(--brand-border)'
 
   function openEdit() {
     setEditType(movement.type)
@@ -95,7 +95,7 @@ export function MovementCard({ movement, onUpdated, onDeleted, hideDate = false 
   /* ── Modo edición ── */
   if (editing) {
     return (
-      <div className="bg-white rounded-xl shadow-sm px-4 py-4 flex flex-col gap-3" style={{ border: '1px solid #92C3A5' }}>
+      <div className="bg-white rounded-xl shadow-sm px-4 py-4 flex flex-col gap-3" style={{ border: '1px solid var(--brand-light)' }}>
         {/* Selector de tipo */}
         <div className="flex gap-2">
           {MOVEMENT_TYPES.map(t => {
@@ -106,7 +106,7 @@ export function MovementCard({ movement, onUpdated, onDeleted, hideDate = false 
                 className="flex-1 py-1.5 rounded-full text-xs font-bold border transition-colors"
                 style={active
                   ? { background: tcfg.bg, color: tcfg.color, borderColor: tcfg.border }
-                  : { background: '#F4F6EB', color: '#8AAB94', borderColor: '#D9E8D0' }
+                  : { background: 'var(--brand-chip)', color: 'var(--brand-muted)', borderColor: 'var(--brand-border)' }
                 }
               >
                 {tcfg.label}
@@ -118,44 +118,44 @@ export function MovementCard({ movement, onUpdated, onDeleted, hideDate = false 
         <input type="text" value={editDescription} onChange={e => setEditDescription(e.target.value)}
           placeholder="Descripción" maxLength={60} disabled={busy}
           className="border rounded-lg px-3 py-2.5 text-sm w-full focus:outline-none focus:ring-2"
-          style={{ borderColor: '#D9E8D0', color: '#578466' }}
+          style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
         />
 
         <div className="flex gap-2">
           <div className="flex-1 relative min-w-0">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold select-none" style={{ color: '#6B8C78' }}>$</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold select-none" style={{ color: 'var(--brand-mid)' }}>$</span>
             <input type="number" value={editAmount} onChange={e => setEditAmount(e.target.value)}
               placeholder="0" min="0.01" step="0.01" disabled={busy}
               className="border rounded-lg pl-7 pr-3 py-2.5 text-sm w-full focus:outline-none focus:ring-2"
-              style={{ borderColor: '#D9E8D0', color: '#578466' }}
+              style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
             />
           </div>
           <input type="date" value={editDate} max={getTodayString()} onChange={e => setEditDate(e.target.value)}
             disabled={busy}
             className="border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 shrink-0"
-            style={{ borderColor: '#D9E8D0', color: '#578466', width: '138px' }}
+            style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)', width: '138px' }}
           />
         </div>
 
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={editIsInvestment} onChange={e => setEditIsInvestment(e.target.checked)}
-            disabled={busy} className="w-4 h-4" style={{ accentColor: '#FFCE57' }}
+            disabled={busy} className="w-4 h-4" style={{ accentColor: 'var(--investment)' }}
           />
-          <span className="text-xs" style={{ color: '#6B8C78' }}>📈 Marcar como inversión (activo a largo plazo)</span>
+          <span className="text-xs" style={{ color: 'var(--brand-mid)' }}>📈 Marcar como inversión (activo a largo plazo)</span>
         </label>
 
-        {error && <p className="text-xs" style={{ color: '#D0481A' }}>{error}</p>}
+        {error && <p className="text-xs" style={{ color: 'var(--danger)' }}>{error}</p>}
 
         <div className="flex gap-2">
           <button type="button" onClick={handleSave} disabled={busy}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-opacity disabled:opacity-50"
-            style={{ background: '#578466' }}
+            style={{ background: 'var(--brand)' }}
           >
             {saving ? 'Guardando...' : 'Guardar'}
           </button>
           <button type="button" onClick={cancelEdit} disabled={busy}
             className="py-2.5 px-4 rounded-xl text-sm font-medium border transition-colors disabled:opacity-50"
-            style={{ borderColor: '#D9E8D0', color: '#6B8C78', background: '#F4F6EB' }}
+            style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-mid)', background: 'var(--brand-chip)' }}
           >
             Cancelar
           </button>
@@ -164,7 +164,7 @@ export function MovementCard({ movement, onUpdated, onDeleted, hideDate = false 
         {!confirmDelete ? (
           <button type="button" onClick={() => setConfirmDelete(true)} disabled={busy}
             className="w-full py-2 rounded-xl text-sm font-medium transition-opacity disabled:opacity-50"
-            style={{ color: '#D0481A', background: '#FFF0EA', border: '1px solid #FAD5BF' }}
+            style={{ color: 'var(--danger)', background: 'var(--danger-bg)', border: '1px solid var(--danger-border)' }}
           >
             Borrar movimiento
           </button>
@@ -172,13 +172,13 @@ export function MovementCard({ movement, onUpdated, onDeleted, hideDate = false 
           <div className="flex gap-2">
             <button type="button" onClick={handleDelete} disabled={busy}
               className="flex-1 py-2 rounded-xl text-sm font-bold text-white transition-opacity disabled:opacity-50"
-              style={{ background: '#D0481A' }}
+              style={{ background: 'var(--danger)' }}
             >
               {deleting ? 'Borrando...' : '¿Confirmar borrado?'}
             </button>
             <button type="button" onClick={() => setConfirmDelete(false)} disabled={busy}
               className="py-2 px-3 rounded-xl text-sm font-medium border transition-colors disabled:opacity-50"
-              style={{ borderColor: '#D9E8D0', color: '#6B8C78', background: '#F4F6EB' }}
+              style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-mid)', background: 'var(--brand-chip)' }}
             >
               No
             </button>
@@ -200,14 +200,14 @@ export function MovementCard({ movement, onUpdated, onDeleted, hideDate = false 
       </span>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium leading-snug truncate" style={{ color: '#578466' }}>
+        <p className="text-sm font-medium leading-snug truncate" style={{ color: 'var(--brand)' }}>
           {movement.description}
         </p>
         {!hideDate && (
-          <p className="text-xs mt-0.5" style={{ color: '#6B8C78' }}>{formatEntryDate(movement.movementDate)}</p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--brand-mid)' }}>{formatEntryDate(movement.movementDate)}</p>
         )}
         {movement.isInvestment && (
-          <p className="text-[10px] mt-0.5 font-medium" style={{ color: '#B89010' }}>Inversión</p>
+          <p className="text-[10px] mt-0.5 font-medium" style={{ color: 'var(--pending-text)' }}>Inversión</p>
         )}
       </div>
 
@@ -217,7 +217,7 @@ export function MovementCard({ movement, onUpdated, onDeleted, hideDate = false 
 
       <button type="button" onClick={openEdit}
         className="shrink-0 p-1.5 rounded-lg transition-colors flex items-center justify-center"
-        style={{ color: '#8AAB94', background: '#F4F6EB' }}
+        style={{ color: 'var(--brand-muted)', background: 'var(--brand-chip)' }}
         aria-label="Editar movimiento"
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">

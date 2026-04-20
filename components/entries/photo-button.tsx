@@ -19,7 +19,6 @@ interface PhotoButtonProps {
   onLoadingChange: (v: boolean) => void
 }
 
-
 export function PhotoButton({
   fecha,
   onMovementsExtracted,
@@ -33,17 +32,14 @@ export function PhotoButton({
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!e.target) return
-    // Limpiar para permitir seleccionar el mismo archivo de nuevo
-    e.target.value = ''
+    e.target.value = '' // permite seleccionar el mismo archivo de nuevo
     if (!file) return
 
-    // Validar formato
     if (!PHOTO_LIMITS.acceptedFormats.includes(file.type as typeof PHOTO_LIMITS.acceptedFormats[number])) {
       onError('Formato no soportado. Usa JPG, PNG o WebP.')
       return
     }
 
-    // Validar tamaño antes de comprimir
     if (file.size > PHOTO_LIMITS.maxFileSizeMB * 1024 * 1024 * 3) {
       onError('La imagen es demasiado grande.')
       return
@@ -75,7 +71,7 @@ export function PhotoButton({
 
       const { movements } = data as { movements: PendingMovement[] }
       onMovementsExtracted({
-        rawText: `📷 Foto analizada con IA`,
+        rawText: '📷 Foto analizada con IA',
         entryDate: fecha || getTodayString(),
         movements,
       })
@@ -102,9 +98,9 @@ export function PhotoButton({
         title="Tomar foto o subir imagen"
         className="flex items-center justify-center rounded-xl transition-all min-h-[44px] min-w-[44px]"
         style={{
-          background: loading ? '#F5F5F5' : '#F0FAF4',
-          border: `1px solid ${loading ? '#E0E0E0' : '#2E7D32'}`,
-          color: loading ? '#5A7A8A' : '#2E7D32',
+          background: 'var(--brand-chip)',
+          border: `1px solid ${loading ? 'var(--brand-border)' : 'var(--brand)'}`,
+          color: loading ? 'var(--brand-mid)' : 'var(--brand)',
         }}
       >
         {loading ? (

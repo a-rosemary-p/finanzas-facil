@@ -26,11 +26,11 @@ export function MovementDayGroup({
         className="flex items-center justify-between w-full py-1 min-h-[36px]"
         aria-expanded={expanded}
       >
-        <span className="text-sm font-bold" style={{ color: '#578466' }}>
+        <span className="text-sm font-bold" style={{ color: 'var(--brand)' }}>
           {formatDateWithWeekday(date)}
         </span>
         <span className="text-xs font-medium px-2 py-0.5 rounded-full ml-2 shrink-0 flex items-center gap-1"
-          style={{ color: '#6B8C78', background: '#F4F6EB' }}
+          style={{ color: 'var(--brand-mid)', background: 'var(--brand-chip)' }}
         >
           {movements.length}
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"

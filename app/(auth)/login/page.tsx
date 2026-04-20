@@ -103,19 +103,19 @@ function LoginInner() {
             </p>
             <p className="text-base font-bold mt-1" style={{ color: '#fff' }}>{email}</p>
           </div>
-          <div className="bg-white rounded-2xl shadow-sm p-6 w-full" style={{ border: '1px solid #D9E8D0' }}>
-            <p className="text-sm text-center mb-1" style={{ color: '#578466' }}>
+          <div className="bg-white rounded-2xl shadow-sm p-6 w-full" style={{ border: '1px solid var(--brand-border)' }}>
+            <p className="text-sm text-center mb-1" style={{ color: 'var(--brand)' }}>
               {isForgot
                 ? 'Haz clic en el link del correo para restablecer tu contraseña.'
                 : 'Haz clic en el link del correo para activar tu cuenta.'}
             </p>
-            <p className="text-xs text-center mb-5" style={{ color: '#6B8C78' }}>
+            <p className="text-xs text-center mb-5" style={{ color: 'var(--brand-mid)' }}>
               Si no lo ves, revisa tu carpeta de spam.
             </p>
             <button
               onClick={() => { setRegistered(false); switchMode('login') }}
               className="w-full text-white rounded-xl py-3.5 font-bold text-base min-h-[52px]"
-              style={{ background: '#578466' }}
+              style={{ background: 'var(--brand)' }}
             >
               {isForgot ? 'Volver a entrar' : 'Ya confirmé — entrar →'}
             </button>
@@ -136,8 +136,8 @@ function LoginInner() {
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-sm p-6" style={{ border: '1px solid #D9E8D0' }}>
-          <h2 className="font-bold text-lg mb-5" style={{ color: '#578466' }}>
+        <div className="bg-white rounded-2xl shadow-sm p-6" style={{ border: '1px solid var(--brand-border)' }}>
+          <h2 className="font-bold text-lg mb-5" style={{ color: 'var(--brand)' }}>
             {mode === 'login' ? 'Entrar' : mode === 'register' ? 'Crear cuenta' : 'Restablecer contraseña'}
           </h2>
 
@@ -145,33 +145,33 @@ function LoginInner() {
 
             {mode === 'register' && (
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium" style={{ color: '#578466' }}>Tu nombre o negocio</label>
+                <label className="text-sm font-medium" style={{ color: 'var(--brand)' }}>Tu nombre o negocio</label>
                 <input
                   type="text" value={nombre} onChange={e => setNombre(e.target.value)}
                   placeholder="Ej: Juan, Taquería El Güero"
                   autoComplete="name" disabled={loading} maxLength={50}
                   className="border rounded-lg px-3 py-3 min-h-[44px] focus:outline-none focus:ring-2"
-                  style={{ borderColor: '#D9E8D0', color: '#578466' }}
+                  style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
                 />
               </div>
             )}
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium" style={{ color: '#578466' }}>Correo electrónico</label>
+              <label className="text-sm font-medium" style={{ color: 'var(--brand)' }}>Correo electrónico</label>
               <input
                 type="email" value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="tu@negocio.com" autoComplete="email" disabled={loading}
                 className="border rounded-lg px-3 py-3 min-h-[44px] focus:outline-none focus:ring-2"
-                style={{ borderColor: '#D9E8D0', color: '#578466' }}
+                style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
               />
             </div>
 
             {mode !== 'forgot' && (
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium" style={{ color: '#578466' }}>Contraseña</label>
+                  <label className="text-sm font-medium" style={{ color: 'var(--brand)' }}>Contraseña</label>
                   {mode === 'login' && (
-                    <button type="button" onClick={() => switchMode('forgot')} className="text-xs underline" style={{ color: '#6B8C78' }}>
+                    <button type="button" onClick={() => switchMode('forgot')} className="text-xs underline" style={{ color: 'var(--brand-mid)' }}>
                       ¿Olvidaste tu contraseña?
                     </button>
                   )}
@@ -181,55 +181,55 @@ function LoginInner() {
                   placeholder="••••••••" autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                   disabled={loading}
                   className="border rounded-lg px-3 py-3 min-h-[44px] focus:outline-none focus:ring-2"
-                  style={{ borderColor: '#D9E8D0', color: '#578466' }}
+                  style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
                 />
                 {mode === 'register' && (
-                  <p className="text-xs" style={{ color: '#6B8C78' }}>Mínimo 6 caracteres</p>
+                  <p className="text-xs" style={{ color: 'var(--brand-mid)' }}>Mínimo 6 caracteres</p>
                 )}
               </div>
             )}
 
             {mode === 'register' && (
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium" style={{ color: '#578466' }}>Confirmar contraseña</label>
+                <label className="text-sm font-medium" style={{ color: 'var(--brand)' }}>Confirmar contraseña</label>
                 <input
                   type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
                   placeholder="••••••••" autoComplete="new-password" disabled={loading}
                   className="border rounded-lg px-3 py-3 min-h-[44px] focus:outline-none focus:ring-2"
-                  style={{ borderColor: '#D9E8D0', color: '#578466' }}
+                  style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
                 />
               </div>
             )}
 
             {mode === 'forgot' && (
-              <p className="text-sm" style={{ color: '#6B8C78' }}>
+              <p className="text-sm" style={{ color: 'var(--brand-mid)' }}>
                 Escribe tu correo y te mandamos un link para restablecer tu contraseña.
               </p>
             )}
 
-            {error && <p className="text-sm" style={{ color: '#D0481A' }}>{error}</p>}
+            {error && <p className="text-sm" style={{ color: 'var(--danger)' }}>{error}</p>}
 
             <button
               type="submit" disabled={loading}
               className="text-white rounded-xl py-3.5 font-bold text-base transition-opacity disabled:opacity-50 min-h-[52px]"
-              style={{ background: '#578466' }}
+              style={{ background: 'var(--brand)' }}
             >
               {loading ? 'Un momento...' : mode === 'login' ? 'Entrar' : mode === 'register' ? 'Crear cuenta' : 'Enviar link'}
             </button>
           </form>
 
-          <p className="text-center text-sm mt-4" style={{ color: '#6B8C78' }}>
+          <p className="text-center text-sm mt-4" style={{ color: 'var(--brand-mid)' }}>
             {mode === 'forgot' ? (
               <>{'¿Ya recordaste? '}
-                <button onClick={() => switchMode('login')} className="font-medium underline" style={{ color: '#578466' }}>Entrar</button>
+                <button onClick={() => switchMode('login')} className="font-medium underline" style={{ color: 'var(--brand)' }}>Entrar</button>
               </>
             ) : mode === 'login' ? (
               <>{'¿No tienes cuenta? '}
-                <button onClick={() => switchMode('register')} className="font-medium underline" style={{ color: '#578466' }}>Regístrate</button>
+                <button onClick={() => switchMode('register')} className="font-medium underline" style={{ color: 'var(--brand)' }}>Regístrate</button>
               </>
             ) : (
               <>{'¿Ya tienes cuenta? '}
-                <button onClick={() => switchMode('login')} className="font-medium underline" style={{ color: '#578466' }}>Entra aquí</button>
+                <button onClick={() => switchMode('login')} className="font-medium underline" style={{ color: 'var(--brand)' }}>Entra aquí</button>
               </>
             )}
           </p>

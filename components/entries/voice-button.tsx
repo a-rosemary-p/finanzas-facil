@@ -33,8 +33,8 @@ declare global {
 
 // Compatibilidad real de Web Speech API:
 // ✅ Chrome (desktop + Android)   ✅ Safari (iOS 14.5+, macOS 14.1+)
-// ✅ Edge / Samsung Internet       ❌ Firefox (desktop + Android) — no soportado
-// ❌ Algunos WebViews de Android   ⚠️  Requiere HTTPS y permiso de micrófono
+// ✅ Edge / Samsung Internet       ❌ Firefox — no soportado
+// ⚠️  Requiere HTTPS y permiso de micrófono
 
 export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
   // null = aún no hidratado (SSR), evita flash de contenido incorrecto
@@ -47,11 +47,8 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
     setSupported(!!(window.SpeechRecognition || window.webkitSpeechRecognition))
   }, [])
 
-  // Durante SSR no renderiza nada (evita mismatch de hidratación)
   if (supported === null) return null
 
-  // Browser sin soporte → botón deshabilitado con tooltip explicativo
-  // (mejor que desaparecer sin avisar)
   if (!supported) {
     return (
       <button
@@ -59,7 +56,7 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
         disabled
         title="Dictado no disponible en este navegador. Usa Chrome o Safari."
         className="flex items-center justify-center rounded-xl min-h-[44px] min-w-[44px] opacity-40 cursor-not-allowed"
-        style={{ background: '#F5F5F5', border: '1px solid #E0E0E0', color: '#5A7A8A' }}
+        style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)', color: 'var(--brand-mid)' }}
       >
         <span className="text-xl">🎤</span>
       </button>
@@ -82,12 +79,11 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
     rec.interimResults = false
 
     rec.onstart = () => setRecording(true)
-    rec.onend = () => setRecording(false)
+    rec.onend   = () => setRecording(false)
 
     rec.onerror = (e) => {
       setRecording(false)
       const code = e?.error
-      // Códigos de error del Web Speech API
       if (code === 'not-allowed' || code === 'permission-denied') {
         showError('Permiso denegado — habilita el micrófono en tu navegador')
       } else if (code === 'network') {
@@ -99,7 +95,7 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
       } else if (code === 'service-not-allowed') {
         showError('Dictado no disponible. Usa Chrome o Safari.')
       } else if (code === 'aborted') {
-        // El usuario detuvo manualmente — no mostrar error
+        // detuvo manualmente — silencioso
       } else {
         showError('Micrófono no disponible. Intenta de nuevo.')
       }
@@ -132,9 +128,9 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
         title={recording ? 'Detener grabación' : 'Dictar por voz'}
         className="flex items-center justify-center rounded-xl transition-all min-h-[44px] min-w-[44px]"
         style={{
-          background: recording ? '#FFF5F5' : '#F0FAF4',
-          border: `1px solid ${recording ? '#C62828' : '#2E7D32'}`,
-          color: recording ? '#C62828' : '#2E7D32',
+          background: recording ? 'var(--danger-bg)' : 'var(--brand-chip)',
+          border: `1px solid ${recording ? 'var(--danger)' : 'var(--brand)'}`,
+          color: recording ? 'var(--danger)' : 'var(--brand)',
         }}
       >
         {recording ? (
@@ -147,7 +143,7 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
         )}
       </button>
       {errorMsg && (
-        <p className="text-xs max-w-[160px]" style={{ color: '#C62828' }}>{errorMsg}</p>
+        <p className="text-xs max-w-[160px]" style={{ color: 'var(--danger)' }}>{errorMsg}</p>
       )}
     </div>
   )

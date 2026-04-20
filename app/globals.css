@@ -1,14 +1,48 @@
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────────────────
+   BRAND PALETTE — edit here, changes everywhere
+   ───────────────────────────────────────────────────────── */
 :root {
-  --color-text-primary:   #578466;
-  --color-text-secondary: #6B8C78;
-  --color-accent:         #578466;
-  --color-danger:         #D0481A;
-  --color-pending:        #B89010;
-  --color-border:         #D9E8D0;
-  --color-bg-top:         #F4F6EB;
-  --color-bg-bottom:      #E8EDD8;
+  /* Greens */
+  --brand:          #578466;   /* primary — buttons, logo, headings */
+  --brand-mid:      #6B8C78;   /* secondary — labels, muted text */
+  --brand-light:    #92C3A5;   /* light — active borders, chips */
+  --brand-border:   #D9E8D0;   /* hairline border */
+  --brand-chip:     #F4F6EB;   /* chip / tag / input bg */
+  --brand-muted:    #8AAB94;   /* placeholder, icon, disabled */
+  --brand-lime:     #DAE68F;   /* yellow-green — income accent */
+
+  /* Income (ingreso) */
+  --income-bg:      #DAE68F;
+  --income-border:  #92C3A5;
+  --income-text:    #578466;
+
+  /* Expense (gasto) */
+  --expense-bg:     #FAD5BF;
+  --expense-border: #F79366;
+  --expense-text:   #D0481A;
+
+  /* Pending (pendiente) */
+  --pending-bg:     #FFF5CC;
+  --pending-border: #FFCE57;
+  --pending-text:   #B89010;
+
+  /* Danger / delete */
+  --danger:         #D0481A;
+  --danger-bg:      #FFF0EA;
+  --danger-border:  #FAD5BF;
+
+  /* Investment */
+  --investment:     #FFCE57;
+  --investment-text: #B89010;
+
+  /* Pro plan */
+  --pro-bg:         #EEFBE8;
+
+  /* Legacy aliases kept for body gradient vars */
+  --color-bg-top:    #F4F6EB;
+  --color-bg-bottom: #E8EDD8;
 }
 
 @theme inline {
@@ -23,7 +57,7 @@ html {
 body {
   min-height: 100%;
   font-family: var(--font-outfit), Arial, Helvetica, sans-serif;
-  color: var(--color-text-primary);
+  color: var(--brand);
   background: linear-gradient(115deg, #BFDACB 25%, #E8F0B9 75%) fixed;
   padding-bottom: env(safe-area-inset-bottom, 0px);
   -webkit-tap-highlight-color: transparent;

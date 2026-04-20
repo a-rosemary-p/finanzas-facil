@@ -60,20 +60,20 @@ function FilterBox({
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden" style={{ border: '1px solid #D9E8D0' }}>
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden" style={{ border: '1px solid var(--brand-border)' }}>
       <div className="flex items-center justify-between px-4 py-3">
         <button
           type="button"
           onClick={() => { setPickerOpen(v => !v); if (!expanded) setExpanded(true) }}
           className="flex items-center gap-2 text-sm font-bold min-h-[36px]"
-          style={{ color: '#578466' }}
+          style={{ color: 'var(--brand)' }}
         >
           <span>📅</span><span>{periodLabel}</span>
         </button>
         <button type="button"
           onClick={() => { setExpanded(v => !v); setPickerOpen(false) }}
           className="p-2 rounded-lg min-h-[36px] min-w-[36px] flex items-center justify-center"
-          style={{ color: '#6B8C78', background: '#F4F6EB' }}
+          style={{ color: 'var(--brand-mid)', background: 'var(--brand-chip)' }}
           aria-label={expanded ? 'Colapsar filtros' : 'Expandir filtros'}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -92,13 +92,13 @@ function FilterBox({
             <button type="button" onClick={() => setPickerYear(y => y + 1)}
               disabled={pickerYear >= currentYear}
               className="p-1.5 rounded min-h-[36px] min-w-[36px] disabled:opacity-30"
-              style={{ color: '#6B8C78' }}
+              style={{ color: 'var(--brand-mid)' }}
             >◀</button>
-            <span className="text-sm font-bold" style={{ color: '#578466' }}>{pickerYear}</span>
+            <span className="text-sm font-bold" style={{ color: 'var(--brand)' }}>{pickerYear}</span>
             <button type="button" onClick={() => setPickerYear(y => y - 1)}
               disabled={pickerYear <= 2023}
               className="p-1.5 rounded min-h-[36px] min-w-[36px] disabled:opacity-30"
-              style={{ color: '#6B8C78' }}
+              style={{ color: 'var(--brand-mid)' }}
             >▶</button>
           </div>
           <div className="grid grid-cols-4 gap-1.5">
@@ -111,8 +111,8 @@ function FilterBox({
                 <button key={label} type="button" onClick={() => selectMonth(idx)}
                   className="py-2 rounded-lg text-xs font-medium min-h-[36px] transition-colors"
                   style={(isActive || isCurrentMonth)
-                    ? { background: '#578466', color: '#fff' }
-                    : { background: '#F4F6EB', color: '#6B8C78' }
+                    ? { background: 'var(--brand)', color: '#fff' }
+                    : { background: 'var(--brand-chip)', color: 'var(--brand-mid)' }
                   }
                 >{label}</button>
               )
@@ -129,15 +129,15 @@ function FilterBox({
               <button key={opt.value} type="button" onClick={() => selectFilter(opt.value)}
                 className="px-3 py-2 rounded-full text-sm font-medium border min-h-[40px] transition-colors"
                 style={filter === opt.value && opt.value !== 'month'
-                  ? { background: '#578466', color: '#fff', borderColor: '#578466' }
-                  : { background: '#fff', color: '#6B8C78', borderColor: '#D9E8D0' }
+                  ? { background: 'var(--brand)', color: '#fff', borderColor: 'var(--brand)' }
+                  : { background: '#fff', color: 'var(--brand-mid)', borderColor: 'var(--brand-border)' }
                 }
               >{opt.label}</button>
             ))}
             <button type="button"
               onClick={() => { setExpanded(false); alert('Próximamente: filtros por fecha personalizada') }}
               className="px-3 py-2 rounded-full text-sm font-medium border min-h-[40px]"
-              style={{ background: '#fff', color: '#8AAB94', borderColor: '#D9E8D0' }}
+              style={{ background: '#fff', color: 'var(--brand-muted)', borderColor: 'var(--brand-border)' }}
             >⚙ Rango avanzado...</button>
           </div>
         </div>
@@ -204,7 +204,7 @@ function DashboardInner() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-sm" style={{ color: '#6B8C78' }}>Cargando...</p>
+        <p className="text-sm" style={{ color: 'var(--brand-mid)' }}>Cargando...</p>
       </div>
     )
   }
@@ -221,24 +221,24 @@ function DashboardInner() {
       {/* Header */}
       <header className="bg-white sticky top-0 z-10 flex items-center justify-between px-4"
         style={{
-          borderBottom: '1px solid #D9E8D0',
+          borderBottom: '1px solid var(--brand-border)',
           paddingTop: 'calc(env(safe-area-inset-top, 0px) + 10px)',
           paddingBottom: '10px', minHeight: '56px',
         }}
       >
-        <span className="font-bold text-2xl" style={{ color: '#578466' }}>FinanzasFácil</span>
+        <span className="font-bold text-2xl" style={{ color: 'var(--brand)' }}>FinanzasFácil</span>
         <div className="flex items-center gap-3">
           <span className="text-sm font-medium px-3 py-2 rounded-full min-h-[44px] flex items-center"
             style={profile?.plan === 'pro'
-              ? { background: '#578466', color: '#fff', border: '1px solid #578466' }
-              : { background: '#DAE68F', color: '#578466', border: '1px solid #92C3A5' }
+              ? { background: 'var(--brand)', color: '#fff', border: '1px solid var(--brand)' }
+              : { background: 'var(--brand-lime)', color: 'var(--brand)', border: '1px solid var(--brand-light)' }
             }
           >
             {profile?.plan === 'pro' ? 'Pro' : 'Free'}
           </span>
           <button onClick={logout}
             className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg min-h-[44px] transition-colors"
-            style={{ color: '#6B8C78', background: '#F4F6EB', border: '1px solid #D9E8D0' }}
+            style={{ color: 'var(--brand-mid)', background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -260,10 +260,10 @@ function DashboardInner() {
           <>
             {/* 1. Saludo */}
             <div>
-              <p className="font-bold text-lg" style={{ color: '#578466' }}>
+              <p className="font-bold text-lg" style={{ color: 'var(--brand)' }}>
                 Hola, {profile?.displayName} 👋
               </p>
-              <p className="text-sm italic capitalize" style={{ color: '#6B8C78' }}>
+              <p className="text-sm italic capitalize" style={{ color: 'var(--brand-mid)' }}>
                 {getFechaFormateada()}
               </p>
             </div>
@@ -274,16 +274,16 @@ function DashboardInner() {
             {/* 3. Etiqueta de período + métricas */}
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-bold" style={{ color: '#578466' }}>{periodLabel}</p>
+                <p className="text-sm font-bold" style={{ color: 'var(--brand)' }}>{periodLabel}</p>
                 <label className="flex items-center gap-1.5 cursor-pointer">
                   <input type="checkbox" checked={showInvestments}
                     onChange={e => setShowInvestments(e.target.checked)}
-                    className="w-3.5 h-3.5" style={{ accentColor: '#FFCE57' }}
+                    className="w-3.5 h-3.5" style={{ accentColor: 'var(--investment)' }}
                   />
-                  <span className="text-xs" style={{ color: '#8AAB94' }}>📈 Incluir inversiones</span>
+                  <span className="text-xs" style={{ color: 'var(--brand-muted)' }}>📈 Incluir inversiones</span>
                 </label>
               </div>
-              <div style={{ height: '1px', background: '#92C3A5' }} />
+              <div style={{ height: '1px', background: 'var(--brand-light)' }} />
               <div className="grid grid-cols-3 gap-3">
                 <MetricCard label="Ingresos" value={metrics.income} color="#578466" bg="#DAE68F" border="#92C3A5" sign="+" />
                 <MetricCard label="Gastos" value={metrics.expenses} color="#D0481A" bg="#FAD5BF" border="#F79366" sign="−" />
@@ -323,21 +323,21 @@ function DashboardInner() {
 
             {/* 5. Historial agrupado */}
             <section className="flex flex-col gap-4">
-              <h2 className="font-bold" style={{ color: '#578466' }}>
+              <h2 className="font-bold" style={{ color: 'var(--brand)' }}>
                 Registros
                 {typeFilter !== 'all' && (
-                  <span className="ml-2 text-sm font-medium" style={{ color: '#6B8C78' }}>
+                  <span className="ml-2 text-sm font-medium" style={{ color: 'var(--brand-mid)' }}>
                     · {TYPE_FILTER_CONFIG.find(t => t.value === typeFilter)?.label}
                   </span>
                 )}
               </h2>
 
               {loading ? (
-                <p className="text-sm text-center py-8" style={{ color: '#6B8C78' }}>Cargando...</p>
+                <p className="text-sm text-center py-8" style={{ color: 'var(--brand-mid)' }}>Cargando...</p>
               ) : sortedDates.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-sm p-6 text-center" style={{ border: '1px solid #D9E8D0' }}>
-                  <p className="text-sm" style={{ color: '#6B8C78' }}>Sin registros para este período.</p>
-                  <p className="text-xs mt-1" style={{ color: '#8AAB94' }}>Escribe arriba lo que pasó en tu negocio.</p>
+                <div className="bg-white rounded-xl shadow-sm p-6 text-center" style={{ border: '1px solid var(--brand-border)' }}>
+                  <p className="text-sm" style={{ color: 'var(--brand-mid)' }}>Sin registros para este período.</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--brand-muted)' }}>Escribe arriba lo que pasó en tu negocio.</p>
                 </div>
               ) : (
                 <>
@@ -350,7 +350,7 @@ function DashboardInner() {
                   {hasMore && (
                     <button onClick={loadMore} disabled={loadingMore}
                       className="w-full py-3 rounded-xl text-sm font-medium transition-colors border min-h-[44px]"
-                      style={{ borderColor: '#578466', color: '#578466', background: '#fff' }}
+                      style={{ borderColor: 'var(--brand)', color: 'var(--brand)', background: '#fff' }}
                     >
                       {loadingMore ? 'Cargando...' : 'Cargar más'}
                     </button>
@@ -362,36 +362,36 @@ function DashboardInner() {
             {/* Banner upgrade exitoso */}
             {upgradedBanner && (
               <div className="rounded-xl p-4 flex items-center gap-3"
-                style={{ background: '#F4F6EB', border: '1px solid #92C3A5' }}
+                style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-light)' }}
               >
                 <span className="text-xl">🎉</span>
                 <div className="flex-1">
-                  <p className="text-sm font-bold" style={{ color: '#578466' }}>¡Bienvenido al plan Pro!</p>
-                  <p className="text-xs" style={{ color: '#6B8C78' }}>Ya tienes movimientos ilimitados.</p>
+                  <p className="text-sm font-bold" style={{ color: 'var(--brand)' }}>¡Bienvenido al plan Pro!</p>
+                  <p className="text-xs" style={{ color: 'var(--brand-mid)' }}>Ya tienes movimientos ilimitados.</p>
                 </div>
                 <button onClick={() => setUpgradedBanner(false)}
                   className="text-lg leading-none min-w-[36px] min-h-[36px] flex items-center justify-center"
-                  style={{ color: '#6B8C78' }}
+                  style={{ color: 'var(--brand-mid)' }}
                 >×</button>
               </div>
             )}
 
             {/* Banner plan Free */}
             {profile?.plan === 'free' && (
-              <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col gap-2" style={{ border: '1px solid #D9E8D0' }}>
+              <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col gap-2" style={{ border: '1px solid var(--brand-border)' }}>
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium" style={{ color: '#578466' }}>Plan Free</p>
-                  <p className="text-sm" style={{ color: '#6B8C78' }}>{profile.movementsToday}/10 hoy</p>
+                  <p className="text-sm font-medium" style={{ color: 'var(--brand)' }}>Plan Free</p>
+                  <p className="text-sm" style={{ color: 'var(--brand-mid)' }}>{profile.movementsToday}/10 hoy</p>
                 </div>
-                <div className="w-full rounded-full h-1.5" style={{ background: '#D9E8D0' }}>
+                <div className="w-full rounded-full h-1.5" style={{ background: 'var(--brand-border)' }}>
                   <div className="h-1.5 rounded-full transition-all" style={{
                     width: `${Math.min((profile.movementsToday / 10) * 100, 100)}%`,
-                    background: profile.movementsToday >= 10 ? '#D0481A' : '#578466',
+                    background: profile.movementsToday >= 10 ? 'var(--danger)' : 'var(--brand)',
                   }} />
                 </div>
                 <button onClick={handleUpgrade} disabled={checkoutLoading}
                   className="w-full text-white rounded-xl py-3 font-bold text-sm min-h-[44px] transition-opacity disabled:opacity-60"
-                  style={{ background: '#578466' }}
+                  style={{ background: 'var(--brand)' }}
                 >
                   {checkoutLoading ? 'Redirigiendo...' : 'Actualizar a Pro — $99/mes'}
                 </button>
@@ -400,14 +400,14 @@ function DashboardInner() {
 
             {/* Panel plan Pro */}
             {profile?.plan === 'pro' && (
-              <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between" style={{ border: '1px solid #D9E8D0' }}>
+              <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between" style={{ border: '1px solid var(--brand-border)' }}>
                 <div>
-                  <p className="text-sm font-bold" style={{ color: '#578466' }}>Plan Pro activo ✓</p>
-                  <p className="text-xs" style={{ color: '#6B8C78' }}>Movimientos ilimitados</p>
+                  <p className="text-sm font-bold" style={{ color: 'var(--brand)' }}>Plan Pro activo ✓</p>
+                  <p className="text-xs" style={{ color: 'var(--brand-mid)' }}>Movimientos ilimitados</p>
                 </div>
                 <button onClick={handlePortal} disabled={portalLoading}
                   className="text-xs font-medium px-3 py-2 rounded-lg border min-h-[36px] transition-opacity disabled:opacity-60"
-                  style={{ borderColor: '#D9E8D0', color: '#6B8C78', background: '#F4F6EB' }}
+                  style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-mid)', background: 'var(--brand-chip)' }}
                 >
                   {portalLoading ? '...' : 'Gestionar'}
                 </button>
@@ -424,7 +424,7 @@ export default function DashboardPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-sm" style={{ color: '#6B8C78' }}>Cargando...</p>
+        <p className="text-sm" style={{ color: 'var(--brand-mid)' }}>Cargando...</p>
       </div>
     }>
       <DashboardInner />
