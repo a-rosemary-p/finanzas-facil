@@ -206,13 +206,13 @@ export function MovementCard({ movement, onUpdated, onDeleted, hideDate = false 
         )}
       </div>
 
-      <span className="text-base font-bold shrink-0" style={{ color: cfg.color }}>
-        {cfg.sign}{formatCurrency(movement.amount)}
-      </span>
-
       {movement.isInvestment && (
         <span className="text-base shrink-0" title="Inversión">📈</span>
       )}
+
+      <span className="text-base font-bold shrink-0" style={{ color: cfg.color }}>
+        {cfg.sign}{formatCurrency(movement.amount)}
+      </span>
 
       <button type="button" onClick={openEdit}
         className="shrink-0 p-1.5 rounded-lg transition-colors flex items-center justify-center"
