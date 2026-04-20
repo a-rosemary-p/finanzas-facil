@@ -18,7 +18,7 @@ export const PLANS = {
   PRO: {
     maxMovementsPerDay: Infinity,
     historyDays: Infinity,
-    priceMonthlyMXN: 99,
+    priceMonthlyMXN: 49,
   },
 } as const
 
