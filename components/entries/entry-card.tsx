@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { formatCurrency, formatEntryDate, getTodayString } from '@/lib/utils'
-import { MOVEMENT_TYPES } from '@/lib/constants'
+import { MOVEMENT_TYPES, MOVEMENT_TYPE_CONFIG } from '@/lib/constants'
 import type { Movement } from '@/types'
 
 interface MovementCardProps {
@@ -11,30 +11,6 @@ interface MovementCardProps {
   onDeleted: (id: string) => void
   hideDate?: boolean
 }
-
-const TYPE_CONFIG = {
-  ingreso: {
-    label: 'Ingreso',
-    bg: 'var(--income-bg)',
-    color: 'var(--income-text)',
-    border: 'var(--income-border)',
-    sign: '+',
-  },
-  gasto: {
-    label: 'Gasto',
-    bg: 'var(--expense-bg)',
-    color: 'var(--expense-text)',
-    border: 'var(--expense-border)',
-    sign: '−',
-  },
-  pendiente: {
-    label: 'Pendiente',
-    bg: 'var(--pending-bg)',
-    color: 'var(--pending-text)',
-    border: 'var(--pending-border)',
-    sign: '⏳ ',
-  },
-} as const
 
 export function MovementCard({ movement, onUpdated, onDeleted, hideDate = false }: MovementCardProps) {
   const [editing, setEditing] = useState(false)
@@ -49,7 +25,7 @@ export function MovementCard({ movement, onUpdated, onDeleted, hideDate = false 
   const [editDate, setEditDate] = useState(movement.movementDate)
   const [editIsInvestment, setEditIsInvestment] = useState(movement.isInvestment)
 
-  const cfg = TYPE_CONFIG[movement.type]
+  const cfg = MOVEMENT_TYPE_CONFIG[movement.type]
   const busy = saving || deleting
   const cardBorder = movement.isInvestment ? '1.5px solid var(--investment)' : '1px solid var(--brand-border)'
 
@@ -99,7 +75,7 @@ export function MovementCard({ movement, onUpdated, onDeleted, hideDate = false 
         {/* Selector de tipo */}
         <div className="flex gap-2">
           {MOVEMENT_TYPES.map(t => {
-            const tcfg = TYPE_CONFIG[t]
+            const tcfg = MOVEMENT_TYPE_CONFIG[t]
             const active = editType === t
             return (
               <button key={t} type="button" onClick={() => setEditType(t)} disabled={busy}

@@ -34,6 +34,12 @@ export const CATEGORIES = [
 
 export const MOVEMENT_TYPES = ['ingreso', 'gasto', 'pendiente'] as const
 
+export const MOVEMENT_TYPE_CONFIG = {
+  ingreso:   { label: 'Ingreso',   bg: 'var(--income-bg)',  color: 'var(--income-text)',  border: 'var(--income-border)',  sign: '+' },
+  gasto:     { label: 'Gasto',     bg: 'var(--expense-bg)', color: 'var(--expense-text)', border: 'var(--expense-border)', sign: '−' },
+  pendiente: { label: 'Pendiente', bg: 'var(--pending-bg)', color: 'var(--pending-text)', border: 'var(--pending-border)', sign: '⏳ ' },
+} as const
+
 export const DATE_FILTERS = ['today', '7days', 'month', 'year', 'all'] as const
 
 export const DATE_FILTER_LABELS: Record<string, string> = {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { formatCurrency, getTodayString } from '@/lib/utils'
-import { CATEGORIES, MOVEMENT_TYPES } from '@/lib/constants'
+import { CATEGORIES, MOVEMENT_TYPES, MOVEMENT_TYPE_CONFIG } from '@/lib/constants'
 import type { PendingMovement, Entry } from '@/types'
 
 interface ConfirmationScreenProps {
@@ -11,12 +11,6 @@ interface ConfirmationScreenProps {
   initialMovements: PendingMovement[]
   onConfirmed: (entry: Entry) => void
   onCancel: () => void
-}
-
-const TYPE_LABELS: Record<string, string> = {
-  ingreso: 'Ingreso',
-  gasto: 'Gasto',
-  pendiente: 'Pendiente',
 }
 
 function emptyMovement(date: string): PendingMovement {
@@ -142,7 +136,7 @@ export function ConfirmationScreen({
               style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
             >
               {MOVEMENT_TYPES.map(t => (
-                <option key={t} value={t}>{TYPE_LABELS[t]}</option>
+                <option key={t} value={t}>{MOVEMENT_TYPE_CONFIG[t].label}</option>
               ))}
             </select>
           </div>
