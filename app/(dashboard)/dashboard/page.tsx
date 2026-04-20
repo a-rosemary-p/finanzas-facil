@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
 import { useEntries } from '@/hooks/use-entries'
@@ -163,6 +163,20 @@ function DashboardInner() {
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
   const [upgradedBanner, setUpgradedBanner] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Cierra el menú al hacer clic fuera
+  useEffect(() => {
+    if (!menuOpen) return
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [menuOpen])
 
   useEffect(() => { if (profile) loadData('month') }, [profile, loadData])
 
@@ -228,6 +242,7 @@ function DashboardInner() {
       >
         <span className="font-bold text-2xl" style={{ color: 'var(--brand)' }}>FinanzasFácil</span>
         <div className="flex items-center gap-3">
+          {/* Plan badge */}
           <span className="text-sm font-medium px-3 py-2 rounded-full min-h-[44px] flex items-center"
             style={profile?.plan === 'pro'
               ? { background: 'var(--brand)', color: '#fff', border: '1px solid var(--brand)' }
@@ -236,16 +251,59 @@ function DashboardInner() {
           >
             {profile?.plan === 'pro' ? 'Pro' : 'Free'}
           </span>
-          <button onClick={logout}
-            className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg min-h-[44px] transition-colors"
-            style={{ color: 'var(--brand-mid)', background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-            Salir
-          </button>
+
+          {/* Menú hamburger */}
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setMenuOpen(v => !v)}
+              className="flex flex-col items-center justify-center gap-[5px] rounded-lg min-h-[44px] min-w-[44px] transition-colors"
+              style={{ background: menuOpen ? 'var(--brand-chip)' : 'transparent', border: '1px solid var(--brand-border)' }}
+              aria-label="Menú"
+            >
+              <span className="block w-[18px] h-[2px] rounded-full" style={{ background: 'var(--brand-mid)' }} />
+              <span className="block w-[18px] h-[2px] rounded-full" style={{ background: 'var(--brand-mid)' }} />
+              <span className="block w-[18px] h-[2px] rounded-full" style={{ background: 'var(--brand-mid)' }} />
+            </button>
+
+            {menuOpen && (
+              <div
+                className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg z-50 overflow-hidden"
+                style={{ border: '1px solid var(--brand-border)', top: '100%' }}
+              >
+                {[
+                  { icon: '👤', label: 'Perfil', href: '/perfil' },
+                  { icon: '⚙️', label: 'Ajustes', href: '/ajustes' },
+                  { icon: '📊', label: 'Reportes', href: '/reportes' },
+                ].map(item => (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors hover:bg-[var(--brand-chip)] min-h-[48px]"
+                    style={{ color: 'var(--brand)' }}
+                  >
+                    <span>{item.icon}</span>
+                    <span>{item.label}</span>
+                  </a>
+                ))}
+                <div style={{ borderTop: '1px solid var(--brand-border)' }}>
+                  <button
+                    type="button"
+                    onClick={() => { setMenuOpen(false); logout() }}
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium w-full transition-colors hover:bg-[var(--danger-bg)] min-h-[48px]"
+                    style={{ color: 'var(--danger)' }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                      <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    <span>Salir</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
