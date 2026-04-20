@@ -130,36 +130,34 @@ export function EntryForm({ onMovementsExtracted }: EntryFormProps) {
           style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
         />
 
-        {/* Fecha: ancho completo para evitar traslape en móvil */}
+        {/* Fila: fecha + botones voz/foto */}
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>
             ¿Cuándo ocurrió?
           </label>
-          <input
-            type="date"
-            value={fecha}
-            max={getTodayString()}
-            onChange={e => setFecha(e.target.value)}
-            disabled={busy}
-            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 w-full"
-            style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
-          />
-        </div>
-
-        {/* Botones de voz y foto alineados a la derecha */}
-        <div className="flex gap-2 justify-end">
-          <VoiceButton
-            onTranscript={t => setTexto(prev => prev ? `${prev} ${t}` : t)}
-            disabled={busy}
-          />
-          <PhotoButton
-            fecha={fecha}
-            onMovementsExtracted={onMovementsExtracted}
-            onError={setError}
-            disabled={loading}
-            loading={photoLoading}
-            onLoadingChange={setPhotoLoading}
-          />
+          <div className="flex gap-2 items-center">
+            <input
+              type="date"
+              value={fecha}
+              max={getTodayString()}
+              onChange={e => setFecha(e.target.value)}
+              disabled={busy}
+              className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 flex-1 min-w-0"
+              style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
+            />
+            <VoiceButton
+              onTranscript={t => setTexto(prev => prev ? `${prev} ${t}` : t)}
+              disabled={busy}
+            />
+            <PhotoButton
+              fecha={fecha}
+              onMovementsExtracted={onMovementsExtracted}
+              onError={setError}
+              disabled={loading}
+              loading={photoLoading}
+              onLoadingChange={setPhotoLoading}
+            />
+          </div>
         </div>
 
         {error && (
