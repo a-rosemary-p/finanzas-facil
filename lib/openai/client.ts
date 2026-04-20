@@ -1,5 +1,5 @@
 import OpenAI from 'openai'
-import { AI_MODEL } from '@/lib/constants'
+import { AI_MODEL, VISION_MODEL } from '@/lib/constants'
 
 let _client: OpenAI | null = null
 
@@ -9,7 +9,7 @@ function getClient(): OpenAI {
     if (!apiKey) throw new Error('OPENAI_API_KEY no configurada')
     _client = new OpenAI({
       apiKey,
-      timeout: 20_000, // 20s por intento — conservador para Vercel Pro (60s límite)
+      timeout: 30_000, // 30s — acomoda el paso OCR con detail:high
     })
   }
   return _client
@@ -36,7 +36,44 @@ async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
   throw lastErr
 }
 
-// Extracción de texto → devuelve string JSON
+// ─── Paso 1 del pipeline OCR+LLM ──────────────────────────────────────────────
+// Transcripción cruda de texto en imagen.
+// Usa gpt-4o con detail:high para máxima legibilidad.
+// Devuelve texto plano (no JSON) — puede incluir "[SIN TEXTO]" si no hay contenido.
+export async function extractTextFromImage(
+  ocrPrompt: string,
+  base64: string,
+  mimeType: string
+): Promise<string> {
+  const client = getClient()
+  return withRetry(async () => {
+    const res = await client.chat.completions.create({
+      model: VISION_MODEL,
+      temperature: 0,
+      max_tokens: 800,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: ocrPrompt },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:${mimeType};base64,${base64}`,
+                detail: 'high', // necesario para leer texto — 'low' procesa a 512×512
+              },
+            },
+          ],
+        },
+      ],
+    })
+    return res.choices[0]?.message?.content?.trim() ?? ''
+  })
+}
+
+// ─── Paso 2: parseo estructurado de texto (sin visión) ────────────────────────
+// Toma el texto OCR limpio y lo convierte a movimientos JSON.
+// Modelo barato (AI_MODEL) — el trabajo duro ya lo hizo el paso OCR.
 export async function extractFromText(
   systemPrompt: string,
   userContent: string
@@ -56,7 +93,9 @@ export async function extractFromText(
   })
 }
 
-// Extracción de imagen (vision) → devuelve string JSON
+// ─── Fallback: visión directa (si OCR no extrajo texto suficiente) ────────────
+// Usa gpt-4o con detail:high + prompt completo de extracción.
+// Más caro pero necesario cuando la imagen no tiene texto claro (foto borrosa, etc).
 export async function extractFromImage(
   prompt: string,
   base64: string,
@@ -65,7 +104,7 @@ export async function extractFromImage(
   const client = getClient()
   return withRetry(async () => {
     const res = await client.chat.completions.create({
-      model: AI_MODEL,
+      model: VISION_MODEL,
       response_format: { type: 'json_object' },
       temperature: 0.1,
       messages: [
@@ -77,7 +116,7 @@ export async function extractFromImage(
               type: 'image_url',
               image_url: {
                 url: `data:${mimeType};base64,${base64}`,
-                detail: 'low', // ahorra tokens en imágenes de tickets/fotos simples
+                detail: 'high',
               },
             },
           ],

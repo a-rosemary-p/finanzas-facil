@@ -2,6 +2,8 @@
 // Si alguien quiere cambiar un límite o precio, solo toca este archivo.
 
 export const AI_MODEL = 'gpt-4.1-mini' as const
+export const VISION_MODEL = 'gpt-4o' as const        // mejor calidad OCR en imágenes
+export const OCR_MIN_TEXT_LENGTH = 20                 // mín. caracteres para considerar OCR exitoso
 
 export const EXCHANGE_RATES = {
   USD_TO_MXN: 17,

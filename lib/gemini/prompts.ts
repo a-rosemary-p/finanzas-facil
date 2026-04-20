@@ -1,6 +1,16 @@
 // Todos los prompts separados del código de negocio.
 // Fáciles de iterar sin tocar lógica.
 
+// Paso 1 del pipeline OCR+LLM:
+// Extrae texto crudo de la imagen, sin interpretar ni estructurar.
+export const OCR_TRANSCRIPTION_PROMPT = `
+Transcribe todo el texto visible en la imagen, exactamente como aparece.
+Incluye números, fechas, palabras, importes y símbolos de moneda ($ / €).
+Si hay notas a mano, tickets, recibos o listas, copia cada línea tal cual.
+No interpretes, no reformatees, no traduzcas. Solo transcribe el texto.
+Si no hay texto legible, responde únicamente: [SIN TEXTO]
+`.trim()
+
 export const PHOTO_EXTRACTION_PROMPT = `
 IDIOMA:
 El usuario puede escribir en español, inglés, o cualquier otro idioma.

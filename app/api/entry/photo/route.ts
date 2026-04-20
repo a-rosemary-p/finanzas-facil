@@ -1,8 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
-import { extractFromImage } from '@/lib/openai/client'
-import { PHOTO_EXTRACTION_PROMPT } from '@/lib/gemini/prompts'
+import { extractTextFromImage, extractFromText, extractFromImage } from '@/lib/openai/client'
+import { OCR_TRANSCRIPTION_PROMPT, PHOTO_EXTRACTION_PROMPT, EXTRACTION_SYSTEM_PROMPT } from '@/lib/gemini/prompts'
 import { parseGeminiResponse } from '@/lib/gemini/parser'
-import { PLANS, PHOTO_LIMITS } from '@/lib/constants'
+import { PLANS, PHOTO_LIMITS, OCR_MIN_TEXT_LENGTH } from '@/lib/constants'
+import type { PendingMovement } from '@/types'
+
+// Vercel Pro permite hasta 60s — el pipeline OCR+parse puede tardar ~25s en imágenes complejas
+export const maxDuration = 60
 
 export async function POST(request: Request) {
   try {
@@ -64,21 +68,66 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4. Llamar a OpenAI Vision (multimodal)
-    const prompt = `${PHOTO_EXTRACTION_PROMPT}\n\nFecha base: ${fechaMovimiento}`
-    const raw = await extractFromImage(prompt, base64 as string, mimeType as string)
+    const b64 = base64 as string
+    const mime = mimeType as string
+    const fecha = fechaMovimiento as string
 
-    // 5. Parsear y validar respuesta
-    const movements = parseGeminiResponse(raw, fechaMovimiento)
+    // ─── Pipeline OCR + LLM ──────────────────────────────────────────────────────
+    //
+    // Paso 1: Transcripción OCR
+    //   gpt-4o con detail:high → extrae texto crudo sin interpretar
+    //
+    // Paso 2a (happy path): si OCR extrajo suficiente texto
+    //   gpt-4.1-mini (texto puro, sin visión) → más rápido y barato
+    //
+    // Paso 2b (fallback): si OCR falló (imagen borrosa, sin texto, etc.)
+    //   gpt-4o vision con detail:high + prompt completo → misma calidad pero más caro
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    let movements: PendingMovement[] = []
+
+    // Paso 1: OCR
+    let ocrText = ''
+    try {
+      ocrText = await extractTextFromImage(OCR_TRANSCRIPTION_PROMPT, b64, mime)
+    } catch {
+      // Si OCR falla, continuamos directo al fallback de visión
+      ocrText = ''
+    }
+
+    const ocrSucceeded =
+      ocrText.length >= OCR_MIN_TEXT_LENGTH &&
+      !ocrText.includes('[SIN TEXTO]')
+
+    if (ocrSucceeded) {
+      // Paso 2a: texto extraído → modelo de texto (sin visión)
+      const userContent = [
+        `Fecha base: ${fecha}`,
+        '',
+        'Texto extraído de la imagen:',
+        ocrText,
+      ].join('\n')
+
+      const raw = await extractFromText(EXTRACTION_SYSTEM_PROMPT, userContent)
+      movements = parseGeminiResponse(raw, fecha)
+    }
+
+    // Si el OCR falló o no se encontraron movimientos → fallback visión directa
+    if (movements.length === 0) {
+      const prompt = `${PHOTO_EXTRACTION_PROMPT}\n\nFecha base: ${fecha}`
+      const raw = await extractFromImage(prompt, b64, mime)
+      movements = parseGeminiResponse(raw, fecha)
+    }
 
     if (movements.length === 0) {
       return Response.json(
-        { error: 'No encontré movimientos financieros en la imagen. Intenta con otra foto.' },
+        { error: 'No encontré movimientos financieros en la imagen. Intenta con otra foto más clara.' },
         { status: 422 }
       )
     }
 
     return Response.json({ movements })
+
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)
     console.error('[POST /api/entry/photo]', msg)
@@ -91,7 +140,7 @@ export async function POST(request: Request) {
     }
     if (msg.includes('timeout') || msg.includes('timed out') || msg.includes('ETIMEDOUT')) {
       return Response.json(
-        { error: 'La IA tardó demasiado analizando la imagen. Intenta con una foto más sencilla.' },
+        { error: 'La IA tardó demasiado analizando la imagen. Intenta con una foto más clara y enfocada.' },
         { status: 504 }
       )
     }
