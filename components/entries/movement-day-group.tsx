@@ -42,7 +42,7 @@ export function MovementDayGroup({
         </span>
       </button>
 
-      <div style={{ overflow: 'hidden', maxHeight: expanded ? `${movements.length * 80}px` : '0', transition: 'max-height 0.25s ease' }}>
+      <div style={{ overflow: expanded ? 'visible' : 'hidden', maxHeight: expanded ? '9999px' : '0', transition: 'max-height 0.3s ease' }}>
         <div className="flex flex-col gap-2 pb-1">
           {movements.map(m => (
             <MovementCard key={m.id} movement={m} onUpdated={onUpdated} onDeleted={onDeleted} hideDate />
