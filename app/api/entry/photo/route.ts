@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { extractTextFromImage, extractFromText, extractFromImage } from '@/lib/openai/client'
-import { OCR_TRANSCRIPTION_PROMPT, PHOTO_EXTRACTION_PROMPT, EXTRACTION_SYSTEM_PROMPT } from '@/lib/gemini/prompts'
-import { parseGeminiResponse } from '@/lib/gemini/parser'
+import { OCR_TRANSCRIPTION_PROMPT, PHOTO_EXTRACTION_PROMPT, EXTRACTION_SYSTEM_PROMPT } from '@/lib/ai/prompts'
+import { parseGeminiResponse } from '@/lib/ai/parser'
 import { PLANS, PHOTO_LIMITS, OCR_MIN_TEXT_LENGTH } from '@/lib/constants'
 import type { PendingMovement } from '@/types'
 

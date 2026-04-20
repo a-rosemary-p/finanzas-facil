@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { extractFromText } from '@/lib/openai/client'
-import { EXTRACTION_SYSTEM_PROMPT } from '@/lib/gemini/prompts'
-import { parseGeminiResponse } from '@/lib/gemini/parser'
+import { EXTRACTION_SYSTEM_PROMPT } from '@/lib/ai/prompts'
+import { parseGeminiResponse } from '@/lib/ai/parser'
 import { PLANS } from '@/lib/constants'
 
 export async function POST(request: Request) {

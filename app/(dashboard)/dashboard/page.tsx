@@ -134,11 +134,11 @@ function FilterBox({
                 }
               >{opt.label}</button>
             ))}
-            <button type="button"
-              onClick={() => { setExpanded(false); alert('Próximamente: filtros por fecha personalizada') }}
-              className="px-3 py-2 rounded-full text-sm font-medium border min-h-[40px]"
+            <span
+              className="px-3 py-2 rounded-full text-sm font-medium border min-h-[40px] flex items-center opacity-40 cursor-not-allowed select-none"
               style={{ background: '#fff', color: 'var(--brand-muted)', borderColor: 'var(--brand-border)' }}
-            >⚙ Rango avanzado...</button>
+              title="Próximamente"
+            >⚙ Rango avanzado...</span>
           </div>
         </div>
       )}

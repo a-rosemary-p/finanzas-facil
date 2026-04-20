@@ -1,6 +1,6 @@
 # FinanzasFácil — App Spec
 
-> Last updated: April 2026
+> Last updated: April 19 2026 10:00PM EST
 
 ---
 
