@@ -191,8 +191,6 @@ export function MovementCard({ movement, onUpdated, onDeleted, hideDate = false 
   /* ── Vista normal ── */
   return (
     <div className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center gap-3" style={{ border: cardBorder }}>
-      {movement.isInvestment && <span className="text-base shrink-0" title="Inversión">📈</span>}
-
       <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 min-w-[5rem] text-center"
         style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}
       >
@@ -206,14 +204,15 @@ export function MovementCard({ movement, onUpdated, onDeleted, hideDate = false 
         {!hideDate && (
           <p className="text-xs mt-0.5" style={{ color: 'var(--brand-mid)' }}>{formatEntryDate(movement.movementDate)}</p>
         )}
-        {movement.isInvestment && (
-          <p className="text-[10px] mt-0.5 font-medium" style={{ color: 'var(--pending-text)' }}>Inversión</p>
-        )}
       </div>
 
       <span className="text-base font-bold shrink-0" style={{ color: cfg.color }}>
         {cfg.sign}{formatCurrency(movement.amount)}
       </span>
+
+      {movement.isInvestment && (
+        <span className="text-base shrink-0" title="Inversión">📈</span>
+      )}
 
       <button type="button" onClick={openEdit}
         className="shrink-0 p-1.5 rounded-lg transition-colors flex items-center justify-center"
