@@ -109,8 +109,6 @@ function DashboardInner() {
   const periodLabel = getPeriodLabel(filter, selectedMonth)
   const grouped = groupMovementsByDate(movements)
   const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
-  const today = new Date().toISOString().split('T')[0]
-  const yesterday = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().split('T')[0] })()
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(115deg, #BFDACB 25%, #E8F0B9 75%)' }}>
@@ -283,7 +281,6 @@ function DashboardInner() {
                 <>
                   {sortedDates.map(date => (
                     <MovementDayGroup key={date} date={date} movements={grouped[date]}
-                      defaultExpanded={date === today || date === yesterday}
                       onUpdated={updateMovement} onDeleted={deleteMovement}
                     />
                   ))}

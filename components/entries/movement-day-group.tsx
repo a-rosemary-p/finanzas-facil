@@ -14,7 +14,7 @@ interface MovementDayGroupProps {
 }
 
 export function MovementDayGroup({
-  date, movements, defaultExpanded = false, onUpdated, onDeleted,
+  date, movements, defaultExpanded = true, onUpdated, onDeleted,
 }: MovementDayGroupProps) {
   const [expanded, setExpanded] = useState(defaultExpanded)
 
