@@ -370,7 +370,7 @@ export default function HomePage() {
                   PRO
                 </p>
                 <p className="text-2xl font-bold" style={{ color: 'var(--brand)' }}>
-                  $99
+                  $49
                   <span className="text-sm font-normal ml-0.5" style={{ color: 'var(--brand-mid)' }}>/mes</span>
                 </p>
               </div>
