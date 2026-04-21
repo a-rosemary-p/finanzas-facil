@@ -25,18 +25,25 @@ export function useAuth() {
 
       const { data } = await supabase
         .from('profiles')
-        .select('id, email, display_name, plan, subscription_status, movements_today')
+        .select('id, email, display_name, plan, subscription_status, movements_today, movements_today_date')
         .eq('id', user.id)
         .single()
 
       if (data) {
+        // El trigger solo resetea movements_today cuando se inserta un movimiento.
+        // Si movements_today_date es de otro día, el contador real hoy es 0.
+        // en-CA devuelve YYYY-MM-DD en zona horaria local (coincide con CURRENT_DATE de Postgres)
+        const today = new Date().toLocaleDateString('en-CA')
+        const countIsFromToday = data.movements_today_date === today
+        const effectiveMovementsToday = countIsFromToday ? (data.movements_today as number) : 0
+
         setProfile({
           id: data.id as string,
           email: data.email as string,
           displayName: (data.display_name as string) || (data.email as string).split('@')[0],
           plan: data.plan as Profile['plan'],
           subscriptionStatus: data.subscription_status as Profile['subscriptionStatus'],
-          movementsToday: data.movements_today as number,
+          movementsToday: effectiveMovementsToday,
         })
       } else {
         // Perfil no encontrado (cuenta nueva o trigger demorado) — perfil mínimo
