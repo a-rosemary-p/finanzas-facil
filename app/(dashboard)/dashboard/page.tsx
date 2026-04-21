@@ -124,7 +124,7 @@ function DashboardInner() {
           paddingBottom: '10px', minHeight: '56px',
         }}
       >
-        <span className="font-bold italic text-3xl" style={{ color: 'var(--brand)' }}>Fiza</span>
+        <span className="font-bold text-3xl uppercase tracking-wide" style={{ color: 'var(--brand)' }}>Fiza</span>
         <div className="flex items-center gap-3">
           {/* Plan badge */}
           <span className="text-sm font-medium px-3 py-2 rounded-full min-h-[44px] flex items-center"
