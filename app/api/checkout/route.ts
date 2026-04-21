@@ -3,9 +3,17 @@ import { createClient } from '@/lib/supabase/server'
 import { getStripe } from '@/lib/stripe/client'
 import { STRIPE_CONFIG } from '@/lib/stripe/config'
 
+function normalizeUrl(raw: string): string | null {
+  const trimmed = raw.trim().replace(/\/+$/, '') // trim + drop trailing slashes
+  if (!trimmed) return null
+  const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+  try { return new URL(withProtocol).origin } catch { return null }
+}
+
 function getBaseUrl(req: NextRequest): string {
   // 1. Env var explícita
-  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL
+  const fromEnv = process.env.NEXT_PUBLIC_APP_URL ? normalizeUrl(process.env.NEXT_PUBLIC_APP_URL) : null
+  if (fromEnv) return fromEnv
   // 2. Vercel inyecta VERCEL_PROJECT_PRODUCTION_URL = dominio de producción (sin https://)
   if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
   // 3. VERCEL_URL = URL del deploy específico (útil en preview)
@@ -79,7 +87,15 @@ export async function POST(req: NextRequest) {
     const code = (err as { code?: string } | null)?.code
     const type = (err as { type?: string } | null)?.type
     console.error('[POST /api/checkout] Stripe error:', { msg, code, type })
-    // DEBUG: expose raw Stripe error so we can diagnose live mode issues
-    return NextResponse.json({ error: `DEBUG: ${msg}` }, { status: 500 })
+    if (msg.includes('No such price') || msg.includes('No such product')) {
+      return NextResponse.json({ error: 'Error de configuración de pago. Contacta soporte.' }, { status: 500 })
+    }
+    if (msg.includes('No such customer')) {
+      return NextResponse.json({ error: 'Error con tu cuenta. Intenta de nuevo.' }, { status: 400 })
+    }
+    if (msg.toLowerCase().includes('not a valid url')) {
+      return NextResponse.json({ error: 'Error de configuración del sitio. Contacta soporte.' }, { status: 500 })
+    }
+    return NextResponse.json({ error: 'No se pudo iniciar el pago. Intenta de nuevo.' }, { status: 500 })
   }
 }
