@@ -19,6 +19,6 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
       },
     ],
-    sitemap: 'https://finanzasfacil.mx/sitemap.xml',
+    sitemap: 'https://www.finanzasfacil.mx/sitemap.xml',
   }
 }

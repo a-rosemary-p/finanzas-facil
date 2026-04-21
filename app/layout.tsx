@@ -28,16 +28,16 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'FinanzasFácil',
     description: 'Control de ingresos y gastos para tu negocio',
-    url: 'https://finanzasfacil.mx',
+    url: 'https://www.finanzasfacil.mx',
     siteName: 'FinanzasFácil',
-    images: [{ url: 'https://finanzasfacil.mx/og', width: 1200, height: 630, alt: 'FinanzasFácil' }],
+    images: [{ url: 'https://www.finanzasfacil.mx/og', width: 1200, height: 630, alt: 'FinanzasFácil' }],
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'FinanzasFácil',
     description: 'Control de ingresos y gastos para tu negocio',
-    images: ['https://finanzasfacil.mx/og'],
+    images: ['https://www.finanzasfacil.mx/og'],
   },
 }
 
