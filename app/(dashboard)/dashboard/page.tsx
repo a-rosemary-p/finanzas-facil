@@ -73,18 +73,22 @@ function DashboardInner() {
     setCheckoutLoading(true)
     try {
       const res = await fetch('/api/checkout', { method: 'POST' })
-      const data = await res.json() as { url?: string }
+      const data = await res.json() as { url?: string; error?: string }
       if (data.url) window.location.href = data.url
-    } catch { /* ignore */ } finally { setCheckoutLoading(false) }
+      else if (data.error) window.alert(data.error)
+    } catch { window.alert('No se pudo conectar. Intenta de nuevo.') }
+    finally { setCheckoutLoading(false) }
   }, [])
 
   const handlePortal = useCallback(async () => {
     setPortalLoading(true)
     try {
       const res = await fetch('/api/portal', { method: 'POST' })
-      const data = await res.json() as { url?: string }
+      const data = await res.json() as { url?: string; error?: string }
       if (data.url) window.location.href = data.url
-    } catch { /* ignore */ } finally { setPortalLoading(false) }
+      else if (data.error) window.alert(data.error)
+    } catch { window.alert('No se pudo conectar. Intenta de nuevo.') }
+    finally { setPortalLoading(false) }
   }, [])
 
   function handleMovementsExtracted(data: PendingData) {
