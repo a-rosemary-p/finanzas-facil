@@ -132,7 +132,7 @@ function LoginInner() {
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <h1 className="font-bold" style={{ color: '#fff', fontSize: 'clamp(3.125rem, 16.25vw, 5.625rem)', textAlign: 'center' }}>
-            <span style={{ marginRight: '0.08em' }}>f</span>iza
+            <span style={{ marginRight: '0.05em' }}>f</span>iza
           </h1>
           <p className="text-xl italic mt-2" style={{ color: 'rgba(255,255,255,0.85)', textAlign: 'center' }}>Tus cuentas, sin cuentos</p>
         </div>

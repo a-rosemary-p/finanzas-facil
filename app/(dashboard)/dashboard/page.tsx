@@ -125,7 +125,7 @@ function DashboardInner() {
         }}
       >
         <span className="font-bold text-3xl" style={{ color: 'var(--brand)' }}>
-          <span style={{ marginRight: '0.08em' }}>f</span>iza
+          <span style={{ marginRight: '0.05em' }}>f</span>iza
         </span>
         <div className="flex items-center gap-3">
           {/* Plan badge */}
