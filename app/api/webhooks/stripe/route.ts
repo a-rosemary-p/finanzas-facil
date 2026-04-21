@@ -49,6 +49,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
+  console.log('[webhook] received event', { type: event.type, id: event.id })
+
+  // Statuses that entitle the user to Pro features
+  const PRO_STATUSES = new Set(['trialing', 'active', 'past_due'])
+  // Statuses that revoke Pro access
+  const FREE_STATUSES = new Set(['canceled', 'unpaid', 'incomplete_expired'])
+
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
@@ -58,18 +65,57 @@ export async function POST(req: NextRequest) {
         const customerId = session.customer as string
         const subscriptionId = session.subscription as string
 
+        // Fetch subscription to get its real status (may be 'trialing' not 'active')
+        let status: string = 'active'
+        if (subscriptionId) {
+          try {
+            const sub = await getStripe().subscriptions.retrieve(subscriptionId)
+            status = sub.status
+          } catch (e) {
+            console.error('[webhook] failed to retrieve subscription', e)
+          }
+        }
+
+        console.log('[webhook] checkout.session.completed', { customerId, subscriptionId, status })
         await updateProfileByCustomer(customerId, {
-          plan: 'pro',
+          plan: PRO_STATUSES.has(status) ? 'pro' : 'free',
           stripe_subscription_id: subscriptionId,
-          subscription_status: 'active',
+          subscription_status: status,
         })
+        break
+      }
+
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object as Stripe.Subscription
+        const customerId = subscription.customer as string
+        const status = subscription.status
+
+        console.log(`[webhook] ${event.type}`, { customerId, subId: subscription.id, status })
+
+        if (PRO_STATUSES.has(status)) {
+          await updateProfileByCustomer(customerId, {
+            plan: 'pro',
+            stripe_subscription_id: subscription.id,
+            subscription_status: status,
+          })
+        } else if (FREE_STATUSES.has(status)) {
+          await updateProfileByCustomer(customerId, {
+            plan: 'free',
+            subscription_status: status,
+            stripe_subscription_id: null,
+          })
+        } else {
+          // incomplete, paused, etc. — just record status, don't change plan
+          await updateProfileByCustomer(customerId, { subscription_status: status })
+        }
         break
       }
 
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice
         const customerId = invoice.customer as string
-        // Renewal — keep plan active
+        console.log('[webhook] invoice.payment_succeeded', { customerId })
         await updateProfileByCustomer(customerId, {
           plan: 'pro',
           subscription_status: 'active',
@@ -80,6 +126,7 @@ export async function POST(req: NextRequest) {
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice
         const customerId = invoice.customer as string
+        console.log('[webhook] invoice.payment_failed', { customerId })
         await updateProfileByCustomer(customerId, {
           subscription_status: 'past_due',
         })
@@ -89,6 +136,7 @@ export async function POST(req: NextRequest) {
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription
         const customerId = subscription.customer as string
+        console.log('[webhook] customer.subscription.deleted', { customerId })
         await updateProfileByCustomer(customerId, {
           plan: 'free',
           subscription_status: 'canceled',
@@ -97,28 +145,8 @@ export async function POST(req: NextRequest) {
         break
       }
 
-      case 'customer.subscription.updated': {
-        const subscription = event.data.object as Stripe.Subscription
-        const customerId = subscription.customer as string
-        const status = subscription.status // active | past_due | canceled | ...
-
-        if (status === 'active') {
-          await updateProfileByCustomer(customerId, {
-            plan: 'pro',
-            subscription_status: 'active',
-          })
-        } else if (status === 'canceled' || status === 'unpaid') {
-          await updateProfileByCustomer(customerId, {
-            plan: 'free',
-            subscription_status: status,
-            stripe_subscription_id: null,
-          })
-        }
-        break
-      }
-
       default:
-        // Unhandled event — return 200 so Stripe doesn't retry
+        console.log('[webhook] unhandled event type', event.type)
         break
     }
   } catch (err) {
