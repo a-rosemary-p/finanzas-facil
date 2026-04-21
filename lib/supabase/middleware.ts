@@ -39,7 +39,10 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith('/login') ||
     pathname.startsWith('/reset-password') ||
     pathname.startsWith('/auth/') ||
-    pathname.startsWith('/api/webhooks')
+    pathname.startsWith('/api/webhooks') ||
+    pathname === '/og' ||
+    pathname === '/robots.txt' ||
+    pathname === '/sitemap.xml'
 
   // Usuario no autenticado en ruta protegida → redirige a /login
   if (!user && !isPublicRoute) {
