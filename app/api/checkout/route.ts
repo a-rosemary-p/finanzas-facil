@@ -41,30 +41,48 @@ export async function POST(req: NextRequest) {
   // Reutilizar customer existente o crear uno nuevo
   let customerId = profile?.stripe_customer_id as string | undefined
 
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email,
+  try {
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email,
+        metadata: { supabase_user_id: user.id },
+      })
+      customerId = customer.id
+
+      // Guardar el customer_id de inmediato para que el webhook lo encuentre
+      await supabase
+        .from('profiles')
+        .update({ stripe_customer_id: customerId })
+        .eq('id', user.id)
+    }
+
+    const priceId = STRIPE_CONFIG.priceId
+    if (!priceId) {
+      console.error('[POST /api/checkout] STRIPE_PRICE_ID no configurado')
+      return NextResponse.json({ error: 'Configuración de pago incompleta. Contacta soporte.' }, { status: 500 })
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ['card'],
+      line_items: [{ price: priceId, quantity: 1 }],
+      mode: 'subscription',
+      success_url: `${base}/dashboard?upgraded=1`,
+      cancel_url: `${base}/dashboard`,
+      locale: 'es',
       metadata: { supabase_user_id: user.id },
     })
-    customerId = customer.id
 
-    // Guardar el customer_id de inmediato para que el webhook lo encuentre
-    await supabase
-      .from('profiles')
-      .update({ stripe_customer_id: customerId })
-      .eq('id', user.id)
+    return NextResponse.json({ url: session.url })
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[POST /api/checkout] Stripe error:', msg)
+    if (msg.includes('No such price') || msg.includes('No such product')) {
+      return NextResponse.json({ error: 'Error de configuración de pago. Contacta soporte.' }, { status: 500 })
+    }
+    if (msg.includes('No such customer')) {
+      return NextResponse.json({ error: 'Error con tu cuenta. Intenta de nuevo.' }, { status: 400 })
+    }
+    return NextResponse.json({ error: 'No se pudo iniciar el pago. Intenta de nuevo.' }, { status: 500 })
   }
-
-  const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    payment_method_types: ['card'],
-    line_items: [{ price: STRIPE_CONFIG.priceId, quantity: 1 }],
-    mode: 'subscription',
-    success_url: `${base}/dashboard?upgraded=1`,
-    cancel_url: `${base}/dashboard`,
-    locale: 'es',
-    metadata: { supabase_user_id: user.id },
-  })
-
-  return NextResponse.json({ url: session.url })
 }
