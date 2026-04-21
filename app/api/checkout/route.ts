@@ -76,13 +76,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url: session.url })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
-    console.error('[POST /api/checkout] Stripe error:', msg)
-    if (msg.includes('No such price') || msg.includes('No such product')) {
-      return NextResponse.json({ error: 'Error de configuración de pago. Contacta soporte.' }, { status: 500 })
-    }
-    if (msg.includes('No such customer')) {
-      return NextResponse.json({ error: 'Error con tu cuenta. Intenta de nuevo.' }, { status: 400 })
-    }
-    return NextResponse.json({ error: 'No se pudo iniciar el pago. Intenta de nuevo.' }, { status: 500 })
+    const code = (err as { code?: string } | null)?.code
+    const type = (err as { type?: string } | null)?.type
+    console.error('[POST /api/checkout] Stripe error:', { msg, code, type })
+    // DEBUG: expose raw Stripe error so we can diagnose live mode issues
+    return NextResponse.json({ error: `DEBUG: ${msg}` }, { status: 500 })
   }
 }
