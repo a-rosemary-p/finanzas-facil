@@ -166,7 +166,7 @@ export default function HomePage() {
         }}
       >
         <span className="font-bold text-2xl" style={{ color: 'var(--brand)' }}>
-          FinanzasFácil
+          fiza
         </span>
         <Link
           href="/login"
@@ -194,7 +194,7 @@ export default function HomePage() {
           style={{ color: 'rgba(255,255,255,0.88)', maxWidth: '300px' }}
         >
           Escribe, dicta o fotografía lo que pasó en tu negocio.
-          FinanzasFácil lo organiza todo automáticamente.
+          fiza lo organiza todo automáticamente.
         </p>
 
         <div className="flex flex-col gap-3 w-full" style={{ maxWidth: '320px' }}>
@@ -232,7 +232,7 @@ export default function HomePage() {
           <div
             ref={carouselRef}
             role="list"
-            aria-label="Cómo funciona FinanzasFácil"
+            aria-label="Cómo funciona fiza"
             className="ff-carousel no-scrollbar flex gap-4"
             style={{
               overflowX: 'auto',
@@ -309,7 +309,7 @@ export default function HomePage() {
               style={{ color: 'var(--brand)', borderTop: '1px solid var(--brand-border)' }}
             >
               Si llevas tus cuentas en un cuaderno, en tu cabeza, o en el WhatsApp de tu familia
-              — FinanzasFácil es para ti.
+              — fiza es para ti.
             </p>
           </div>
         </div>
@@ -401,7 +401,7 @@ export default function HomePage() {
       {/* ── Footer ── */}
       <footer className="py-8 text-center mt-auto" style={{ background: 'var(--brand)' }}>
         <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.72)' }}>
-          FinanzasFácil &nbsp;·&nbsp; © 2026 finanzasfacil.mx
+          fiza &nbsp;·&nbsp; © 2026 fiza.mx
         </p>
       </footer>
 

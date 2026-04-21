@@ -41,6 +41,7 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith('/auth/') ||
     pathname.startsWith('/api/webhooks') ||
     pathname === '/og' ||
+    pathname === '/og.png' ||
     pathname === '/robots.txt' ||
     pathname === '/sitemap.xml'
 

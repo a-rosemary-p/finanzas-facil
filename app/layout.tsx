@@ -10,34 +10,34 @@ const outfit = Outfit({
 })
 
 export const metadata: Metadata = {
-  title: 'FinanzasFácil',
+  title: 'fiza',
   description: 'Control de ingresos y gastos para tu negocio',
   icons: {
     icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-32.png', sizes: '32x32', type: 'image/png' },
     ],
-    apple: '/favicon.svg',
-    shortcut: '/favicon.svg',
+    apple: '/apple-touch-icon.png',
+    shortcut: '/favicon-32.png',
   },
   appleWebApp: {
     capable: true,
-    title: 'FinanzasFácil',
+    title: 'fiza',
     statusBarStyle: 'default',
   },
   formatDetection: { telephone: false },
   openGraph: {
-    title: 'FinanzasFácil',
+    title: 'fiza',
     description: 'Control de ingresos y gastos para tu negocio',
-    url: 'https://www.finanzasfacil.mx',
-    siteName: 'FinanzasFácil',
-    images: [{ url: 'https://www.finanzasfacil.mx/og', width: 1200, height: 630, alt: 'FinanzasFácil' }],
+    url: 'https://fiza.mx',
+    siteName: 'fiza',
+    images: [{ url: 'https://fiza.mx/og.png', width: 1200, height: 630, alt: 'fiza' }],
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'FinanzasFácil',
+    title: 'fiza',
     description: 'Control de ingresos y gastos para tu negocio',
-    images: ['https://www.finanzasfacil.mx/og'],
+    images: ['https://fiza.mx/og.png'],
   },
 }
 

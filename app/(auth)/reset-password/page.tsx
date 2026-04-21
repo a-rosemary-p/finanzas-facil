@@ -56,8 +56,8 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-sm">
 
         <div className="flex flex-col items-center mb-8">
-          <h1 className="font-bold" style={{ color: '#fff', fontSize: 'clamp(2.5rem, 13vw, 4.5rem)', textAlign: 'center' }}>
-            FinanzasFácil
+          <h1 className="font-bold" style={{ color: '#fff', fontSize: 'clamp(3.125rem, 16.25vw, 5.625rem)', textAlign: 'center' }}>
+            <span style={{ marginRight: '0.05em' }}>f</span>iza
           </h1>
         </div>
 
