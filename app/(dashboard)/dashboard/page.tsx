@@ -334,7 +334,7 @@ function DashboardInner() {
                   className="w-full text-white rounded-xl py-3 font-bold text-sm min-h-[44px] transition-opacity disabled:opacity-60"
                   style={{ background: 'var(--brand)' }}
                 >
-                  {checkoutLoading ? 'Redirigiendo...' : 'Actualizar a Pro — $49/mes'}
+                  {checkoutLoading ? 'Redirigiendo...' : 'Prueba Pro gratis 30 días'}
                 </button>
               </div>
             )}
