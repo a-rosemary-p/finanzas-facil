@@ -33,10 +33,18 @@ export async function POST(req: NextRequest) {
   const stripe = getStripe()
   const base = getBaseUrl(req)
 
-  const portalSession = await stripe.billingPortal.sessions.create({
-    customer: customerId,
-    return_url: `${base}/dashboard`,
-  })
-
-  return NextResponse.json({ url: portalSession.url })
+  try {
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: `${base}/dashboard`,
+    })
+    return NextResponse.json({ url: portalSession.url })
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[POST /api/portal] Stripe error:', msg)
+    if (msg.includes('No such customer')) {
+      return NextResponse.json({ error: 'No se encontró tu suscripción. Intenta suscribirte de nuevo.' }, { status: 400 })
+    }
+    return NextResponse.json({ error: 'Error al abrir el portal. Intenta de nuevo.' }, { status: 500 })
+  }
 }
