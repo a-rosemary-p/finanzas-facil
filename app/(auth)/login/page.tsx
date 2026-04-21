@@ -12,6 +12,7 @@ function traducirError(msg: string): string {
   if (m.includes('already registered') || m.includes('already exists') || m.includes('email already') || m.includes('already been registered')) return 'Este correo ya está registrado. ¿Quieres entrar?'
   if (m.includes('password should be at least') || m.includes('password must be')) return 'La contraseña debe tener al menos 6 caracteres'
   if (m.includes('email not confirmed')) return 'Confirma tu correo antes de entrar. Revisa tu bandeja de entrada.'
+  if (m.includes('error sending') || m.includes('sending confirmation') || m.includes('unable to send')) return 'No se pudo enviar el correo de confirmación. Intenta de nuevo en unos minutos.'
   if (m.includes('security purposes') || m.includes('over_email_send_rate_limit') || m.includes('email rate limit')) return 'Demasiados intentos. Espera 60 segundos e intenta de nuevo.'
   if (m.includes('rate limit') || m.includes('too many requests') || m.includes('too many')) return 'Demasiados intentos. Espera un momento.'
   if (m.includes('unable to validate email') || m.includes('valid email') || m.includes('invalid email')) return 'El formato del correo no es válido'
