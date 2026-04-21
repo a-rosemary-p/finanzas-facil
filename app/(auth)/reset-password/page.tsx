@@ -56,9 +56,7 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-sm">
 
         <div className="flex flex-col items-center mb-8">
-          <h1 className="font-bold" style={{ color: '#fff', fontSize: 'clamp(3.125rem, 16.25vw, 5.625rem)', textAlign: 'center' }}>
-            <span style={{ marginRight: '0.05em' }}>f</span>iza
-          </h1>
+          <img src="/logo-white.png" alt="fiza" style={{ height: '64px', width: 'auto' }} />
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm p-6" style={{ border: '1px solid var(--brand-border)' }}>

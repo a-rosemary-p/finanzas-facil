@@ -165,9 +165,7 @@ export default function HomePage() {
           paddingTop: 'env(safe-area-inset-top, 0px)',
         }}
       >
-        <span className="font-bold text-2xl" style={{ color: 'var(--brand)' }}>
-          fiza
-        </span>
+        <img src="/logo-green.png" alt="fiza" style={{ height: '28px', width: 'auto' }} />
         <Link
           href="/login"
           className="text-sm font-semibold px-4 py-2 rounded-lg border transition-colors min-h-[40px] flex items-center"

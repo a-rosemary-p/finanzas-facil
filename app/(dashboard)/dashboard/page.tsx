@@ -124,9 +124,7 @@ function DashboardInner() {
           paddingBottom: '10px', minHeight: '56px',
         }}
       >
-        <span className="font-bold text-3xl" style={{ color: 'var(--brand)' }}>
-          <span style={{ marginRight: '0.05em' }}>f</span>iza
-        </span>
+        <img src="/logo-green.png" alt="fiza" style={{ height: '32px', width: 'auto' }} />
         <div className="flex items-center gap-3">
           {/* Plan badge */}
           <span className="text-sm font-medium px-3 py-2 rounded-full min-h-[44px] flex items-center"
