@@ -28,16 +28,16 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'fiza',
     description: 'Control de ingresos y gastos para tu negocio',
-    url: 'https://fiza.mx',
+    url: 'https://www.fiza.mx',
     siteName: 'fiza',
-    images: [{ url: 'https://fiza.mx/og.png', width: 1200, height: 630, alt: 'fiza' }],
+    images: [{ url: 'https://www.fiza.mx/og.png', width: 1200, height: 630, alt: 'fiza' }],
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'fiza',
     description: 'Control de ingresos y gastos para tu negocio',
-    images: ['https://fiza.mx/og.png'],
+    images: ['https://www.fiza.mx/og.png'],
   },
 }
 

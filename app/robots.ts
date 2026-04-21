@@ -19,6 +19,6 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
       },
     ],
-    sitemap: 'https://fiza.mx/sitemap.xml',
+    sitemap: 'https://www.fiza.mx/sitemap.xml',
   }
 }
