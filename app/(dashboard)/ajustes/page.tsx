@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import type { SettingsUpdate } from '@/types'
 
-type EditingSection = 'preferencias' | 'cuenta' | 'password' | null
+type EditingSection = 'cuenta' | 'password' | null
 
 // ── Helpers de UI ───────────────────────────────────────────
 
@@ -133,13 +133,6 @@ export default function AjustesPage() {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  // ── Preferencias draft ──
-  const [prefDraft, setPrefDraft] = useState<SettingsUpdate>({
-    monedaPreferida: 'MXN',
-    mostrarInversiones: false,
-    mostrarPendientes: true,
-  })
-
   // ── Cuenta (email) draft ──
   const [emailDraft, setEmailDraft] = useState('')
   const [emailSuccess, setEmailSuccess] = useState('')
@@ -173,18 +166,19 @@ export default function AjustesPage() {
     return () => clearTimeout(t)
   }, [pwSuccess])
 
+  // ── Toggle directo en Preferencias (sin modo edición) ──
+  async function toggleSetting(update: SettingsUpdate) {
+    try {
+      await updateSettings(update)
+    } catch {
+      // Si falla, el estado no se actualiza y el toggle vuelve a su posición anterior
+    }
+  }
+
   function openSection(section: EditingSection) {
-    // Si ya hay otra sección abierta, la cerramos sin guardar
     setEditingSection(section)
     setSaving(false)
 
-    if (section === 'preferencias' && profile) {
-      setPrefDraft({
-        monedaPreferida: profile.monedaPreferida ?? 'MXN',
-        mostrarInversiones: profile.mostrarInversiones ?? false,
-        mostrarPendientes: profile.mostrarPendientes ?? true,
-      })
-    }
     if (section === 'cuenta' && profile) {
       setEmailDraft(profile.email)
       setEmailError('')
@@ -199,19 +193,6 @@ export default function AjustesPage() {
   function closeSection() {
     setEditingSection(null)
     setSaving(false)
-  }
-
-  // ── Guardar preferencias ──
-  async function savePreferencias() {
-    setSaving(true)
-    try {
-      await updateSettings(prefDraft)
-      closeSection()
-    } catch {
-      // error silencioso — el botón vuelve a habilitarse
-    } finally {
-      setSaving(false)
-    }
   }
 
   // ── Guardar email ──
@@ -295,7 +276,6 @@ export default function AjustesPage() {
     )
   }
 
-  const isPrefEditing = editingSection === 'preferencias'
   const isCuentaEditing = editingSection === 'cuenta'
   const isPwEditing = editingSection === 'password'
 
@@ -375,73 +355,54 @@ export default function AjustesPage() {
         style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}
       >
 
-        {/* ── 1. Preferencias ── */}
+        {/* ── 1. Preferencias (sin modo edición — toggles guardan en vivo) ── */}
         <SectionCard
           title="Preferencias"
-          editing={isPrefEditing}
-          onEdit={() => openSection('preferencias')}
-          onSave={savePreferencias}
-          onCancel={closeSection}
-          saving={saving}
+          editing={false}
+          onEdit={() => {}}
+          onSave={() => {}}
+          onCancel={() => {}}
+          noEdit
         >
-          {isPrefEditing ? (
-            <div className="flex flex-col gap-5 pt-2">
-              {/* Moneda */}
-              <div className="flex flex-col gap-2">
-                <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>
-                  Moneda preferida
-                </p>
-                <div className="flex gap-2">
-                  {(['MXN', 'USD'] as const).map(m => (
-                    <button
-                      key={m} type="button"
-                      onClick={() => setPrefDraft(d => ({ ...d, monedaPreferida: m }))}
-                      className="flex-1 py-2.5 rounded-xl text-sm font-bold border transition-colors min-h-[44px]"
-                      style={prefDraft.monedaPreferida === m
-                        ? { background: 'var(--brand)', color: '#fff', borderColor: 'var(--brand)' }
-                        : { background: 'var(--brand-chip)', color: 'var(--brand)', borderColor: 'var(--brand-border)' }
-                      }
-                    >
-                      {m === 'MXN' ? '🇲🇽 MXN' : '🇺🇸 USD'}
-                    </button>
-                  ))}
+          <div className="flex flex-col pt-1">
+            {/* Moneda preferida */}
+            <div className="flex flex-col gap-2 py-3" style={{ borderBottom: '1px solid var(--brand-border)' }}>
+              <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>
+                Moneda preferida
+              </p>
+              <div className="flex gap-2">
+                {/* MXN — siempre activo por ahora */}
+                <div
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold border flex items-center justify-center min-h-[44px]"
+                  style={{ background: 'var(--brand)', color: '#fff', borderColor: 'var(--brand)' }}
+                >
+                  🇲🇽 MXN
+                </div>
+                {/* USD — próximamente */}
+                <div
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold border flex flex-col items-center justify-center min-h-[44px] gap-0.5"
+                  style={{ background: '#f5f5f5', color: '#bbb', borderColor: '#e0e0e0' }}
+                >
+                  <span>🇺🇸 USD</span>
+                  <span className="text-[10px] font-medium" style={{ color: '#bbb' }}>Próximamente</span>
                 </div>
               </div>
+            </div>
 
-              {/* Toggles */}
-              <ToggleRow
-                label="Mostrar inversiones por default"
-                description="Activos a largo plazo. Si está apagado, puedes activarlos temporalmente en el dashboard."
-                checked={prefDraft.mostrarInversiones ?? false}
-                onChange={v => setPrefDraft(d => ({ ...d, mostrarInversiones: v }))}
-              />
-              <ToggleRow
-                label="Mostrar pendientes por default"
-                description="Compromisos futuros. Si está apagado, no aparecen en el historial al ver 'Todos'."
-                checked={prefDraft.mostrarPendientes ?? true}
-                onChange={v => setPrefDraft(d => ({ ...d, mostrarPendientes: v }))}
-              />
-            </div>
-          ) : (
-            <div>
-              <ReadRow
-                label="Moneda preferida"
-                value={profile.monedaPreferida === 'USD' ? '🇺🇸 USD — Dólar americano' : '🇲🇽 MXN — Peso mexicano'}
-              />
-              <ReadRow
-                label="Mostrar inversiones en el dashboard"
-                value={profile.mostrarInversiones ? 'Sí' : 'No (activar con el toggle)'}
-              />
-              <div className="flex flex-col gap-1 py-3">
-                <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>
-                  Mostrar pendientes en el dashboard
-                </p>
-                <p className="text-sm" style={{ color: 'var(--brand)' }}>
-                  {profile.mostrarPendientes ?? true ? 'Sí' : 'No'}
-                </p>
-              </div>
-            </div>
-          )}
+            {/* Toggles en vivo */}
+            <ToggleRow
+              label="Mostrar inversiones por default"
+              description="Activos a largo plazo. Si está apagado, puedes activarlos temporalmente en el dashboard."
+              checked={profile.mostrarInversiones ?? false}
+              onChange={v => toggleSetting({ mostrarInversiones: v })}
+            />
+            <ToggleRow
+              label="Mostrar pendientes por default"
+              description="Compromisos futuros. Si está apagado, no aparecen en el historial al ver 'Todos'."
+              checked={profile.mostrarPendientes ?? true}
+              onChange={v => toggleSetting({ mostrarPendientes: v })}
+            />
+          </div>
         </SectionCard>
 
         {/* ── 2. Cuenta ── */}

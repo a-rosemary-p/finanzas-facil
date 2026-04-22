@@ -6,7 +6,7 @@ import { getDateRange } from '@/lib/utils'
 import { PLANS } from '@/lib/constants'
 import type { Entry, Movement, DateFilter, TypeFilter, DashboardMetrics, Plan } from '@/types'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 10
 
 function toMovement(row: Record<string, unknown>): Movement {
   return {
