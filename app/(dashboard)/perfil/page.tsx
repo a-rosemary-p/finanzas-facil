@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
 import { GIROS, ESTADOS_MX } from '@/lib/constants'
@@ -64,13 +64,27 @@ function EditSelect({ label, value, onChange, options, placeholder }: {
 // ── Página ──────────────────────────────────────────────────
 export default function PerfilPage() {
   const router = useRouter()
-  const { profile, loading, updateProfile } = useAuth()
+  const { profile, loading, logout, updateProfile } = useAuth()
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [draft, setDraft] = useState<Required<ProfileUpdate>>({
     displayName: '', giro: '', ciudad: '', estado: '',
   })
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Cierra el menú al hacer clic fuera
+  useEffect(() => {
+    if (!menuOpen) return
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [menuOpen])
 
   function startEditing() {
     setDraft({
@@ -126,32 +140,57 @@ export default function PerfilPage() {
           <img src="/logo-green.png" alt="fiza" style={{ height: '32px', width: 'auto' }} />
         </a>
 
-        <div className="flex items-center gap-2">
-          {editing ? (
-            <>
-              <button
-                type="button" onClick={cancelEditing}
-                className="text-sm font-medium px-3 py-2 rounded-lg min-h-[36px]"
-                style={{ color: 'var(--brand-mid)' }}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button" onClick={handleSave} disabled={saving}
-                className="text-sm font-bold px-4 py-2 rounded-lg text-white min-h-[36px] transition-opacity disabled:opacity-60"
-                style={{ background: 'var(--brand)' }}
-              >
-                {saving ? 'Guardando…' : 'Guardar'}
-              </button>
-            </>
-          ) : (
-            <button
-              type="button" onClick={startEditing}
-              className="text-sm font-medium px-3 py-2 rounded-lg min-h-[36px]"
-              style={{ color: 'var(--brand)', border: '1px solid var(--brand-border)', background: 'var(--brand-chip)' }}
+        {/* Menú hamburger */}
+        <div className="relative" ref={menuRef}>
+          <button
+            type="button"
+            onClick={() => setMenuOpen(v => !v)}
+            className="flex flex-col items-center justify-center gap-[5px] rounded-lg min-h-[44px] min-w-[44px] transition-colors"
+            style={{ background: menuOpen ? 'var(--brand-chip)' : 'transparent', border: '1px solid var(--brand-border)' }}
+            aria-label="Menú"
+          >
+            <span className="block w-[18px] h-[2px] rounded-full" style={{ background: 'var(--brand-mid)' }} />
+            <span className="block w-[18px] h-[2px] rounded-full" style={{ background: 'var(--brand-mid)' }} />
+            <span className="block w-[18px] h-[2px] rounded-full" style={{ background: 'var(--brand-mid)' }} />
+          </button>
+
+          {menuOpen && (
+            <div
+              className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg z-50 overflow-hidden"
+              style={{ border: '1px solid var(--brand-border)', top: '100%' }}
             >
-              ✏️ Editar
-            </button>
+              {[
+                { icon: '🏠', label: 'Dashboard', href: '/dashboard' },
+                { icon: '👤', label: 'Perfil', href: '/perfil' },
+                { icon: '⚙️', label: 'Ajustes', href: '/ajustes' },
+                { icon: '📊', label: 'Reportes', href: '/reportes' },
+              ].map(item => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors hover:bg-[var(--brand-chip)] min-h-[48px]"
+                  style={{ color: 'var(--brand)' }}
+                >
+                  <span>{item.icon}</span>
+                  <span>{item.label}</span>
+                </a>
+              ))}
+              <div style={{ borderTop: '1px solid var(--brand-border)' }}>
+                <button
+                  type="button"
+                  onClick={() => { setMenuOpen(false); logout() }}
+                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium w-full transition-colors hover:bg-[var(--danger-bg)] min-h-[48px]"
+                  style={{ color: 'var(--danger)' }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                  </svg>
+                  <span>Salir</span>
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </header>
@@ -162,10 +201,37 @@ export default function PerfilPage() {
 
         {/* Datos del negocio */}
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ border: '1px solid var(--brand-border)' }}>
-          <div className="px-4 pt-4 pb-2">
+          {/* Card header: label left, edit/save/cancel right */}
+          <div className="flex items-center justify-between px-4 pt-4 pb-2">
             <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--brand-muted)' }}>
               Datos del negocio
             </p>
+            {editing ? (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button" onClick={cancelEditing}
+                  className="text-xs font-medium px-3 py-1.5 rounded-lg min-h-[32px]"
+                  style={{ color: 'var(--brand-mid)' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button" onClick={handleSave} disabled={saving}
+                  className="text-xs font-bold px-3 py-1.5 rounded-lg text-white min-h-[32px] transition-opacity disabled:opacity-60"
+                  style={{ background: 'var(--brand)' }}
+                >
+                  {saving ? 'Guardando…' : 'Guardar'}
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button" onClick={startEditing}
+                className="text-xs font-medium px-3 py-1.5 rounded-lg min-h-[32px]"
+                style={{ color: 'var(--brand)', border: '1px solid var(--brand-border)', background: 'var(--brand-chip)' }}
+              >
+                ✏️ Editar
+              </button>
+            )}
           </div>
 
           <div className="px-4 pb-4">
