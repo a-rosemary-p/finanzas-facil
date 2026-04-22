@@ -135,26 +135,19 @@ export function useAuth() {
     setProfile(prev => prev ? { ...prev, ...update } : prev)
   }
 
-  // Paso 1: enviar OTP al correo actual para re-autenticar
-  async function sendEmailChangeOtp() {
-    const supabase = createClient()
-    const { error } = await supabase.auth.reauthenticate()
-    if (error) throw error
-  }
-
-  // Paso 2: verificar OTP y actualizar email
-  async function updateEmail(newEmail: string, otpToken: string) {
+  // Verificar contraseña actual y actualizar email
+  async function updateEmail(newEmail: string, currentPassword: string) {
     if (!profile) throw new Error('No hay perfil cargado')
     const supabase = createClient()
 
-    const { error: verifyError } = await supabase.auth.verifyOtp({
+    // Verificar identidad con contraseña actual
+    const { error: authError } = await supabase.auth.signInWithPassword({
       email: profile.email,
-      token: otpToken,
-      // 'reauthentication' es válido en runtime pero no está en los tipos de esta versión
-      type: 'reauthentication' as unknown as 'email',
+      password: currentPassword,
     })
-    if (verifyError) throw new Error('invalid_otp')
+    if (authError) throw new Error('wrong_password')
 
+    // Actualizar email — Supabase enviará confirmación al nuevo correo
     const { error } = await supabase.auth.updateUser({ email: newEmail })
     if (error) throw error
     // El email en profiles no cambia hasta que el usuario confirme desde su bandeja
@@ -182,5 +175,5 @@ export function useAuth() {
     router.replace('/login')
   }
 
-  return { profile, loading, logout, refreshProfile, updateProfile, updateSettings, sendEmailChangeOtp, updateEmail, updatePassword }
+  return { profile, loading, logout, refreshProfile, updateProfile, updateSettings, updateEmail, updatePassword }
 }

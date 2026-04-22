@@ -127,16 +127,15 @@ function EditInput({ label, value, onChange, type = 'text', placeholder, error }
 
 // ── Página ──────────────────────────────────────────────────
 export default function AjustesPage() {
-  const { profile, loading, logout, updateSettings, sendEmailChangeOtp, updateEmail, updatePassword } = useAuth()
+  const { profile, loading, logout, updateSettings, updateEmail, updatePassword } = useAuth()
   const [editingSection, setEditingSection] = useState<EditingSection>(null)
   const [saving, setSaving] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  // ── Cuenta (email) — flujo OTP ──
+  // ── Cuenta (email) ──
   const [emailDraft, setEmailDraft] = useState('')
-  const [otpDraft, setOtpDraft] = useState('')
-  const [emailStep, setEmailStep] = useState<'sending_otp' | 'otp_sent' | null>(null)
+  const [emailPasswordDraft, setEmailPasswordDraft] = useState('')
   const [emailSuccess, setEmailSuccess] = useState('')
   const [emailError, setEmailError] = useState('')
 
@@ -183,18 +182,9 @@ export default function AjustesPage() {
 
     if (section === 'cuenta') {
       setEmailDraft('')
-      setOtpDraft('')
+      setEmailPasswordDraft('')
       setEmailError('')
       setEmailSuccess('')
-      setEmailStep('sending_otp')
-      // Enviar OTP al correo actual para re-autenticar
-      sendEmailChangeOtp()
-        .then(() => setEmailStep('otp_sent'))
-        .catch(() => {
-          setEmailError('No se pudo enviar el código. Intenta de nuevo.')
-          setEmailStep(null)
-          setEditingSection(null)
-        })
     }
     if (section === 'password') {
       setPwDraft({ current: '', new: '', confirm: '' })
@@ -205,24 +195,22 @@ export default function AjustesPage() {
   function closeSection() {
     setEditingSection(null)
     setSaving(false)
-    setEmailStep(null)
   }
 
-  // ── Guardar email (paso 2: verificar OTP + nuevo correo) ──
+  // ── Guardar email ──
   async function saveEmail() {
-    if (!otpDraft.trim()) { setEmailError('Ingresa el código de verificación.'); return }
+    if (!emailPasswordDraft.trim()) { setEmailError('Ingresa tu contraseña actual.'); return }
     if (!emailDraft.trim()) { setEmailError('Ingresa el nuevo correo.'); return }
     setSaving(true)
     setEmailError('')
     try {
-      await updateEmail(emailDraft.trim(), otpDraft.trim())
+      await updateEmail(emailDraft.trim(), emailPasswordDraft.trim())
       setEmailSuccess(`Te enviamos un correo a ${emailDraft.trim()} para confirmar el cambio.`)
-      setEditingSection(null)
-      setEmailStep(null)
+      closeSection()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : ''
-      if (msg === 'invalid_otp') {
-        setEmailError('El código no es válido o ya expiró.')
+      if (msg === 'wrong_password') {
+        setEmailError('La contraseña no es correcta.')
       } else if (msg.toLowerCase().includes('invalid')) {
         setEmailError('El correo no es válido.')
       } else {
@@ -431,32 +419,21 @@ export default function AjustesPage() {
         >
           {isCuentaEditing ? (
             <div className="flex flex-col gap-4 pt-2">
-              {emailStep === 'sending_otp' ? (
-                <p className="text-sm py-2" style={{ color: 'var(--brand-mid)' }}>
-                  Enviando código a {profile.email}…
-                </p>
-              ) : (
-                <>
-                  <div className="rounded-xl px-3 py-2.5 text-sm" style={{ background: 'var(--brand-chip)', color: 'var(--brand-mid)', border: '1px solid var(--brand-border)' }}>
-                    Código enviado a <strong style={{ color: 'var(--brand)' }}>{profile.email}</strong>. Revisa tu bandeja.
-                  </div>
-                  <EditInput
-                    label="Código de verificación"
-                    type="text"
-                    value={otpDraft}
-                    onChange={setOtpDraft}
-                    placeholder="123456"
-                  />
-                  <EditInput
-                    label="Nuevo correo electrónico"
-                    type="email"
-                    value={emailDraft}
-                    onChange={setEmailDraft}
-                    placeholder="nuevo@correo.com"
-                    error={emailError}
-                  />
-                </>
-              )}
+              <EditInput
+                label="Contraseña actual"
+                type="password"
+                value={emailPasswordDraft}
+                onChange={setEmailPasswordDraft}
+                placeholder="••••••••"
+              />
+              <EditInput
+                label="Nuevo correo electrónico"
+                type="email"
+                value={emailDraft}
+                onChange={setEmailDraft}
+                placeholder="nuevo@correo.com"
+                error={emailError}
+              />
             </div>
           ) : (
             <div>
