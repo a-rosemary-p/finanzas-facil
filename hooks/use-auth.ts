@@ -18,7 +18,8 @@ export function useAuth() {
       .single()
 
     if (data) {
-      const today = new Date().toLocaleDateString('en-CA')
+      // toISOString() siempre da YYYY-MM-DD en UTC, igual que CURRENT_DATE de Postgres
+      const today = new Date().toISOString().slice(0, 10)
       const countIsFromToday = data.movements_today_date === today
       const effectiveMovementsToday = countIsFromToday ? (data.movements_today as number) : 0
 
