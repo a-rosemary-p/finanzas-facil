@@ -9,6 +9,7 @@ import { EntryForm } from '@/components/entries/entry-form'
 import { ConfirmationScreen } from '@/components/entries/confirmation-screen'
 import { FilterBox } from '@/components/dashboard/filter-box'
 import { MetricCard } from '@/components/dashboard/metric-card'
+import { PendingCommitments } from '@/components/dashboard/pending-commitments'
 import { getPeriodLabel, groupMovementsByDate } from '@/lib/utils'
 import { TYPE_FILTER_CONFIG } from '@/lib/constants'
 import type { DateFilter, TypeFilter, Entry, PendingMovement } from '@/types'
@@ -39,6 +40,7 @@ function DashboardInner() {
     setShowInvestments, setShowPendientes, setCustomRange,
     loadData, loadMore, loading, loadingMore, hasMore,
     prependEntry, updateMovement, deleteMovement,
+    pendingMovements, loadPendings, markAsPaid,
   } = useEntries()
 
   const searchParams = useSearchParams()
@@ -48,6 +50,7 @@ function DashboardInner() {
   const [portalLoading, setPortalLoading] = useState(false)
   const [upgradedBanner, setUpgradedBanner] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [insight, setInsight] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
   // Cierra el menú al hacer clic fuera
@@ -70,6 +73,11 @@ function DashboardInner() {
         profile.mostrarPendientes ?? true,
         profile.plan,
       )
+      loadPendings()
+      fetch('/api/insights')
+        .then(r => r.json())
+        .then((d: { insight?: string }) => { if (d.insight) setInsight(d.insight) })
+        .catch(() => { /* non-critical */ })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id])
@@ -216,17 +224,34 @@ function DashboardInner() {
         ) : (
           <>
             {/* 1. Saludo */}
-            <div>
-              <p className="font-bold text-lg" style={{ color: 'var(--brand)' }}>
-                Hola, {profile?.displayName}
-              </p>
-              <p className="text-sm italic capitalize" style={{ color: 'var(--brand-mid)' }}>
-                {getFechaFormateada()}
-              </p>
+            <div className="flex flex-col gap-2">
+              <div>
+                <p className="font-bold text-lg" style={{ color: 'var(--brand)' }}>
+                  Hola, {profile?.displayName}
+                </p>
+                <p className="text-sm italic capitalize" style={{ color: 'var(--brand-mid)' }}>
+                  {getFechaFormateada()}
+                </p>
+              </div>
+              {insight && (
+                <div className="rounded-xl px-3.5 py-2.5 text-sm" style={{
+                  background: 'var(--brand-chip)',
+                  border: '1px solid var(--brand-light)',
+                  color: 'var(--brand)',
+                }}>
+                  {insight}
+                </div>
+              )}
             </div>
 
             {/* 2. Formulario de entrada */}
             <EntryForm onMovementsExtracted={handleMovementsExtracted} />
+
+            {/* 2b. Próximos compromisos */}
+            <PendingCommitments
+              movements={pendingMovements}
+              onMarkAsPaid={markAsPaid}
+            />
 
             {/* 3. Etiqueta de período + métricas */}
             <div className="flex flex-col gap-2">
@@ -314,7 +339,7 @@ function DashboardInner() {
                 <>
                   {sortedDates.map(date => (
                     <MovementDayGroup key={date} date={date} movements={grouped[date]}
-                      onUpdated={updateMovement} onDeleted={deleteMovement}
+                      onUpdated={updateMovement} onDeleted={deleteMovement} onMarkAsPaid={markAsPaid}
                     />
                   ))}
                   {hasMore && (

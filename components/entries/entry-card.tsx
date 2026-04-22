@@ -9,13 +9,15 @@ interface MovementCardProps {
   movement: Movement
   onUpdated: (updated: Movement) => void
   onDeleted: (id: string) => void
+  onMarkAsPaid?: (id: string) => Promise<unknown>
   hideDate?: boolean
 }
 
-export function MovementCard({ movement, onUpdated, onDeleted, hideDate = false }: MovementCardProps) {
+export function MovementCard({ movement, onUpdated, onDeleted, onMarkAsPaid, hideDate = false }: MovementCardProps) {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [markingPaid, setMarkingPaid] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState('')
 
@@ -26,7 +28,7 @@ export function MovementCard({ movement, onUpdated, onDeleted, hideDate = false 
   const [editIsInvestment, setEditIsInvestment] = useState(movement.isInvestment)
 
   const cfg = MOVEMENT_TYPE_CONFIG[movement.type]
-  const busy = saving || deleting
+  const busy = saving || deleting || markingPaid
   const cardBorder = movement.isInvestment ? '1.5px solid var(--investment)' : '1px solid var(--brand-border)'
 
   function openEdit() {
@@ -117,7 +119,7 @@ export function MovementCard({ movement, onUpdated, onDeleted, hideDate = false 
           <input type="checkbox" checked={editIsInvestment} onChange={e => setEditIsInvestment(e.target.checked)}
             disabled={busy} className="w-4 h-4" style={{ accentColor: 'var(--investment)' }}
           />
-          <span className="text-xs" style={{ color: 'var(--brand-mid)' }}>📈 Marcar como inversión (activo a largo plazo)</span>
+          <span className="text-xs" style={{ color: 'var(--brand-mid)' }}>Marcar como inversión (activo a largo plazo)</span>
         </label>
 
         {error && <p className="text-xs" style={{ color: 'var(--danger)' }}>{error}</p>}
@@ -183,12 +185,30 @@ export function MovementCard({ movement, onUpdated, onDeleted, hideDate = false 
       </div>
 
       {movement.isInvestment && (
-        <span className="text-base shrink-0" title="Inversión">📈</span>
+        <span className="shrink-0" title="Inversión" style={{ color: 'var(--investment)' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+            <polyline points="16 7 22 7 22 13"/>
+          </svg>
+        </span>
       )}
 
       <span className="text-base font-bold shrink-0" style={{ color: cfg.color }}>
         {cfg.sign}{formatCurrency(movement.amount)}
       </span>
+
+      {movement.type === 'pendiente' && onMarkAsPaid && (
+        <button
+          type="button"
+          onClick={async () => { setMarkingPaid(true); await onMarkAsPaid(movement.id); setMarkingPaid(false) }}
+          disabled={busy}
+          className="shrink-0 px-2.5 py-1 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-50"
+          style={{ background: 'var(--brand)', color: '#fff' }}
+          aria-label="Marcar como pagado"
+        >
+          {markingPaid ? '...' : 'Pagado'}
+        </button>
+      )}
 
       <button type="button" onClick={openEdit}
         className="shrink-0 p-1.5 rounded-lg transition-colors flex items-center justify-center"

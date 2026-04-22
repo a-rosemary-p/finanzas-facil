@@ -11,10 +11,11 @@ interface MovementDayGroupProps {
   defaultExpanded?: boolean
   onUpdated: (updated: Movement) => void
   onDeleted: (id: string) => void
+  onMarkAsPaid?: (id: string) => Promise<unknown>
 }
 
 export function MovementDayGroup({
-  date, movements, defaultExpanded = true, onUpdated, onDeleted,
+  date, movements, defaultExpanded = true, onUpdated, onDeleted, onMarkAsPaid,
 }: MovementDayGroupProps) {
   const [expanded, setExpanded] = useState(defaultExpanded)
 
@@ -46,7 +47,7 @@ export function MovementDayGroup({
         <div style={{ overflow: 'hidden', minHeight: 0 }}>
           <div className="flex flex-col gap-2 pb-1">
             {movements.map(m => (
-              <MovementCard key={m.id} movement={m} onUpdated={onUpdated} onDeleted={onDeleted} hideDate />
+              <MovementCard key={m.id} movement={m} onUpdated={onUpdated} onDeleted={onDeleted} onMarkAsPaid={onMarkAsPaid} hideDate />
             ))}
           </div>
         </div>

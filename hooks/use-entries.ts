@@ -43,6 +43,7 @@ export function useEntries() {
   const [showInvestments, setShowInvestmentsState] = useState(false)
   const [showPendientes, setShowPendientesState] = useState(true)
   const [customRange, setCustomRangeState] = useState<{ from: string; to: string } | null>(null)
+  const [pendingMovements, setPendingMovements] = useState<Movement[]>([])
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(false)
@@ -207,9 +208,45 @@ export function useEntries() {
     loadData(filter, typeFilter, selectedMonth, showInvestments, show)
   }
 
+  const loadPendings = useCallback(async () => {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('movements')
+      .select('id, type, amount, description, category, movement_date, is_investment')
+      .eq('type', 'pendiente')
+      .order('movement_date', { ascending: true })
+      .limit(20)
+    setPendingMovements((data ?? []).map(r => toMovement(r as Record<string, unknown>)))
+  }, [])
+
+  async function markAsPaid(id: string): Promise<Movement | null> {
+    const today = new Date().toISOString().slice(0, 10)
+    const res = await fetch(`/api/movements/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'gasto', movementDate: today }),
+    })
+    if (!res.ok) return null
+    const data = await res.json() as { movement: Movement }
+    const updated = data.movement
+    // Remove from pending list
+    setPendingMovements(prev => prev.filter(m => m.id !== id))
+    // Update in main movements list if present
+    updateMovement(updated)
+    return updated
+  }
+
   function prependEntry(entry: Entry) {
     const newMovs = entry.movements
     setMovements(prev => [...newMovs, ...prev])
+    // Add new pendientes to the pending list
+    const newPending = newMovs.filter(m => m.type === 'pendiente')
+    if (newPending.length > 0) {
+      setPendingMovements(prev => {
+        const merged = [...prev, ...newPending]
+        return merged.sort((a, b) => a.movementDate.localeCompare(b.movementDate))
+      })
+    }
     totalRef.current += newMovs.length
     setMetrics(prev => {
       const delta = calcMetrics(
@@ -244,6 +281,10 @@ export function useEntries() {
       })
       return prev.map(m => m.id === updated.id ? updated : m)
     })
+    // Remove from pending list if no longer a pendiente
+    if (updated.type !== 'pendiente') {
+      setPendingMovements(prev => prev.filter(m => m.id !== updated.id))
+    }
   }
 
   function deleteMovement(id: string) {
@@ -263,6 +304,7 @@ export function useEntries() {
       totalRef.current = Math.max(0, totalRef.current - 1)
       return prev.filter(m => m.id !== id)
     })
+    setPendingMovements(prev => prev.filter(m => m.id !== id))
   }
 
   return {
@@ -272,5 +314,6 @@ export function useEntries() {
     setShowInvestments, setShowPendientes, setCustomRange,
     loadData, loadMore, loading, loadingMore, hasMore,
     prependEntry, updateMovement, deleteMovement,
+    pendingMovements, loadPendings, markAsPaid,
   }
 }

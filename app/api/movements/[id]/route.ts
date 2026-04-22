@@ -6,118 +6,95 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id } = await params
-    const supabase = await createClient()
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return Response.json({ error: 'No autorizado' }, { status: 401 })
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) return Response.json({ error: 'No autorizado' }, { status: 401 })
+  const body = await request.json() as Record<string, unknown>
+  const patch: Record<string, unknown> = {}
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/
 
-    const body: unknown = await request.json()
-    if (typeof body !== 'object' || body === null) {
-      return Response.json({ error: 'Body inválido' }, { status: 400 })
+  if (body['type'] !== undefined) {
+    if (!MOVEMENT_TYPES.includes(body['type'] as (typeof MOVEMENT_TYPES)[number])) {
+      return Response.json({ error: 'Tipo inválido' }, { status: 400 })
     }
-
-    const { type, amount, description, movementDate } = body as Record<string, unknown>
-
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/
-    const updates: Record<string, unknown> = {}
-
-    if (type !== undefined) {
-      if (!MOVEMENT_TYPES.includes(type as (typeof MOVEMENT_TYPES)[number])) {
-        return Response.json({ error: 'Tipo inválido' }, { status: 400 })
-      }
-      updates['type'] = type
-    }
-    if (amount !== undefined) {
-      const n = typeof amount === 'string' ? parseFloat(amount) : Number(amount)
-      if (!isFinite(n) || n <= 0) {
-        return Response.json({ error: 'Monto inválido' }, { status: 400 })
-      }
-      updates['amount'] = Math.round(n * 100) / 100
-    }
-    if (description !== undefined) {
-      if (typeof description !== 'string' || (description as string).trim().length === 0) {
-        return Response.json({ error: 'Descripción inválida' }, { status: 400 })
-      }
-      updates['description'] = (description as string).trim().slice(0, 60)
-    }
-    if (movementDate !== undefined) {
-      if (typeof movementDate !== 'string' || !dateRegex.test(movementDate as string)) {
-        return Response.json({ error: 'Fecha inválida' }, { status: 400 })
-      }
-      updates['movement_date'] = movementDate
-    }
-
-    if (Object.keys(updates).length === 0) {
-      return Response.json({ error: 'Nada que actualizar' }, { status: 400 })
-    }
-
-    // También permitir actualizar is_investment si se envía
-    const { isInvestment } = body as Record<string, unknown>
-    if (isInvestment !== undefined) {
-      updates['is_investment'] = isInvestment === true
-    }
-
-    const { data, error } = await supabase
-      .from('movements')
-      .update(updates)
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .select('id, type, amount, description, category, movement_date, is_investment')
-      .single()
-
-    if (error || !data) {
-      console.error('[PATCH /api/movements/[id]]', error)
-      return Response.json({ error: 'Error al actualizar' }, { status: 500 })
-    }
-
-    const movement: Movement = {
-      id: data.id as string,
-      type: data.type as Movement['type'],
-      amount: data.amount as number,
-      description: data.description as string,
-      category: data.category as Movement['category'],
-      movementDate: data.movement_date as string,
-      isInvestment: (data.is_investment as boolean) ?? false,
-    }
-
-    return Response.json({ movement })
-  } catch (error: unknown) {
-    console.error('[PATCH /api/movements/[id]]', error instanceof Error ? error.message : error)
-    return Response.json({ error: 'Error interno' }, { status: 500 })
+    patch['type'] = body['type']
   }
+  if (body['amount'] !== undefined) {
+    const amt = Number(body['amount'])
+    if (!isFinite(amt) || amt <= 0) return Response.json({ error: 'Monto inválido' }, { status: 400 })
+    patch['amount'] = Math.round(amt * 100) / 100
+  }
+  if (body['description'] !== undefined) {
+    const desc = String(body['description']).trim().slice(0, 60)
+    if (!desc) return Response.json({ error: 'Descripción requerida' }, { status: 400 })
+    patch['description'] = desc
+  }
+  if (body['movementDate'] !== undefined) {
+    if (!dateRegex.test(String(body['movementDate']))) {
+      return Response.json({ error: 'Fecha inválida' }, { status: 400 })
+    }
+    patch['movement_date'] = body['movementDate']
+  }
+  if (body['isInvestment'] !== undefined) {
+    patch['is_investment'] = Boolean(body['isInvestment'])
+  }
+  if (body['category'] !== undefined) {
+    patch['category'] = CATEGORIES.includes(body['category'] as (typeof CATEGORIES)[number])
+      ? body['category']
+      : 'Otro'
+  }
+
+  if (Object.keys(patch).length === 0) {
+    return Response.json({ error: 'Nada que actualizar' }, { status: 400 })
+  }
+
+  const { data, error } = await supabase
+    .from('movements')
+    .update(patch)
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .select('id, type, amount, description, category, movement_date, is_investment')
+    .single()
+
+  if (error || !data) {
+    console.error('[PATCH /api/movements/:id]', error)
+    return Response.json({ error: 'No se pudo actualizar' }, { status: 500 })
+  }
+
+  const movement: Movement = {
+    id: data['id'] as string,
+    type: data['type'] as Movement['type'],
+    amount: data['amount'] as number,
+    description: data['description'] as string,
+    category: data['category'] as Movement['category'],
+    movementDate: data['movement_date'] as string,
+    isInvestment: (data['is_investment'] as boolean) ?? false,
+  }
+
+  return Response.json({ movement })
 }
 
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id } = await params
-    const supabase = await createClient()
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return Response.json({ error: 'No autorizado' }, { status: 401 })
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) return Response.json({ error: 'No autorizado' }, { status: 401 })
+  const { error } = await supabase
+    .from('movements')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id)
 
-    const { error } = await supabase
-      .from('movements')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', user.id)
-
-    if (error) {
-      console.error('[DELETE /api/movements/[id]]', error)
-      return Response.json({ error: 'Error al borrar' }, { status: 500 })
-    }
-
-    return Response.json({ ok: true })
-  } catch (error: unknown) {
-    console.error('[DELETE /api/movements/[id]]', error instanceof Error ? error.message : error)
-    return Response.json({ error: 'Error interno' }, { status: 500 })
+  if (error) {
+    console.error('[DELETE /api/movements/:id]', error)
+    return Response.json({ error: 'No se pudo borrar' }, { status: 500 })
   }
+
+  return Response.json({ deleted: true })
 }
