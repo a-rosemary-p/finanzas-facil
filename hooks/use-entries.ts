@@ -42,6 +42,7 @@ export function useEntries() {
   const [typeFilter, setTypeFilterState] = useState<TypeFilter>('all')
   const [showInvestments, setShowInvestmentsState] = useState(false)
   const [showPendientes, setShowPendientesState] = useState(true)
+  const [customRange, setCustomRangeState] = useState<{ from: string; to: string } | null>(null)
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(false)
@@ -51,6 +52,7 @@ export function useEntries() {
   const showInvestmentsRef = useRef(false)
   const showPendientesRef = useRef(true)
   const planRef = useRef<Plan>('free')
+  const customRangeRef = useRef<{ from: string; to: string } | null>(null)
   const totalRef = useRef(0)
 
   const loadData = useCallback(async (
@@ -59,7 +61,8 @@ export function useEntries() {
     selMonth?: Date,
     showInv = false,
     showPend = true,
-    plan: Plan = planRef.current
+    plan: Plan = planRef.current,
+    cRange?: { from: string; to: string }
   ) => {
     setLoading(true)
     setMovements([])
@@ -68,12 +71,13 @@ export function useEntries() {
     showInvestmentsRef.current = showInv
     showPendientesRef.current = showPend
     planRef.current = plan
+    if (cRange !== undefined) customRangeRef.current = cRange
 
     // Límite de historial: Free = 30 días, Pro = sin límite
     const maxHistory = plan === 'free' ? PLANS.FREE.historyDays : undefined
 
     const supabase = createClient()
-    const range = getDateRange(f, selMonth, maxHistory)
+    const range = getDateRange(f, selMonth, maxHistory, customRangeRef.current ?? undefined)
     rangeRef.current = range
     const { start, end } = range
 
@@ -163,7 +167,20 @@ export function useEntries() {
 
   function setFilter(f: DateFilter) {
     setFilterState(f)
+    if (f !== 'custom') {
+      setCustomRangeState(null)
+      customRangeRef.current = null
+    }
     loadData(f, typeFilter, selectedMonth, showInvestments, showPendientes)
+  }
+
+  function setCustomRange(from: string, to: string) {
+    const range = { from, to }
+    setCustomRangeState(range)
+    customRangeRef.current = range
+    setFilterState('custom')
+    setSelectedMonthState(undefined)
+    loadData('custom', typeFilter, undefined, showInvestments, showPendientes, planRef.current, range)
   }
 
   function setTypeFilter(tf: TypeFilter) {
@@ -250,9 +267,9 @@ export function useEntries() {
 
   return {
     movements, metrics, filter, selectedMonth, typeFilter,
-    showInvestments, showPendientes,
+    showInvestments, showPendientes, customRange,
     setFilter, setTypeFilter, setSelectedMonth,
-    setShowInvestments, setShowPendientes,
+    setShowInvestments, setShowPendientes, setCustomRange,
     loadData, loadMore, loading, loadingMore, hasMore,
     prependEntry, updateMovement, deleteMovement,
   }

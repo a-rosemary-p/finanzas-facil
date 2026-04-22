@@ -34,9 +34,9 @@ function DashboardInner() {
   const { profile, loading: authLoading, logout, refreshProfile } = useAuth()
   const {
     movements, metrics, filter, selectedMonth, typeFilter,
-    showInvestments, showPendientes,
+    showInvestments, showPendientes, customRange,
     setFilter, setTypeFilter, setSelectedMonth,
-    setShowInvestments, setShowPendientes,
+    setShowInvestments, setShowPendientes, setCustomRange,
     loadData, loadMore, loading, loadingMore, hasMore,
     prependEntry, updateMovement, deleteMovement,
   } = useEntries()
@@ -123,7 +123,7 @@ function DashboardInner() {
   }
 
   const neto = metrics.net
-  const periodLabel = getPeriodLabel(filter, selectedMonth)
+  const periodLabel = getPeriodLabel(filter, selectedMonth, customRange ?? undefined)
   const grouped = groupMovementsByDate(movements)
   const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
 
@@ -265,9 +265,14 @@ function DashboardInner() {
 
             {/* 4. Filtros */}
             <div className="flex flex-col gap-3">
-              <FilterBox filter={filter} selectedMonth={selectedMonth}
+              <FilterBox
+                filter={filter}
+                selectedMonth={selectedMonth}
+                customRange={customRange}
+                plan={profile?.plan ?? 'free'}
                 onSetFilter={(f: DateFilter) => setFilter(f)}
                 onSetMonth={(d: Date) => setSelectedMonth(d)}
+                onSetCustomRange={(from, to) => setCustomRange(from, to)}
               />
               <div className="flex gap-2">
                 {TYPE_FILTER_CONFIG.map(tf => {

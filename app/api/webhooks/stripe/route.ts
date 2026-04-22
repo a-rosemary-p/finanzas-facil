@@ -18,7 +18,7 @@ async function updateProfileByCustomer(
   const admin = getAdmin()
   const { error } = await admin
     .from('profiles')
-    .update(patch)
+    .update({ ...patch, updated_at: new Date().toISOString() })
     .eq('stripe_customer_id', customerId)
 
   if (error) {
@@ -81,6 +81,7 @@ export async function POST(req: NextRequest) {
           plan: PRO_STATUSES.has(status) ? 'pro' : 'free',
           stripe_subscription_id: subscriptionId,
           subscription_status: status,
+          trial_used: true,   // nunca se puede volver a usar el trial
         })
         break
       }

@@ -46,7 +46,11 @@ export function formatDateWithWeekday(dateStr: string): string {
 }
 
 // Devuelve la etiqueta de período para el header de métricas
-export function getPeriodLabel(filter: DateFilter, selectedMonth?: Date): string {
+export function getPeriodLabel(
+  filter: DateFilter,
+  selectedMonth?: Date,
+  customRange?: { from: string; to: string }
+): string {
   const now = new Date()
   const pad = (n: number) => String(n).padStart(2, '0')
 
@@ -75,8 +79,17 @@ export function getPeriodLabel(filter: DateFilter, selectedMonth?: Date): string
       return String(now.getFullYear())
     case 'all':
       return 'Todo el historial'
-    case 'custom':
-      return 'Rango personalizado'
+    case 'custom': {
+      if (customRange) {
+        // "01/04/26 – 15/04/26"
+        const fmt = (s: string) => {
+          const [y, m, d] = s.split('-').map(Number)
+          return `${pad(d ?? 1)}/${pad(m ?? 1)}/${String(y ?? now.getFullYear()).slice(2)}`
+        }
+        return `${fmt(customRange.from)} – ${fmt(customRange.to)}`
+      }
+      return 'Rango'
+    }
     default:
       return ''
   }
@@ -84,10 +97,12 @@ export function getPeriodLabel(filter: DateFilter, selectedMonth?: Date): string
 
 // Devuelve el rango de fechas { start, end } para un filtro dado.
 // maxHistoryDays: si se pasa, la fecha de inicio nunca será mayor a N días atrás (plan Free = 30).
+// customRange: requerido cuando filter === 'custom'.
 export function getDateRange(
   filter: DateFilter,
   selectedMonth?: Date,
-  maxHistoryDays?: number
+  maxHistoryDays?: number,
+  customRange?: { from: string; to: string }
 ): { start: string; end: string } {
   const today = new Date()
   const pad = (n: number) => String(n).padStart(2, '0')
@@ -115,8 +130,12 @@ export function getDateRange(
     }
     case 'year':
       range = { start: `${today.getFullYear()}-01-01`, end: `${today.getFullYear()}-12-31` }; break
-    case 'all':
     case 'custom':
+      range = customRange
+        ? { start: customRange.from, end: customRange.to }
+        : { start: '2000-01-01', end: '2099-12-31' }
+      break
+    case 'all':
     default:
       range = { start: '2000-01-01', end: '2099-12-31' }
   }

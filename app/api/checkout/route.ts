@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   // Obtener perfil para verificar si ya es Pro o tiene customer_id
   const { data: profile } = await supabase
     .from('profiles')
-    .select('stripe_customer_id, plan, email')
+    .select('stripe_customer_id, plan, email, trial_used')
     .eq('id', user.id)
     .single()
 
@@ -76,7 +76,8 @@ export async function POST(req: NextRequest) {
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'subscription',
       subscription_data: {
-        trial_period_days: 30,
+        // Solo ofrecer trial si el usuario nunca lo ha usado (anti-abuse)
+        ...(profile?.trial_used ? {} : { trial_period_days: 30 }),
         metadata: { supabase_user_id: user.id },
       },
       success_url: `${base}/dashboard?upgraded=1`,

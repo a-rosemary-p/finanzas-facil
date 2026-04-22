@@ -122,7 +122,7 @@ export function ConfirmationScreen({
               style={{ color: 'var(--danger)' }}
               title="Eliminar"
             >
-              🗑️
+              ✕
             </button>
           </div>
 
@@ -143,7 +143,9 @@ export function ConfirmationScreen({
 
           {/* Monto */}
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>Monto ($)</label>
+            <label className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>
+              Monto {m.originalCurrency && m.originalCurrency !== 'MXN' ? '(MXN)' : '($)'}
+            </label>
             <input
               type="number"
               min="0"
@@ -155,6 +157,45 @@ export function ConfirmationScreen({
               style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
             />
           </div>
+
+          {/* Tipo de cambio — solo visible cuando hay moneda extranjera */}
+          {m.originalCurrency && m.originalCurrency !== 'MXN' && (
+            <div
+              className="flex flex-col gap-2 rounded-lg px-3 py-2.5"
+              style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}
+            >
+              <p className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>
+                Tipo de cambio · {m.originalCurrency} → MXN
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-xs" style={{ color: 'var(--brand-muted)' }}>
+                  {m.originalAmount} {m.originalCurrency} ×
+                </span>
+                <input
+                  type="number"
+                  min="1"
+                  step="0.01"
+                  value={m.exchangeRateUsed ?? (m.originalCurrency === 'USD' ? 17 : 18.5)}
+                  onChange={e => {
+                    const rate = parseFloat(e.target.value) || 1
+                    const orig = m.originalAmount ?? m.amount
+                    update(m.tempId, {
+                      exchangeRateUsed: rate,
+                      amount: Math.round(orig * rate * 100) / 100,
+                    })
+                  }}
+                  className="border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 w-20"
+                  style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)', background: '#fff' }}
+                />
+                <span className="text-xs font-semibold" style={{ color: 'var(--brand)' }}>
+                  = {formatCurrency(m.amount)}
+                </span>
+              </div>
+              <p className="text-xs" style={{ color: 'var(--brand-muted)' }}>
+                Ajusta si el tipo de cambio del día es diferente.
+              </p>
+            </div>
+          )}
 
           {/* Descripción */}
           <div className="flex flex-col gap-1">
@@ -207,7 +248,7 @@ export function ConfirmationScreen({
               className="w-4 h-4 accent-amber-500"
             />
             <span className="text-xs" style={{ color: 'var(--brand-mid)' }}>
-              📈 Marcar como inversión (activo a largo plazo)
+              Marcar como inversión (activo a largo plazo)
             </span>
           </label>
         </div>
