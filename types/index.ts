@@ -39,6 +39,9 @@ export interface Profile {
   ciudad?: string
   estado?: string
   timezone?: string
+  monedaPreferida?: 'MXN' | 'USD'
+  mostrarInversiones?: boolean
+  mostrarPendientes?: boolean
 }
 
 export interface ProfileUpdate {
@@ -46,6 +49,12 @@ export interface ProfileUpdate {
   giro?: string
   ciudad?: string
   estado?: string
+}
+
+export interface SettingsUpdate {
+  monedaPreferida?: 'MXN' | 'USD'
+  mostrarInversiones?: boolean
+  mostrarPendientes?: boolean
 }
 
 export interface Entry {

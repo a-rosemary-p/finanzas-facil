@@ -3,7 +3,8 @@
 import { useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getDateRange } from '@/lib/utils'
-import type { Entry, Movement, DateFilter, TypeFilter, DashboardMetrics } from '@/types'
+import { PLANS } from '@/lib/constants'
+import type { Entry, Movement, DateFilter, TypeFilter, DashboardMetrics, Plan } from '@/types'
 
 const PAGE_SIZE = 20
 
@@ -26,7 +27,6 @@ function calcMetrics(
   let income = 0
   let expenses = 0
   for (const m of rows) {
-    // Excluir inversiones de métricas si showInvestments está desactivado
     if (!showInvestments && m.isInvestment) continue
     if (m.type === 'ingreso') income += m.amount
     else if (m.type === 'gasto') expenses += m.amount
@@ -41,6 +41,7 @@ export function useEntries() {
   const [selectedMonth, setSelectedMonthState] = useState<Date | undefined>(undefined)
   const [typeFilter, setTypeFilterState] = useState<TypeFilter>('all')
   const [showInvestments, setShowInvestmentsState] = useState(false)
+  const [showPendientes, setShowPendientesState] = useState(true)
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(false)
@@ -48,26 +49,35 @@ export function useEntries() {
   const rangeRef = useRef<{ start: string; end: string } | null>(null)
   const typeFilterRef = useRef<TypeFilter>('all')
   const showInvestmentsRef = useRef(false)
+  const showPendientesRef = useRef(true)
+  const planRef = useRef<Plan>('free')
   const totalRef = useRef(0)
 
   const loadData = useCallback(async (
     f: DateFilter,
     tf: TypeFilter = 'all',
     selMonth?: Date,
-    showInv = false
+    showInv = false,
+    showPend = true,
+    plan: Plan = planRef.current
   ) => {
     setLoading(true)
     setMovements([])
     setHasMore(false)
     typeFilterRef.current = tf
     showInvestmentsRef.current = showInv
+    showPendientesRef.current = showPend
+    planRef.current = plan
+
+    // Límite de historial: Free = 30 días, Pro = sin límite
+    const maxHistory = plan === 'free' ? PLANS.FREE.historyDays : undefined
 
     const supabase = createClient()
-    const range = getDateRange(f, selMonth)
+    const range = getDateRange(f, selMonth, maxHistory)
     rangeRef.current = range
     const { start, end } = range
 
-    // 1. Métricas — siempre sin filtro de tipo, pero respeta showInvestments
+    // 1. Métricas — sin filtro de tipo, respeta showInvestments
     const { data: metricsRows } = await supabase
       .from('movements')
       .select('type, amount, is_investment')
@@ -83,16 +93,21 @@ export function useEntries() {
       showInv
     ))
 
-    // 2. Primera página de movimientos — con filtro de tipo si aplica
-    const baseQuery = supabase
+    // 2. Primera página de movimientos
+    let baseQuery = supabase
       .from('movements')
       .select('id, type, amount, description, category, movement_date, is_investment', { count: 'exact' })
       .gte('movement_date', start)
       .lte('movement_date', end)
 
-    const filteredQuery = tf !== 'all' ? baseQuery.eq('type', tf) : baseQuery
+    // Filtro por tipo: si es 'all' y showPend=false, excluir pendientes
+    if (tf !== 'all') {
+      baseQuery = baseQuery.eq('type', tf) as typeof baseQuery
+    } else if (!showPend) {
+      baseQuery = baseQuery.neq('type', 'pendiente') as typeof baseQuery
+    }
 
-    const { data: pageRows, count } = await filteredQuery
+    const { data: pageRows, count } = await baseQuery
       .order('movement_date', { ascending: false })
       .order('id', { ascending: false })
       .range(0, PAGE_SIZE - 1)
@@ -108,6 +123,7 @@ export function useEntries() {
     const range = rangeRef.current
     if (!range) return
     const tf = typeFilterRef.current
+    const showPend = showPendientesRef.current
 
     setLoadingMore(true)
     const supabase = createClient()
@@ -115,15 +131,20 @@ export function useEntries() {
     setMovements(prev => {
       const offset = prev.length
 
-      const base = supabase
+      let base = supabase
         .from('movements')
         .select('id, type, amount, description, category, movement_date, is_investment')
         .gte('movement_date', range.start)
         .lte('movement_date', range.end)
 
-      const q = tf !== 'all' ? base.eq('type', tf) : base
+      if (tf !== 'all') {
+        base = base.eq('type', tf) as typeof base
+      } else if (!showPend) {
+        base = base.neq('type', 'pendiente') as typeof base
+      }
 
-      q.order('movement_date', { ascending: false })
+      base
+        .order('movement_date', { ascending: false })
         .order('id', { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1)
         .then(({ data: moreRows }) => {
@@ -142,31 +163,33 @@ export function useEntries() {
 
   function setFilter(f: DateFilter) {
     setFilterState(f)
-    loadData(f, typeFilter, selectedMonth, showInvestments)
+    loadData(f, typeFilter, selectedMonth, showInvestments, showPendientes)
   }
 
   function setTypeFilter(tf: TypeFilter) {
     setTypeFilterState(tf)
     typeFilterRef.current = tf
-    loadData(filter, tf, selectedMonth, showInvestments)
+    loadData(filter, tf, selectedMonth, showInvestments, showPendientes)
   }
 
   function setSelectedMonth(d: Date | undefined) {
     setSelectedMonthState(d)
-    // Cuando cambia el mes, activar el filtro 'month' automáticamente
     setFilterState('month')
-    loadData('month', typeFilter, d, showInvestments)
+    loadData('month', typeFilter, d, showInvestments, showPendientes)
   }
 
   function setShowInvestments(show: boolean) {
     setShowInvestmentsState(show)
     showInvestmentsRef.current = show
-    // Recalcular métricas sin recargar desde la red — solo re-computar desde movimientos actuales
-    // Esto es más rápido, pero para precisión total recargamos
-    loadData(filter, typeFilter, selectedMonth, show)
+    loadData(filter, typeFilter, selectedMonth, show, showPendientes)
   }
 
-  // Añade los movimientos de una entrada recién confirmada al tope
+  function setShowPendientes(show: boolean) {
+    setShowPendientesState(show)
+    showPendientesRef.current = show
+    loadData(filter, typeFilter, selectedMonth, showInvestments, show)
+  }
+
   function prependEntry(entry: Entry) {
     const newMovs = entry.movements
     setMovements(prev => [...newMovs, ...prev])
@@ -184,7 +207,6 @@ export function useEntries() {
     })
   }
 
-  // Reemplaza un movimiento en estado y ajusta métricas
   function updateMovement(updated: Movement) {
     setMovements(prev => {
       const old = prev.find(m => m.id === updated.id)
@@ -207,7 +229,6 @@ export function useEntries() {
     })
   }
 
-  // Elimina un movimiento del estado y ajusta métricas
   function deleteMovement(id: string) {
     setMovements(prev => {
       const target = prev.find(m => m.id === id)
@@ -228,8 +249,10 @@ export function useEntries() {
   }
 
   return {
-    movements, metrics, filter, selectedMonth, typeFilter, showInvestments,
-    setFilter, setTypeFilter, setSelectedMonth, setShowInvestments,
+    movements, metrics, filter, selectedMonth, typeFilter,
+    showInvestments, showPendientes,
+    setFilter, setTypeFilter, setSelectedMonth,
+    setShowInvestments, setShowPendientes,
     loadData, loadMore, loading, loadingMore, hasMore,
     prependEntry, updateMovement, deleteMovement,
   }

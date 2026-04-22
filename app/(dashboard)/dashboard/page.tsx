@@ -33,8 +33,10 @@ function getFechaFormateada(): string {
 function DashboardInner() {
   const { profile, loading: authLoading, logout, refreshProfile } = useAuth()
   const {
-    movements, metrics, filter, selectedMonth, typeFilter, showInvestments,
-    setFilter, setTypeFilter, setSelectedMonth, setShowInvestments,
+    movements, metrics, filter, selectedMonth, typeFilter,
+    showInvestments, showPendientes,
+    setFilter, setTypeFilter, setSelectedMonth,
+    setShowInvestments, setShowPendientes,
     loadData, loadMore, loading, loadingMore, hasMore,
     prependEntry, updateMovement, deleteMovement,
   } = useEntries()
@@ -60,7 +62,17 @@ function DashboardInner() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [menuOpen])
 
-  useEffect(() => { if (profile) loadData('month') }, [profile, loadData])
+  useEffect(() => {
+    if (profile) {
+      loadData(
+        'month', 'all', undefined,
+        profile.mostrarInversiones ?? false,
+        profile.mostrarPendientes ?? true,
+        profile.plan,
+      )
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id])
 
   useEffect(() => {
     if (searchParams.get('upgraded') === '1') {
@@ -221,13 +233,22 @@ function DashboardInner() {
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-bold" style={{ color: 'var(--brand)' }}>{periodLabel}</p>
-                <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input type="checkbox" checked={showInvestments}
-                    onChange={e => setShowInvestments(e.target.checked)}
-                    className="w-3.5 h-3.5" style={{ accentColor: 'var(--investment)' }}
-                  />
-                  <span className="text-xs" style={{ color: 'var(--brand-muted)' }}>📈 Incluir inversiones</span>
-                </label>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" checked={showInvestments}
+                      onChange={e => setShowInvestments(e.target.checked)}
+                      className="w-3.5 h-3.5" style={{ accentColor: 'var(--investment)' }}
+                    />
+                    <span className="text-xs" style={{ color: 'var(--brand-muted)' }}>📈 Inversiones</span>
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" checked={showPendientes}
+                      onChange={e => setShowPendientes(e.target.checked)}
+                      className="w-3.5 h-3.5" style={{ accentColor: 'var(--brand-mid)' }}
+                    />
+                    <span className="text-xs" style={{ color: 'var(--brand-muted)' }}>📋 Pendientes</span>
+                  </label>
+                </div>
               </div>
               <div style={{ height: '1px', background: 'var(--brand-light)' }} />
               <div className="grid grid-cols-3 gap-3">

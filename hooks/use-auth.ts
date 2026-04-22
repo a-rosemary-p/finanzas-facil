@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { TIMEZONE_MAP } from '@/lib/constants'
-import type { Profile, ProfileUpdate } from '@/types'
+import type { Profile, ProfileUpdate, SettingsUpdate } from '@/types'
 
 export function useAuth() {
   const router = useRouter()
@@ -14,12 +14,11 @@ export function useAuth() {
   async function loadProfile(supabase: ReturnType<typeof createClient>, userId: string) {
     const { data } = await supabase
       .from('profiles')
-      .select('id, email, display_name, plan, subscription_status, movements_today, movements_today_date, total_movements, giro, ciudad, estado, timezone')
+      .select('id, email, display_name, plan, subscription_status, movements_today, movements_today_date, total_movements, giro, ciudad, estado, timezone, moneda_preferida, mostrar_inversiones, mostrar_pendientes')
       .eq('id', userId)
       .single()
 
     if (data) {
-      // toISOString() siempre da YYYY-MM-DD en UTC, igual que CURRENT_DATE de Postgres
       const today = new Date().toISOString().slice(0, 10)
       const countIsFromToday = data.movements_today_date === today
       const effectiveMovementsToday = countIsFromToday ? (data.movements_today as number) : 0
@@ -36,6 +35,9 @@ export function useAuth() {
         ciudad: data.ciudad as string | undefined,
         estado: data.estado as string | undefined,
         timezone: (data.timezone as string) || 'America/Mexico_City',
+        monedaPreferida: (data.moneda_preferida as 'MXN' | 'USD') ?? 'MXN',
+        mostrarInversiones: (data.mostrar_inversiones as boolean) ?? false,
+        mostrarPendientes: (data.mostrar_pendientes as boolean) ?? true,
       })
     }
   }
@@ -53,7 +55,6 @@ export function useAuth() {
 
       await loadProfile(supabase, user.id)
 
-      // Fallback si el perfil no existe aún
       setProfile(prev => prev ?? {
         id: user.id,
         email: user.email ?? '',
@@ -62,6 +63,9 @@ export function useAuth() {
         subscriptionStatus: 'none',
         movementsToday: 0,
         totalMovements: 0,
+        monedaPreferida: 'MXN',
+        mostrarInversiones: false,
+        mostrarPendientes: true,
       })
       setLoading(false)
     }
@@ -98,7 +102,6 @@ export function useAuth() {
 
     if (error) throw error
 
-    // Actualizar estado local sin re-fetch
     setProfile(prev => prev ? {
       ...prev,
       displayName: update.displayName
@@ -113,11 +116,53 @@ export function useAuth() {
     } : prev)
   }
 
+  async function updateSettings(update: SettingsUpdate) {
+    if (!profile) throw new Error('No hay perfil cargado')
+    const supabase = createClient()
+
+    const patch: Record<string, unknown> = {}
+    if (update.monedaPreferida  !== undefined) patch.moneda_preferida    = update.monedaPreferida
+    if (update.mostrarInversiones !== undefined) patch.mostrar_inversiones = update.mostrarInversiones
+    if (update.mostrarPendientes  !== undefined) patch.mostrar_pendientes  = update.mostrarPendientes
+
+    const { error } = await supabase
+      .from('profiles')
+      .update(patch)
+      .eq('id', profile.id)
+
+    if (error) throw error
+
+    setProfile(prev => prev ? { ...prev, ...update } : prev)
+  }
+
+  async function updateEmail(newEmail: string) {
+    const supabase = createClient()
+    const { error } = await supabase.auth.updateUser({ email: newEmail })
+    if (error) throw error
+    // El email en profiles no cambia hasta que el usuario confirme desde su bandeja
+  }
+
+  async function updatePassword(currentPassword: string, newPassword: string) {
+    if (!profile) throw new Error('No hay perfil cargado')
+    const supabase = createClient()
+
+    // Re-autenticar para verificar contraseña actual
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: profile.email,
+      password: currentPassword,
+    })
+    if (authError) throw new Error('wrong_password')
+
+    // Cambiar a la nueva contraseña
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) throw error
+  }
+
   async function logout() {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.replace('/login')
   }
 
-  return { profile, loading, logout, refreshProfile, updateProfile }
+  return { profile, loading, logout, refreshProfile, updateProfile, updateSettings, updateEmail, updatePassword }
 }

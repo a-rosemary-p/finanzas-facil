@@ -82,10 +82,12 @@ export function getPeriodLabel(filter: DateFilter, selectedMonth?: Date): string
   }
 }
 
-// Devuelve el rango de fechas { start, end } para un filtro dado
+// Devuelve el rango de fechas { start, end } para un filtro dado.
+// maxHistoryDays: si se pasa, la fecha de inicio nunca será mayor a N días atrás (plan Free = 30).
 export function getDateRange(
   filter: DateFilter,
-  selectedMonth?: Date
+  selectedMonth?: Date,
+  maxHistoryDays?: number
 ): { start: string; end: string } {
   const today = new Date()
   const pad = (n: number) => String(n).padStart(2, '0')
@@ -94,33 +96,40 @@ export function getDateRange(
 
   const end = fmt(today)
 
+  let range: { start: string; end: string }
+
   switch (filter) {
     case 'today':
-      return { start: end, end }
+      range = { start: end, end }; break
     case '7days': {
       const start = new Date(today)
       start.setDate(today.getDate() - 6)
-      return { start: fmt(start), end }
+      range = { start: fmt(start), end }; break
     }
     case 'month': {
       const target = selectedMonth ?? today
       const y = target.getFullYear()
       const mo = target.getMonth()
       const lastDay = new Date(y, mo + 1, 0)
-      return {
-        start: `${y}-${pad(mo + 1)}-01`,
-        end: fmt(lastDay),
-      }
+      range = { start: `${y}-${pad(mo + 1)}-01`, end: fmt(lastDay) }; break
     }
     case 'year':
-      return {
-        start: `${today.getFullYear()}-01-01`,
-        end: `${today.getFullYear()}-12-31`,
-      }
+      range = { start: `${today.getFullYear()}-01-01`, end: `${today.getFullYear()}-12-31` }; break
     case 'all':
     case 'custom':
-      return { start: '2000-01-01', end: '2099-12-31' }
+    default:
+      range = { start: '2000-01-01', end: '2099-12-31' }
   }
+
+  // Aplicar límite de historial (plan Free = 30 días)
+  if (maxHistoryDays !== undefined) {
+    const cap = new Date(today)
+    cap.setDate(today.getDate() - (maxHistoryDays - 1))
+    const capStr = fmt(cap)
+    if (range.start < capStr) range = { ...range, start: capStr }
+  }
+
+  return range
 }
 
 // Agrupa movimientos por movement_date → { 'YYYY-MM-DD': Movement[] }
