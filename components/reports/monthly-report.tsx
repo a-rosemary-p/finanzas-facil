@@ -1,25 +1,9 @@
 // NOTE: Only import via dynamic({ ssr: false }) — react-pdf does not run on the server.
-import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer'
+// Font note: react-pdf has its own font engine independent of CSS/Google Fonts.
+// To use Outfit here, add TTF files to /public/fonts/ and call Font.register().
+// Until then we use the built-in Helvetica (always available, no network calls).
+import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
 import type { Movement } from '@/types'
-
-// ── Register Outfit font (loaded from CDN at PDF generation time) ─────────────
-Font.register({
-  family: 'Outfit',
-  fonts: [
-    {
-      src: 'https://cdn.jsdelivr.net/npm/@fontsource/outfit@5/files/outfit-latin-400-normal.woff2',
-      fontWeight: 400,
-    },
-    {
-      src: 'https://cdn.jsdelivr.net/npm/@fontsource/outfit@5/files/outfit-latin-500-normal.woff2',
-      fontWeight: 500,
-    },
-    {
-      src: 'https://cdn.jsdelivr.net/npm/@fontsource/outfit@5/files/outfit-latin-700-normal.woff2',
-      fontWeight: 700,
-    },
-  ],
-})
 
 // ── Brand colours ─────────────────────────────────────────────────────────────
 const BRAND         = '#578466'
@@ -33,41 +17,41 @@ const DANGER_BORDER = '#F79366'
 const MUTED         = '#7A9A88'
 const TEXT          = '#1a2e24'
 
+// react-pdf built-in fonts: 'Helvetica' (regular), 'Helvetica-Bold' (bold)
 const s = StyleSheet.create({
-  /* ── Page ── */
-  page: { fontFamily: 'Outfit', fontWeight: 400, fontSize: 9, color: TEXT, padding: '32pt 40pt', backgroundColor: '#FFFFFF' },
+  page: { fontFamily: 'Helvetica', fontSize: 9, color: TEXT, padding: '32pt 40pt', backgroundColor: '#FFFFFF' },
 
   /* ── Header ── */
-  header: { alignItems: 'center', paddingBottom: 16, borderBottom: `1.5pt solid ${BRAND}`, marginBottom: 20, gap: 5 },
-  headerMonth:    { fontSize: 10, fontWeight: 400, color: MUTED, letterSpacing: 1, textTransform: 'uppercase' },
-  headerBusiness: { fontSize: 22, fontWeight: 700, color: BRAND, textAlign: 'center' },
-  headerSub:      { fontSize: 9, fontWeight: 400, color: MUTED },
+  header:         { alignItems: 'center', paddingBottom: 16, borderBottom: `1.5pt solid ${BRAND}`, marginBottom: 20, gap: 5 },
+  headerMonth:    { fontFamily: 'Helvetica', fontSize: 10, color: MUTED, letterSpacing: 1 },
+  headerBusiness: { fontFamily: 'Helvetica-Bold', fontSize: 22, color: BRAND, textAlign: 'center' },
+  headerSub:      { fontFamily: 'Helvetica', fontSize: 9, color: MUTED },
 
   /* ── Section title ── */
-  sectionTitle: { fontSize: 7, fontWeight: 700, color: MUTED, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8 },
+  sectionTitle: { fontFamily: 'Helvetica-Bold', fontSize: 7, color: MUTED, letterSpacing: 1.2, marginBottom: 8 },
 
   /* ── Summary pills ── */
-  pillRow: { flexDirection: 'row', gap: 8, marginBottom: 20 },
-  pill:    { flex: 1, borderRadius: 8, padding: 10, alignItems: 'center', gap: 4 },
-  pillLabel:  { fontSize: 7,  fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase' },
-  pillAmount: { fontSize: 16, fontWeight: 700 },
+  pillRow:    { flexDirection: 'row', gap: 8, marginBottom: 20 },
+  pill:       { flex: 1, borderRadius: 8, padding: 10, alignItems: 'center', gap: 4 },
+  pillLabel:  { fontFamily: 'Helvetica-Bold', fontSize: 7, letterSpacing: 0.8 },
+  pillAmount: { fontFamily: 'Helvetica-Bold', fontSize: 16 },
 
   /* ── Breakdown tables ── */
   breakdownBlock:      { marginBottom: 16 },
   breakdownHeader:     { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 5, marginBottom: 1 },
-  breakdownHeaderText: { fontSize: 8, fontWeight: 700 },
+  breakdownHeaderText: { fontFamily: 'Helvetica-Bold', fontSize: 8 },
   breakdownRow:        { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 10, paddingVertical: 5, borderBottom: `0.5pt solid ${BRAND_BORDER}` },
   breakdownAlt:        { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 10, paddingVertical: 5, backgroundColor: BRAND_CHIP, borderBottom: `0.5pt solid ${BRAND_BORDER}` },
-  breakdownLabel:      { fontSize: 8, fontWeight: 400, color: TEXT },
-  breakdownAmt:        { fontSize: 8, fontWeight: 700 },
+  breakdownLabel:      { fontFamily: 'Helvetica', fontSize: 8, color: TEXT },
+  breakdownAmt:        { fontFamily: 'Helvetica-Bold', fontSize: 8 },
   breakdownTotal:      { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 10, paddingVertical: 6, borderTop: `1pt solid ${BRAND_BORDER}`, marginTop: 1 },
-  breakdownTotalLabel: { fontSize: 8,  fontWeight: 700, color: TEXT },
-  breakdownTotalAmt:   { fontSize: 9, fontWeight: 700 },
+  breakdownTotalLabel: { fontFamily: 'Helvetica-Bold', fontSize: 8, color: TEXT },
+  breakdownTotalAmt:   { fontFamily: 'Helvetica-Bold', fontSize: 9 },
 
   /* ── Net result ── */
   netRow:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderRadius: 8, padding: 12, marginTop: 4 },
-  netLabel:  { fontSize: 11, fontWeight: 700 },
-  netAmount: { fontSize: 18, fontWeight: 700 },
+  netLabel:  { fontFamily: 'Helvetica-Bold', fontSize: 11 },
+  netAmount: { fontFamily: 'Helvetica-Bold', fontSize: 18 },
 
   /* ── Movement table ── */
   tableHeader: { flexDirection: 'row', backgroundColor: BRAND_LIME, borderRadius: 4, paddingHorizontal: 8, paddingVertical: 5, marginBottom: 2 },
@@ -78,14 +62,15 @@ const s = StyleSheet.create({
   colCat:  { width: '18%' },
   colType: { width: '13%' },
   colAmt:  { width: '18%', textAlign: 'right' },
-  cellHeader: { fontSize: 8, fontWeight: 700, color: BRAND },
-  cellText:   { fontSize: 8, fontWeight: 400, color: TEXT },
-  cellMuted:  { fontSize: 8, fontWeight: 400, color: MUTED },
+  cellHeader: { fontFamily: 'Helvetica-Bold', fontSize: 8, color: BRAND },
+  cellText:   { fontFamily: 'Helvetica',      fontSize: 8, color: TEXT },
+  cellBold:   { fontFamily: 'Helvetica-Bold', fontSize: 8 },
+  cellMuted:  { fontFamily: 'Helvetica',      fontSize: 8, color: MUTED },
 
   /* ── Footer ── */
-  footer: { position: 'absolute', bottom: 20, left: 40, right: 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTop: `0.5pt solid ${BRAND_BORDER}`, paddingTop: 6 },
-  footerText: { fontSize: 7, fontWeight: 400, color: MUTED },
-  footerLogo: { height: 14, width: 'auto', objectFit: 'contain' },
+  footer:     { position: 'absolute', bottom: 20, left: 40, right: 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTop: `0.5pt solid ${BRAND_BORDER}`, paddingTop: 6 },
+  footerText: { fontFamily: 'Helvetica', fontSize: 7, color: MUTED },
+  footerLogo: { height: 14, objectFit: 'contain' },
 })
 
 /* ── Helpers ── */
@@ -114,14 +99,19 @@ export function MonthlyReportDoc({ month, movements, displayName, giro, logoUrl 
     return raw.charAt(0).toUpperCase() + raw.slice(1)
   })()
 
-  // Breakdown by category (investments excluded from P&L)
+  // P&L breakdown by category (investments excluded)
   const incByCat: CatMap = {}
   const expByCat: CatMap = {}
   let totalIncome = 0, totalExpenses = 0
   for (const m of movements) {
     if (m.isInvestment) continue
-    if (m.type === 'ingreso') { incByCat[m.category] = (incByCat[m.category] ?? 0) + m.amount; totalIncome += m.amount }
-    else if (m.type === 'gasto') { expByCat[m.category] = (expByCat[m.category] ?? 0) + m.amount; totalExpenses += m.amount }
+    if (m.type === 'ingreso') {
+      incByCat[m.category] = (incByCat[m.category] ?? 0) + m.amount
+      totalIncome += m.amount
+    } else if (m.type === 'gasto') {
+      expByCat[m.category] = (expByCat[m.category] ?? 0) + m.amount
+      totalExpenses += m.amount
+    }
   }
   const net = totalIncome - totalExpenses
   const netPos = net >= 0
@@ -141,26 +131,27 @@ export function MonthlyReportDoc({ month, movements, displayName, giro, logoUrl 
     <Document>
       {/* ── PAGE 1: Estado de Resultados ── */}
       <Page size="A4" style={s.page}>
+        {/* Header */}
         <View style={s.header}>
-          <Text style={s.headerMonth}>{monthTitle}</Text>
+          <Text style={s.headerMonth}>{monthTitle.toUpperCase()}</Text>
           <Text style={s.headerBusiness}>{displayName}</Text>
           {giro ? <Text style={s.headerSub}>{giro}</Text> : null}
           <Text style={s.headerSub}>Estado de Resultados</Text>
         </View>
 
         {/* Summary pills */}
-        <Text style={s.sectionTitle}>Resumen</Text>
+        <Text style={s.sectionTitle}>RESUMEN</Text>
         <View style={s.pillRow}>
           <View style={[s.pill, { backgroundColor: BRAND_LIME, border: `1pt solid ${BRAND_LIGHT}` }]}>
-            <Text style={[s.pillLabel, { color: BRAND }]}>Ingresos</Text>
+            <Text style={[s.pillLabel, { color: BRAND }]}>INGRESOS</Text>
             <Text style={[s.pillAmount, { color: BRAND }]}>{fmt(totalIncome)}</Text>
           </View>
           <View style={[s.pill, { backgroundColor: DANGER_BG, border: `1pt solid ${DANGER_BORDER}` }]}>
-            <Text style={[s.pillLabel, { color: DANGER }]}>Gastos</Text>
+            <Text style={[s.pillLabel, { color: DANGER }]}>GASTOS</Text>
             <Text style={[s.pillAmount, { color: DANGER }]}>{fmt(totalExpenses)}</Text>
           </View>
           <View style={[s.pill, { backgroundColor: netPos ? BRAND_LIME : DANGER_BG, border: `1pt solid ${netPos ? BRAND_LIGHT : DANGER_BORDER}` }]}>
-            <Text style={[s.pillLabel, { color: netPos ? BRAND : DANGER }]}>Neto</Text>
+            <Text style={[s.pillLabel, { color: netPos ? BRAND : DANGER }]}>NETO</Text>
             <Text style={[s.pillAmount, { color: netPos ? BRAND : DANGER }]}>{netPos ? '+' : '−'}{fmt(Math.abs(net))}</Text>
           </View>
         </View>
@@ -168,7 +159,7 @@ export function MonthlyReportDoc({ month, movements, displayName, giro, logoUrl 
         {/* Income breakdown */}
         {incEntries.length > 0 && (
           <View style={s.breakdownBlock}>
-            <Text style={s.sectionTitle}>Desglose de ingresos</Text>
+            <Text style={s.sectionTitle}>DESGLOSE DE INGRESOS</Text>
             <View style={[s.breakdownHeader, { backgroundColor: BRAND_LIME }]}>
               <Text style={[s.breakdownHeaderText, { color: BRAND }]}>Categoría</Text>
               <Text style={[s.breakdownHeaderText, { color: BRAND }]}>Monto</Text>
@@ -189,7 +180,7 @@ export function MonthlyReportDoc({ month, movements, displayName, giro, logoUrl 
         {/* Expense breakdown */}
         {expEntries.length > 0 && (
           <View style={s.breakdownBlock}>
-            <Text style={s.sectionTitle}>Desglose de gastos</Text>
+            <Text style={s.sectionTitle}>DESGLOSE DE GASTOS</Text>
             <View style={[s.breakdownHeader, { backgroundColor: DANGER_BG }]}>
               <Text style={[s.breakdownHeaderText, { color: DANGER }]}>Categoría</Text>
               <Text style={[s.breakdownHeaderText, { color: DANGER }]}>Monto</Text>
@@ -207,7 +198,7 @@ export function MonthlyReportDoc({ month, movements, displayName, giro, logoUrl 
           </View>
         )}
 
-        {/* Net result */}
+        {/* Net result bar */}
         <View style={[s.netRow, { backgroundColor: netPos ? BRAND_LIME : DANGER_BG, border: `1pt solid ${netPos ? BRAND_LIGHT : DANGER_BORDER}` }]}>
           <Text style={[s.netLabel, { color: netPos ? BRAND : DANGER }]}>Resultado neto</Text>
           <Text style={[s.netAmount, { color: netPos ? BRAND : DANGER }]}>{netPos ? '+' : '−'}{fmt(Math.abs(net))}</Text>
@@ -219,10 +210,10 @@ export function MonthlyReportDoc({ month, movements, displayName, giro, logoUrl 
       {/* ── PAGE 2+: Movimientos ── */}
       <Page size="A4" orientation="landscape" style={s.page}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, borderBottom: `1pt solid ${BRAND_BORDER}`, paddingBottom: 8 }}>
-          <Text style={{ fontSize: 14, fontWeight: 700, color: BRAND }}>Movimientos</Text>
+          <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 14, color: BRAND }}>Movimientos</Text>
           <View style={{ alignItems: 'flex-end' }}>
-            <Text style={{ fontSize: 10, fontWeight: 700, color: BRAND }}>{displayName}</Text>
-            <Text style={{ fontSize: 8, fontWeight: 400, color: MUTED }}>{monthTitle}</Text>
+            <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 10, color: BRAND }}>{displayName}</Text>
+            <Text style={{ fontFamily: 'Helvetica', fontSize: 8, color: MUTED }}>{monthTitle}</Text>
           </View>
         </View>
 
@@ -245,7 +236,7 @@ export function MonthlyReportDoc({ month, movements, displayName, giro, logoUrl 
               <Text style={[s.cellText, s.colDesc]}>{m.description}</Text>
               <Text style={[s.cellMuted, s.colCat]}>{m.category}</Text>
               <Text style={[s.cellMuted, s.colType]}>{cap(m.type)}</Text>
-              <Text style={[s.cellText, s.colAmt, { color: amtColor, fontWeight: 700 }]}>
+              <Text style={[s.cellBold, s.colAmt, { color: amtColor }]}>
                 {isIncome ? '+' : isPending ? '' : '−'}{fmt(m.amount)}
               </Text>
             </View>
