@@ -247,12 +247,6 @@ function DashboardInner() {
             {/* 2. Formulario de entrada */}
             <EntryForm onMovementsExtracted={handleMovementsExtracted} />
 
-            {/* 2b. Próximos compromisos */}
-            <PendingCommitments
-              movements={pendingMovements}
-              onMarkAsPaid={markAsPaid}
-            />
-
             {/* 3. Etiqueta de período + métricas */}
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
@@ -288,6 +282,12 @@ function DashboardInner() {
               </div>
             </div>
 
+            {/* 3b. Próximos compromisos — collapsed by default, above filters */}
+            <PendingCommitments
+              movements={pendingMovements}
+              onMarkAsPaid={markAsPaid}
+            />
+
             {/* 4. Filtros */}
             <div className="flex flex-col gap-3">
               <FilterBox
@@ -319,14 +319,17 @@ function DashboardInner() {
 
             {/* 5. Historial agrupado */}
             <section className="flex flex-col gap-4">
-              <h2 className="font-bold" style={{ color: 'var(--brand)' }}>
-                Registros
-                {typeFilter !== 'all' && (
-                  <span className="ml-2 text-sm font-medium" style={{ color: 'var(--brand-mid)' }}>
-                    · {TYPE_FILTER_CONFIG.find(t => t.value === typeFilter)?.label}
-                  </span>
-                )}
-              </h2>
+              <div>
+                <h2 className="font-bold" style={{ color: 'var(--brand)' }}>
+                  Registros
+                  {typeFilter !== 'all' && (
+                    <span className="ml-2 text-sm font-medium" style={{ color: 'var(--brand-mid)' }}>
+                      · {TYPE_FILTER_CONFIG.find(t => t.value === typeFilter)?.label}
+                    </span>
+                  )}
+                </h2>
+                <div className="mt-2" style={{ height: '1px', background: 'var(--brand-light)' }} />
+              </div>
 
               {loading ? (
                 <p className="text-sm text-center py-8" style={{ color: 'var(--brand-mid)' }}>Cargando...</p>

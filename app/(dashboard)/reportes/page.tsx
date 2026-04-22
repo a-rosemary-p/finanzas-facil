@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
@@ -93,6 +93,17 @@ export default function ReportesPage() {
   const net = income - expenses
   const currentMonthStr = getMonthStr(new Date())
 
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!menuOpen) return
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [menuOpen])
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -114,12 +125,39 @@ export default function ReportesPage() {
         <a href="/dashboard">
           <img src="/logo-green.png" alt="fiza" style={{ height: '32px', width: 'auto' }} />
         </a>
-        <a href="/dashboard"
-          className="text-sm font-medium px-3 py-2 rounded-lg min-h-[44px] flex items-center"
-          style={{ color: 'var(--brand-mid)', background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}
-        >
-          Volver
-        </a>
+
+        {/* Hamburger menu */}
+        <div className="relative" ref={menuRef}>
+          <button
+            type="button"
+            onClick={() => setMenuOpen(v => !v)}
+            className="flex flex-col items-center justify-center gap-[5px] rounded-lg min-h-[44px] min-w-[44px] transition-colors"
+            style={{ background: menuOpen ? 'var(--brand-chip)' : 'transparent', border: '1px solid var(--brand-border)' }}
+            aria-label="Menú"
+          >
+            <span className="block w-[18px] h-[2px] rounded-full" style={{ background: 'var(--brand-mid)' }} />
+            <span className="block w-[18px] h-[2px] rounded-full" style={{ background: 'var(--brand-mid)' }} />
+            <span className="block w-[18px] h-[2px] rounded-full" style={{ background: 'var(--brand-mid)' }} />
+          </button>
+
+          {menuOpen && (
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg z-50 overflow-hidden"
+              style={{ border: '1px solid var(--brand-border)', top: '100%' }}>
+              {[
+                { label: 'Dashboard', href: '/dashboard' },
+                { label: 'Perfil', href: '/perfil' },
+                { label: 'Ajustes', href: '/ajustes' },
+                { label: 'Reportes', href: '/reportes' },
+              ].map(item => (
+                <a key={item.label} href={item.href} onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors hover:bg-[var(--brand-chip)] min-h-[48px]"
+                  style={{ color: 'var(--brand)' }}>
+                  {item.label}
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-5"
