@@ -473,7 +473,11 @@ export default function AjustesPage() {
                 className="w-full text-white rounded-xl py-3 font-bold text-sm min-h-[48px] transition-opacity disabled:opacity-60"
                 style={{ background: 'var(--brand)' }}
               >
-                {checkoutLoading ? 'Redirigiendo...' : 'Prueba Pro gratis 30 días — $49/mes después'}
+                {checkoutLoading
+                  ? 'Redirigiendo...'
+                  : profile?.trialUsed
+                    ? 'Activa Pro — $49/mes'
+                    : 'Prueba Pro gratis 30 días — $49/mes después'}
               </button>
               <p className="text-xs text-center" style={{ color: 'var(--brand-muted)' }}>
                 Historial limitado a 30 días · Movimientos limitados a 10/día

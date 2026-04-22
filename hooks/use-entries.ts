@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { calcMetrics } from '@/lib/utils'
 import type { Entry, Movement, DateFilter, TypeFilter, DashboardMetrics, Plan } from '@/types'
 
 const PAGE_SIZE = 10
@@ -16,19 +17,6 @@ function toMovement(row: Record<string, unknown>): Movement {
     movementDate: row['movement_date'] as string,
     isInvestment: (row['is_investment'] as boolean) ?? false,
   }
-}
-
-function calcMetrics(
-  rows: { type: string; amount: number; isInvestment: boolean }[],
-  showInvestments: boolean
-): DashboardMetrics {
-  let income = 0, expenses = 0
-  for (const m of rows) {
-    if (!showInvestments && m.isInvestment) continue
-    if (m.type === 'ingreso') income += m.amount
-    else if (m.type === 'gasto') expenses += m.amount
-  }
-  return { income, expenses, net: income - expenses }
 }
 
 export function useEntries() {

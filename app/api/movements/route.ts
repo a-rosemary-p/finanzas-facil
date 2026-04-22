@@ -1,22 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
-import { getDateRange } from '@/lib/utils'
+import { calcMetrics, getDateRange } from '@/lib/utils'
 import { PLANS } from '@/lib/constants'
 import type { DateFilter, TypeFilter, DashboardMetrics } from '@/types'
 
 const PAGE_SIZE = 10
-
-function calcMetrics(
-  rows: { type: string; amount: number; isInvestment: boolean }[],
-  showInvestments: boolean
-): DashboardMetrics {
-  let income = 0, expenses = 0
-  for (const r of rows) {
-    if (!showInvestments && r.isInvestment) continue
-    if (r.type === 'ingreso') income += r.amount
-    else if (r.type === 'gasto') expenses += r.amount
-  }
-  return { income, expenses, net: income - expenses }
-}
 
 export async function GET(request: Request) {
   const supabase = await createClient()

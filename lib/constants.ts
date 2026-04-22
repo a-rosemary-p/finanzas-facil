@@ -40,16 +40,6 @@ export const MOVEMENT_TYPE_CONFIG = {
   pendiente: { label: 'Pendiente', bg: 'var(--pending-bg)', color: 'var(--pending-text)', border: 'var(--pending-border)', sign: '⏳ ' },
 } as const
 
-export const DATE_FILTERS = ['today', '7days', 'month', 'year', 'all'] as const
-
-export const DATE_FILTER_LABELS: Record<string, string> = {
-  today: 'Hoy',
-  '7days': 'Últimos 7 días',
-  month: 'Este mes',
-  year: 'Este año',
-  all: 'Histórico',
-}
-
 export const TYPE_FILTER_CONFIG = [
   { value: 'all',       label: 'Todos',      bg: '#F4F6EB', color: '#6B8C78', border: '#D9E8D0', activeBg: '#578466', activeColor: '#fff',    activeBorder: '#578466' },
   { value: 'ingreso',   label: 'Ingresos',   bg: '#F4F6EB', color: '#6B8C78', border: '#D9E8D0', activeBg: '#DAE68F', activeColor: '#578466', activeBorder: '#92C3A5' },

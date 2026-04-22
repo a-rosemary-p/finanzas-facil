@@ -1,4 +1,19 @@
-import type { DateFilter, Movement } from '@/types'
+import type { DashboardMetrics, DateFilter, Movement } from '@/types'
+
+// Calcula ingresos / gastos / neto de un conjunto de movimientos.
+// Respeta el flag showInvestments (excluye is_investment cuando es false).
+export function calcMetrics(
+  rows: { type: string; amount: number; isInvestment: boolean }[],
+  showInvestments: boolean
+): DashboardMetrics {
+  let income = 0, expenses = 0
+  for (const r of rows) {
+    if (!showInvestments && r.isInvestment) continue
+    if (r.type === 'ingreso') income += r.amount
+    else if (r.type === 'gasto') expenses += r.amount
+  }
+  return { income, expenses, net: income - expenses }
+}
 
 // Formatea un número como moneda MXN: $1,500 / $1,500.50
 export function formatCurrency(amount: number): string {

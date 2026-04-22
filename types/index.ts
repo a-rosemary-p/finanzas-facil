@@ -42,6 +42,7 @@ export interface Profile {
   monedaPreferida?: 'MXN' | 'USD'
   mostrarInversiones?: boolean
   mostrarPendientes?: boolean
+  trialUsed: boolean  // true una vez que el usuario activó el trial por primera vez
 }
 
 export interface ProfileUpdate {

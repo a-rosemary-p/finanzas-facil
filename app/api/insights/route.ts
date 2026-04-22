@@ -107,19 +107,15 @@ export async function GET() {
   // ── 2. Esta semana vs semana anterior ────────────────────────
   const thisMonday = getMondayStr(new Date())
   const lastMonday = offsetWeek(thisMonday, -1)
-  const lastSunday = offsetWeek(thisMonday, 0) // el día antes del lunes actual
-  const lastSundayActual = new Date(new Date(thisMonday).getTime() - 86400000).toISOString().slice(0, 10)
+  const lastSunday = new Date(new Date(thisMonday).getTime() - 86400000).toISOString().slice(0, 10)
 
   const thisWeekIncome = allDates
     .filter(d => d >= thisMonday && d <= today)
     .reduce((s, d) => s + byDate[d].income, 0)
 
   const lastWeekIncome = allDates
-    .filter(d => d >= lastMonday && d <= lastSundayActual)
+    .filter(d => d >= lastMonday && d <= lastSunday)
     .reduce((s, d) => s + byDate[d].income, 0)
-
-  // Suppress unused variable warning
-  void lastSunday
 
   if (lastWeekIncome > 0) {
     const diff = thisWeekIncome - lastWeekIncome
