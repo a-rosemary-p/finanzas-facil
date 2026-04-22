@@ -71,6 +71,15 @@ export function useAuth() {
     }
 
     load()
+
+    // Recargar perfil cuando Supabase confirma cambios (email change, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'USER_UPDATED' && session?.user) {
+        loadProfile(supabase, session.user.id)
+      }
+    })
+
+    return () => subscription.unsubscribe()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
