@@ -160,10 +160,10 @@ export default function PerfilPage() {
               style={{ border: '1px solid var(--brand-border)', top: '100%' }}
             >
               {[
-                { icon: '🏠', label: 'Dashboard', href: '/dashboard' },
-                { icon: '👤', label: 'Perfil', href: '/perfil' },
-                { icon: '⚙️', label: 'Ajustes', href: '/ajustes' },
-                { icon: '📊', label: 'Reportes', href: '/reportes' },
+                { label: 'Dashboard', href: '/dashboard' },
+                { label: 'Perfil', href: '/perfil' },
+                { label: 'Ajustes', href: '/ajustes' },
+                { label: 'Reportes', href: '/reportes' },
               ].map(item => (
                 <a
                   key={item.label}
@@ -172,8 +172,7 @@ export default function PerfilPage() {
                   className="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors hover:bg-[var(--brand-chip)] min-h-[48px]"
                   style={{ color: 'var(--brand)' }}
                 >
-                  <span>{item.icon}</span>
-                  <span>{item.label}</span>
+                  {item.label}
                 </a>
               ))}
               <div style={{ borderTop: '1px solid var(--brand-border)' }}>
@@ -229,7 +228,7 @@ export default function PerfilPage() {
                 className="text-xs font-medium px-3 py-1.5 rounded-lg min-h-[32px]"
                 style={{ color: 'var(--brand)', border: '1px solid var(--brand-border)', background: 'var(--brand-chip)' }}
               >
-                ✏️ Editar
+                Editar
               </button>
             )}
           </div>
@@ -324,7 +323,6 @@ export default function PerfilPage() {
                   {profile.totalMovements.toLocaleString('es-MX')}
                 </p>
               </div>
-              <span className="text-3xl">📊</span>
             </div>
           </div>
         </div>

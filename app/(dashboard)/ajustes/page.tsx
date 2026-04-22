@@ -57,7 +57,7 @@ function SectionCard({
               className="text-xs font-medium px-3 py-1.5 rounded-lg min-h-[32px]"
               style={{ color: 'var(--brand)', border: '1px solid var(--brand-border)', background: 'var(--brand-chip)' }}
             >
-              ✏️ Editar
+              Editar
             </button>
           )
         )}
@@ -319,10 +319,10 @@ export default function AjustesPage() {
               style={{ border: '1px solid var(--brand-border)', top: '100%' }}
             >
               {[
-                { icon: '🏠', label: 'Dashboard', href: '/dashboard' },
-                { icon: '👤', label: 'Perfil', href: '/perfil' },
-                { icon: '⚙️', label: 'Ajustes', href: '/ajustes' },
-                { icon: '📊', label: 'Reportes', href: '/reportes' },
+                { label: 'Dashboard', href: '/dashboard' },
+                { label: 'Perfil', href: '/perfil' },
+                { label: 'Ajustes', href: '/ajustes' },
+                { label: 'Reportes', href: '/reportes' },
               ].map(item => (
                 <a
                   key={item.label}
@@ -331,8 +331,7 @@ export default function AjustesPage() {
                   className="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors hover:bg-[var(--brand-chip)] min-h-[48px]"
                   style={{ color: 'var(--brand)' }}
                 >
-                  <span>{item.icon}</span>
-                  <span>{item.label}</span>
+                  {item.label}
                 </a>
               ))}
               <div style={{ borderTop: '1px solid var(--brand-border)' }}>
@@ -379,14 +378,14 @@ export default function AjustesPage() {
                   className="flex-1 py-2.5 rounded-xl text-sm font-bold border flex items-center justify-center min-h-[44px]"
                   style={{ background: 'var(--brand)', color: '#fff', borderColor: 'var(--brand)' }}
                 >
-                  🇲🇽 MXN
+                  MXN
                 </div>
                 {/* USD — próximamente */}
                 <div
                   className="flex-1 py-2.5 rounded-xl text-sm font-bold border flex flex-col items-center justify-center min-h-[44px] gap-0.5"
                   style={{ background: '#f5f5f5', color: '#bbb', borderColor: '#e0e0e0' }}
                 >
-                  <span>🇺🇸 USD</span>
+                  <span>USD</span>
                   <span className="text-[10px] font-medium" style={{ color: '#bbb' }}>Próximamente</span>
                 </div>
               </div>
@@ -444,7 +443,7 @@ export default function AjustesPage() {
                 <p className="text-sm" style={{ color: 'var(--brand)' }}>{profile.email}</p>
               </div>
               {emailSuccess && (
-                <p className="text-xs py-2" style={{ color: 'var(--brand)' }}>✅ {emailSuccess}</p>
+                <p className="text-xs py-2" style={{ color: 'var(--brand)' }}>{emailSuccess}</p>
               )}
             </div>
           )}
@@ -545,7 +544,7 @@ export default function AjustesPage() {
               </p>
               <p className="text-sm" style={{ color: 'var(--brand)' }}>••••••••••••</p>
               {pwSuccess && (
-                <p className="text-xs mt-1" style={{ color: 'var(--brand)' }}>✅ {pwSuccess}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--brand)' }}>{pwSuccess}</p>
               )}
             </div>
           )}
