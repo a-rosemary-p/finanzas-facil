@@ -50,7 +50,9 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('[POST /api/portal] Stripe error:', msg)
-    // DEBUG: expose raw error while diagnosing live-mode portal config
-    return NextResponse.json({ error: `DEBUG: ${msg}` }, { status: 500 })
+    if (msg.includes('No such customer')) {
+      return NextResponse.json({ error: 'No se encontró tu suscripción. Intenta suscribirte de nuevo.' }, { status: 400 })
+    }
+    return NextResponse.json({ error: 'Error al abrir el portal. Intenta de nuevo.' }, { status: 500 })
   }
 }
