@@ -57,6 +57,42 @@ export const TYPE_FILTER_CONFIG = [
   { value: 'pendiente', label: 'Pendientes', bg: '#F4F6EB', color: '#6B8C78', border: '#D9E8D0', activeBg: '#FFF5CC', activeColor: '#B89010', activeBorder: '#FFCE57' },
 ] as const
 
+export const GIROS = [
+  'Alimentos y bebidas',
+  'Comercio al menudeo',
+  'Comercio al mayoreo',
+  'Servicios personales',
+  'Servicios de salud',
+  'Servicios profesionales',
+  'Servicios financieros',
+  'Taller y reparaciones',
+  'Construcción y oficios',
+  'Transporte y logística',
+  'Educación',
+  'Tecnología y servicios',
+  'Otro',
+] as const
+
+export const ESTADOS_MX = [
+  'Aguascalientes', 'Baja California', 'Baja California Sur',
+  'Campeche', 'Chiapas', 'Chihuahua', 'Ciudad de México',
+  'Coahuila', 'Colima', 'Durango', 'Guanajuato', 'Guerrero',
+  'Hidalgo', 'Jalisco', 'México', 'Michoacán', 'Morelos',
+  'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro',
+  'Quintana Roo', 'San Luis Potosí', 'Sinaloa', 'Sonora',
+  'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán',
+  'Zacatecas',
+] as const
+
+export const TIMEZONE_MAP: Record<string, string> = {
+  'Baja California': 'America/Tijuana',
+  'Chihuahua': 'America/Chihuahua',
+  'Sonora': 'America/Hermosillo',
+  'Sinaloa': 'America/Mazatlan',
+  'Nayarit': 'America/Mazatlan',
+  // todos los demás → America/Mexico_City (default)
+}
+
 export const PHOTO_LIMITS = {
   maxFileSizeMB: 5,
   acceptedFormats: ['image/jpeg', 'image/png', 'image/webp'],

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import type { Profile } from '@/types'
+import { TIMEZONE_MAP } from '@/lib/constants'
+import type { Profile, ProfileUpdate } from '@/types'
 
 export function useAuth() {
   const router = useRouter()
@@ -13,7 +14,7 @@ export function useAuth() {
   async function loadProfile(supabase: ReturnType<typeof createClient>, userId: string) {
     const { data } = await supabase
       .from('profiles')
-      .select('id, email, display_name, plan, subscription_status, movements_today, movements_today_date')
+      .select('id, email, display_name, plan, subscription_status, movements_today, movements_today_date, total_movements, giro, ciudad, estado, timezone')
       .eq('id', userId)
       .single()
 
@@ -30,6 +31,11 @@ export function useAuth() {
         plan: data.plan as Profile['plan'],
         subscriptionStatus: data.subscription_status as Profile['subscriptionStatus'],
         movementsToday: effectiveMovementsToday,
+        totalMovements: (data.total_movements as number) ?? 0,
+        giro: data.giro as string | undefined,
+        ciudad: data.ciudad as string | undefined,
+        estado: data.estado as string | undefined,
+        timezone: (data.timezone as string) || 'America/Mexico_City',
       })
     }
   }
@@ -55,6 +61,7 @@ export function useAuth() {
         plan: 'free',
         subscriptionStatus: 'none',
         movementsToday: 0,
+        totalMovements: 0,
       })
       setLoading(false)
     }
@@ -69,11 +76,48 @@ export function useAuth() {
     if (user) await loadProfile(supabase, user.id)
   }
 
+  async function updateProfile(update: ProfileUpdate) {
+    if (!profile) throw new Error('No hay perfil cargado')
+    const supabase = createClient()
+
+    const patch: Record<string, unknown> = {}
+    if (update.displayName !== undefined) patch.display_name = update.displayName || null
+    if (update.giro !== undefined)        patch.giro         = update.giro || null
+    if (update.ciudad !== undefined)      patch.ciudad       = update.ciudad || null
+    if (update.estado !== undefined) {
+      patch.estado   = update.estado || null
+      patch.timezone = update.estado
+        ? (TIMEZONE_MAP[update.estado] ?? 'America/Mexico_City')
+        : 'America/Mexico_City'
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update(patch)
+      .eq('id', profile.id)
+
+    if (error) throw error
+
+    // Actualizar estado local sin re-fetch
+    setProfile(prev => prev ? {
+      ...prev,
+      displayName: update.displayName
+        ? update.displayName
+        : (update.displayName === '' ? (prev.email.split('@')[0]) : prev.displayName),
+      giro:    update.giro    !== undefined ? (update.giro    || undefined) : prev.giro,
+      ciudad:  update.ciudad  !== undefined ? (update.ciudad  || undefined) : prev.ciudad,
+      estado:  update.estado  !== undefined ? (update.estado  || undefined) : prev.estado,
+      timezone: update.estado
+        ? (TIMEZONE_MAP[update.estado] ?? 'America/Mexico_City')
+        : prev.timezone,
+    } : prev)
+  }
+
   async function logout() {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.replace('/login')
   }
 
-  return { profile, loading, logout, refreshProfile }
+  return { profile, loading, logout, refreshProfile, updateProfile }
 }

@@ -2,7 +2,7 @@
 // Nunca definir tipos inline en componentes o funciones.
 
 export type Plan = 'free' | 'pro'
-export type SubscriptionStatus = 'none' | 'active' | 'past_due' | 'canceled'
+export type SubscriptionStatus = 'none' | 'active' | 'trialing' | 'past_due' | 'canceled' | 'unpaid' | 'incomplete_expired'
 export type MovementType = 'ingreso' | 'gasto' | 'pendiente'
 export type Category =
   | 'Ventas'
@@ -34,6 +34,18 @@ export interface Profile {
   plan: Plan
   subscriptionStatus: SubscriptionStatus
   movementsToday: number
+  totalMovements: number
+  giro?: string
+  ciudad?: string
+  estado?: string
+  timezone?: string
+}
+
+export interface ProfileUpdate {
+  displayName?: string
+  giro?: string
+  ciudad?: string
+  estado?: string
 }
 
 export interface Entry {

@@ -125,7 +125,9 @@ function DashboardInner() {
           paddingBottom: '10px', minHeight: '56px',
         }}
       >
-        <img src="/logo-green.png" alt="fiza" style={{ height: '32px', width: 'auto' }} />
+        <a href="/dashboard">
+          <img src="/logo-green.png" alt="fiza" style={{ height: '32px', width: 'auto' }} />
+        </a>
         <div className="flex items-center gap-3">
           {/* Plan badge */}
           <span className="text-sm font-medium px-3 py-2 rounded-full min-h-[44px] flex items-center"
@@ -157,6 +159,7 @@ function DashboardInner() {
                 style={{ border: '1px solid var(--brand-border)', top: '100%' }}
               >
                 {[
+                  { icon: '🏠', label: 'Dashboard', href: '/dashboard' },
                   { icon: '👤', label: 'Perfil', href: '/perfil' },
                   { icon: '⚙️', label: 'Ajustes', href: '/ajustes' },
                   { icon: '📊', label: 'Reportes', href: '/reportes' },
