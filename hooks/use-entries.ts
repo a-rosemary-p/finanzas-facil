@@ -2,19 +2,17 @@
 
 import { useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { getDateRange } from '@/lib/utils'
-import { PLANS } from '@/lib/constants'
 import type { Entry, Movement, DateFilter, TypeFilter, DashboardMetrics, Plan } from '@/types'
 
 const PAGE_SIZE = 10
 
 function toMovement(row: Record<string, unknown>): Movement {
   return {
-    id: row['id'] as string,
-    type: row['type'] as Movement['type'],
-    amount: Number(row['amount']),
-    description: row['description'] as string,
-    category: row['category'] as Movement['category'],
+    id:           row['id']            as string,
+    type:         row['type']          as Movement['type'],
+    amount:       Number(row['amount']),
+    description:  row['description']   as string,
+    category:     row['category']      as Movement['category'],
     movementDate: row['movement_date'] as string,
     isInvestment: (row['is_investment'] as boolean) ?? false,
   }
@@ -24,8 +22,7 @@ function calcMetrics(
   rows: { type: string; amount: number; isInvestment: boolean }[],
   showInvestments: boolean
 ): DashboardMetrics {
-  let income = 0
-  let expenses = 0
+  let income = 0, expenses = 0
   for (const m of rows) {
     if (!showInvestments && m.isInvestment) continue
     if (m.type === 'ingreso') income += m.amount
@@ -48,14 +45,42 @@ export function useEntries() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(false)
 
-  const rangeRef = useRef<{ start: string; end: string } | null>(null)
-  const typeFilterRef = useRef<TypeFilter>('all')
+  // Refs for stable access inside callbacks
+  const typeFilterRef      = useRef<TypeFilter>('all')
   const showInvestmentsRef = useRef(false)
-  const showPendientesRef = useRef(true)
-  const planRef = useRef<Plan>('free')
-  const customRangeRef = useRef<{ from: string; to: string } | null>(null)
-  const totalRef = useRef(0)
+  const showPendientesRef  = useRef(true)
+  const planRef            = useRef<Plan>('free')
+  const customRangeRef     = useRef<{ from: string; to: string } | null>(null)
+  const totalRef           = useRef(0)
+  // Stores serialised base query params so loadMore can reuse them
+  const baseParamsRef      = useRef<string>('')
+  // Tracks current movements array length without depending on state
+  const movementsLenRef    = useRef(0)
 
+  // ── Build URLSearchParams for the movements API ──────────────────────────
+  function buildParams(
+    f: DateFilter,
+    tf: TypeFilter,
+    showInv: boolean,
+    showPend: boolean,
+    selMonth?: Date,
+    cRange?: { from: string; to: string } | null
+  ): URLSearchParams {
+    const p = new URLSearchParams({
+      filter:          f,
+      type:            tf,
+      showPendientes:  String(showPend),
+      showInvestments: String(showInv),
+    })
+    if (selMonth) p.set('selectedMonth', selMonth.toISOString().slice(0, 7))
+    if (f === 'custom' && cRange) {
+      p.set('from', cRange.from)
+      p.set('to', cRange.to)
+    }
+    return p
+  }
+
+  // ── loadData — full refresh (page 0) ──────────────────────────────────────
   const loadData = useCallback(async (
     f: DateFilter,
     tf: TypeFilter = 'all',
@@ -68,104 +93,63 @@ export function useEntries() {
     setLoading(true)
     setMovements([])
     setHasMore(false)
-    typeFilterRef.current = tf
+    movementsLenRef.current = 0
+
+    typeFilterRef.current     = tf
     showInvestmentsRef.current = showInv
-    showPendientesRef.current = showPend
-    planRef.current = plan
+    showPendientesRef.current  = showPend
+    planRef.current            = plan
     if (cRange !== undefined) customRangeRef.current = cRange
 
-    // Límite de historial: Free = 30 días, Pro = sin límite
-    const maxHistory = plan === 'free' ? PLANS.FREE.historyDays : undefined
+    const baseParams = buildParams(f, tf, showInv, showPend, selMonth, customRangeRef.current)
+    baseParamsRef.current = baseParams.toString()
 
-    const supabase = createClient()
-    const range = getDateRange(f, selMonth, maxHistory, customRangeRef.current ?? undefined)
-    rangeRef.current = range
-    const { start, end } = range
+    const res = await fetch(
+      `/api/movements?${baseParams}&offset=0&pageSize=${PAGE_SIZE}`
+    )
 
-    // 1. Métricas — sin filtro de tipo, respeta showInvestments
-    const { data: metricsRows } = await supabase
-      .from('movements')
-      .select('type, amount, is_investment')
-      .gte('movement_date', start)
-      .lte('movement_date', end)
-
-    setMetrics(calcMetrics(
-      (metricsRows ?? []).map(r => ({
-        type: r['type'] as string,
-        amount: Number(r['amount']),
-        isInvestment: (r['is_investment'] as boolean) ?? false,
-      })),
-      showInv
-    ))
-
-    // 2. Primera página de movimientos
-    let baseQuery = supabase
-      .from('movements')
-      .select('id, type, amount, description, category, movement_date, is_investment', { count: 'exact' })
-      .gte('movement_date', start)
-      .lte('movement_date', end)
-
-    // Filtro por tipo: si es 'all' y showPend=false, excluir pendientes
-    if (tf !== 'all') {
-      baseQuery = baseQuery.eq('type', tf) as typeof baseQuery
-    } else if (!showPend) {
-      baseQuery = baseQuery.neq('type', 'pendiente') as typeof baseQuery
+    if (!res.ok) {
+      // 403 = Pro feature; just show empty state, don't crash
+      setLoading(false)
+      return
     }
 
-    const { data: pageRows, count } = await baseQuery
-      .order('movement_date', { ascending: false })
-      .order('id', { ascending: false })
-      .range(0, PAGE_SIZE - 1)
+    const data = await res.json() as {
+      movements: Movement[]
+      total: number
+      metrics: DashboardMetrics
+    }
 
-    const total = count ?? 0
-    totalRef.current = total
-    setMovements((pageRows ?? []).map(r => toMovement(r as Record<string, unknown>)))
-    setHasMore(total > PAGE_SIZE)
+    movementsLenRef.current = data.movements.length
+    setMovements(data.movements)
+    setMetrics(data.metrics)
+    totalRef.current = data.total
+    setHasMore(data.total > PAGE_SIZE)
     setLoading(false)
   }, [])
 
+  // ── loadMore — next page ──────────────────────────────────────────────────
   const loadMore = useCallback(async () => {
-    const range = rangeRef.current
-    if (!range) return
-    const tf = typeFilterRef.current
-    const showPend = showPendientesRef.current
-
+    if (!baseParamsRef.current) return
     setLoadingMore(true)
-    const supabase = createClient()
 
-    setMovements(prev => {
-      const offset = prev.length
+    const offset = movementsLenRef.current
+    const res = await fetch(
+      `/api/movements?${baseParamsRef.current}&offset=${offset}&pageSize=${PAGE_SIZE}`
+    )
 
-      let base = supabase
-        .from('movements')
-        .select('id, type, amount, description, category, movement_date, is_investment')
-        .gte('movement_date', range.start)
-        .lte('movement_date', range.end)
+    if (!res.ok) { setLoadingMore(false); return }
 
-      if (tf !== 'all') {
-        base = base.eq('type', tf) as typeof base
-      } else if (!showPend) {
-        base = base.neq('type', 'pendiente') as typeof base
-      }
+    const data = await res.json() as { movements: Movement[]; total: number }
+    const newTotal = offset + data.movements.length
 
-      base
-        .order('movement_date', { ascending: false })
-        .order('id', { ascending: false })
-        .range(offset, offset + PAGE_SIZE - 1)
-        .then(({ data: moreRows }) => {
-          const rows = (moreRows ?? []).map(r => toMovement(r as Record<string, unknown>))
-          setMovements(p => {
-            const updated = [...p, ...rows]
-            setHasMore(updated.length < totalRef.current)
-            return updated
-          })
-          setLoadingMore(false)
-        })
-
-      return prev
-    })
+    movementsLenRef.current = newTotal
+    setMovements(prev => [...prev, ...data.movements])
+    setHasMore(newTotal < (data.total ?? totalRef.current))
+    setLoadingMore(false)
   }, [])
 
+  // ── Filter setters ────────────────────────────────────────────────────────
   function setFilter(f: DateFilter) {
     setFilterState(f)
     if (f !== 'custom') {
@@ -208,6 +192,7 @@ export function useEntries() {
     loadData(filter, typeFilter, selectedMonth, showInvestments, show)
   }
 
+  // ── Pending movements ─────────────────────────────────────────────────────
   const loadPendings = useCallback(async () => {
     const supabase = createClient()
     const { data } = await supabase
@@ -229,24 +214,24 @@ export function useEntries() {
     if (!res.ok) return null
     const data = await res.json() as { movement: Movement }
     const updated = data.movement
-    // Remove from pending list
     setPendingMovements(prev => prev.filter(m => m.id !== id))
-    // Update in main movements list if present
     updateMovement(updated)
     return updated
   }
 
+  // ── Optimistic UI helpers ─────────────────────────────────────────────────
   function prependEntry(entry: Entry) {
     const newMovs = entry.movements
+    movementsLenRef.current += newMovs.length
     setMovements(prev => [...newMovs, ...prev])
-    // Add new pendientes to the pending list
+
     const newPending = newMovs.filter(m => m.type === 'pendiente')
     if (newPending.length > 0) {
-      setPendingMovements(prev => {
-        const merged = [...prev, ...newPending]
-        return merged.sort((a, b) => a.movementDate.localeCompare(b.movementDate))
-      })
+      setPendingMovements(prev =>
+        [...prev, ...newPending].sort((a, b) => a.movementDate.localeCompare(b.movementDate))
+      )
     }
+
     totalRef.current += newMovs.length
     setMetrics(prev => {
       const delta = calcMetrics(
@@ -254,9 +239,9 @@ export function useEntries() {
         showInvestmentsRef.current
       )
       return {
-        income: prev.income + delta.income,
+        income:   prev.income   + delta.income,
         expenses: prev.expenses + delta.expenses,
-        net: prev.net + delta.net,
+        net:      prev.net      + delta.net,
       }
     })
   }
@@ -281,7 +266,6 @@ export function useEntries() {
       })
       return prev.map(m => m.id === updated.id ? updated : m)
     })
-    // Remove from pending list if no longer a pendiente
     if (updated.type !== 'pendiente') {
       setPendingMovements(prev => prev.filter(m => m.id !== updated.id))
     }
@@ -301,6 +285,7 @@ export function useEntries() {
         }
         return next
       })
+      movementsLenRef.current = Math.max(0, movementsLenRef.current - 1)
       totalRef.current = Math.max(0, totalRef.current - 1)
       return prev.filter(m => m.id !== id)
     })
