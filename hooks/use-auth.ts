@@ -150,7 +150,8 @@ export function useAuth() {
     const { error: verifyError } = await supabase.auth.verifyOtp({
       email: profile.email,
       token: otpToken,
-      type: 'reauthentication',
+      // 'reauthentication' es válido en runtime pero no está en los tipos de esta versión
+      type: 'reauthentication' as unknown as 'email',
     })
     if (verifyError) throw new Error('invalid_otp')
 
