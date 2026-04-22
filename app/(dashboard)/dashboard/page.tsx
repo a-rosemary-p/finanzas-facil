@@ -31,7 +31,7 @@ function getFechaFormateada(): string {
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
 function DashboardInner() {
-  const { profile, loading: authLoading, logout } = useAuth()
+  const { profile, loading: authLoading, logout, refreshProfile } = useAuth()
   const {
     movements, metrics, filter, selectedMonth, typeFilter, showInvestments,
     setFilter, setTypeFilter, setSelectedMonth, setShowInvestments,
@@ -98,6 +98,7 @@ function DashboardInner() {
   function handleConfirmed(entry: Entry) {
     prependEntry(entry); setMode('dashboard'); setPendingData(null)
     window.scrollTo({ top: 0, behavior: 'smooth' })
+    refreshProfile() // actualiza el contador movements_today
   }
   function handleCancel() { setMode('dashboard'); setPendingData(null) }
 
