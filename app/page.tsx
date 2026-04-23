@@ -1,349 +1,881 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
-/* ─────────────────────────────────────────
-   Mock UIs para el carousel (sin imágenes reales)
-───────────────────────────────────────── */
+/* ─── SVG Icons ───────────────────────────────────────────────────────────── */
 
-function MockInput() {
+function IconPen({ size = 20 }: { size?: number }) {
   return (
-    <div aria-hidden="true" className="h-40 rounded-xl p-3 flex flex-col gap-2.5" style={{ background: 'var(--brand-chip)' }}>
-      <div className="flex-1 rounded-lg p-3" style={{ background: '#fff', border: '1px solid var(--brand-border)' }}>
-        <p className="text-[11px] leading-relaxed" style={{ color: 'var(--brand)' }}>
-          Vendí $1,500 de tacos, gasté $300 en tortillas y $120 en gas...
-        </p>
-        <span className="inline-block w-0.5 h-3 mt-1 align-middle rounded-full" style={{ background: 'var(--brand)', opacity: 0.7 }} />
-      </div>
-      <div className="flex gap-2 justify-center">
-        {['✏️', '🎤', '📷'].map(icon => (
-          <span
-            key={icon}
-            className="text-base rounded-xl px-3 py-1.5"
-            style={{ background: '#fff', border: '1px solid var(--brand-border)' }}
-          >
-            {icon}
-          </span>
-        ))}
-      </div>
-    </div>
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M14.5 2.5l3 3L6.5 16.5l-4 1 1-4L14.5 2.5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
   )
 }
 
-function MockAI() {
-  const rows = [
-    { badge: 'Ingreso',   badgeBg: 'var(--brand-lime)', badgeColor: 'var(--brand)', text: 'Ventas del día', amount: '+$1,500', amountColor: 'var(--brand)' },
-    { badge: 'Gasto',     badgeBg: '#FAD5BF', badgeColor: '#D0481A', text: 'Tortillas',       amount: '−$300',   amountColor: '#D0481A' },
-    { badge: 'Pendiente', badgeBg: '#FFF5CC', badgeColor: '#B89010', text: 'Renta (lunes)',   amount: '⏳$400',  amountColor: '#B89010' },
+function IconMic({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <rect x="7" y="2" width="6" height="9" rx="3" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M4 10a6 6 0 0012 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <line x1="10" y1="16" x2="10" y2="18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function IconCamera({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M18 14.5a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h1.5L7 4h6l1.5 2H16a2 2 0 012 2v6.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+      <circle cx="10" cy="11" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+    </svg>
+  )
+}
+
+function IconSparkles({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M10 2.5l1.6 4.4 4.4 1.6-4.4 1.6L10 14.5l-1.6-3.9L4 8.5l4.4-1.6L10 2.5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function IconChart({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <rect x="2" y="12" width="4" height="6" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+      <rect x="8" y="7" width="4" height="11" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+      <rect x="14" y="3" width="4" height="15" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+    </svg>
+  )
+}
+
+function IconFileText({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M4 3a1 1 0 011-1h7l4 4v11a1 1 0 01-1 1H5a1 1 0 01-1-1V3z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+      <path d="M12 2v4h4M7 10h6M7 13h6M7 16h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function IconClock({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M10 6v4l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function IconHistory({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M2.5 10a7.5 7.5 0 107.5-7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M2.5 4.5v5.5H8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M10 7v3l2.5 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function IconShield({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M10 2L3 5v4.5c0 4 2.9 7.7 7 9 4.1-1.3 7-5 7-9V5L10 2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M7 10l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function IconCheck({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M3 8l4 4 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function IconStar({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+      <path d="M7 1l1.65 3.5L12.5 5l-2.75 2.65.65 3.85L7 9.75l-3.4 1.75.65-3.85L1.5 5l3.85-.5L7 1z"/>
+    </svg>
+  )
+}
+
+function IconChevronDown({ open }: { open: boolean }) {
+  return (
+    <svg
+      width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"
+      className="shrink-0 transition-transform duration-200"
+      style={{ transform: open ? 'rotate(180deg)' : 'rotate(0)' }}
+    >
+      <path d="M5 7.5l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+/* ── Business icons ───────────────────────────────────────────────────────── */
+
+function IconUtensils({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3 2v7c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V2M7 2v20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M21 15V2a5 5 0 00-5 5v5.5M19.5 12.5V22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function IconScissors({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="6" cy="6" r="3" stroke="currentColor" strokeWidth="1.5"/>
+      <circle cx="6" cy="18" r="3" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M20 4L8.12 15.88M14.47 14.48L20 20M8.12 8.12L12 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function IconWrench({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function IconStore({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3 9l1-6h16l1 6M3 9a3 3 0 006 0 3 3 0 006 0 3 3 0 006 0M5 21V9M19 21V9M9 21v-6h6v6M3 21h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function IconTruck({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M1 3h15v13H1z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+      <path d="M16 8h4l3 4v4h-7V8z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+      <circle cx="5.5" cy="18.5" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+      <circle cx="18.5" cy="18.5" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+    </svg>
+  )
+}
+
+function IconBriefcase({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2M2 12h20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+/* ─── App Mockup ──────────────────────────────────────────────────────────── */
+
+function AppMockup() {
+  const entries = [
+    {
+      type: 'Ingreso', amount: '+$4,200', desc: 'Ventas del día',
+      bg: 'var(--income-bg)', border: 'var(--income-border)', color: 'var(--income-text)',
+    },
+    {
+      type: 'Gasto', amount: '-$800', desc: 'Ingredientes',
+      bg: 'var(--expense-bg)', border: 'var(--expense-border)', color: 'var(--expense-text)',
+    },
+    {
+      type: 'Pendiente', amount: '$1,500', desc: 'Renta (viernes)',
+      bg: 'var(--pending-bg)', border: 'var(--pending-border)', color: 'var(--pending-text)',
+    },
   ]
   return (
-    <div aria-hidden="true" className="h-40 rounded-xl p-3 flex flex-col gap-1.5" style={{ background: 'var(--brand-chip)' }}>
-      {rows.map(r => (
+    <div
+      className="w-full rounded-2xl overflow-hidden"
+      style={{
+        background: '#fff',
+        border: '1px solid var(--brand-border)',
+        boxShadow: '0 12px 48px rgba(87,132,102,0.22)',
+        maxWidth: '300px',
+      }}
+    >
+      {/* Header bar */}
+      <div
+        className="flex items-center justify-between px-4 py-2.5"
+        style={{ background: 'linear-gradient(115deg, #578466 0%, #92C3A5 60%, #DAE68F 100%)' }}
+      >
+        <img src="/logo-white.png" alt="fiza" style={{ height: '18px', width: 'auto' }} />
+        <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.85)' }}>Hoy, martes</span>
+      </div>
+
+      <div className="px-3 pt-3 pb-3">
+        {/* Input with natural language */}
         <div
-          key={r.badge}
-          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5"
-          style={{ background: '#fff', border: '1px solid var(--brand-border)' }}
+          className="rounded-xl p-3 mb-2"
+          style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}
         >
-          <span
-            className="text-[9px] font-bold rounded px-1.5 py-0.5 shrink-0"
-            style={{ background: r.badgeBg, color: r.badgeColor }}
-          >
-            {r.badge}
-          </span>
-          <span className="flex-1 text-[11px] truncate" style={{ color: 'var(--brand)' }}>{r.text}</span>
-          <span className="text-[11px] font-bold shrink-0" style={{ color: r.amountColor }}>{r.amount}</span>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function MockDashboard() {
-  const cards = [
-    { label: 'INGRESOS', value: '$1,500', bg: 'var(--brand-lime)', color: 'var(--brand)', border: 'var(--brand-light)' },
-    { label: 'GASTOS',   value: '$300',   bg: '#FAD5BF', color: '#D0481A', border: '#F79366' },
-    { label: 'NETO',     value: '$1,200', bg: 'var(--brand-lime)', color: 'var(--brand)', border: 'var(--brand-light)' },
-  ]
-  return (
-    <div aria-hidden="true" className="h-40 rounded-xl p-3 flex flex-col gap-2.5" style={{ background: 'var(--brand-chip)' }}>
-      <div className="grid grid-cols-3 gap-1.5">
-        {cards.map(c => (
-          <div
-            key={c.label}
-            className="rounded-lg p-2 text-center"
-            style={{ background: c.bg, border: `1px solid ${c.border}` }}
-          >
-            <p className="text-[8px] font-bold leading-none mb-1" style={{ color: c.color }}>{c.label}</p>
-            <p className="text-[12px] font-bold leading-none" style={{ color: c.color }}>{c.value}</p>
+          <p className="text-xs leading-relaxed mb-2" style={{ color: 'var(--brand)', fontStyle: 'italic' }}>
+            "Vendí $4,200 en el puesto, gasté $800 en ingredientes y debo $1,500 de renta el viernes..."
+          </p>
+          <div className="flex gap-1.5 justify-end">
+            {[
+              { Icon: IconPen, label: 'texto' },
+              { Icon: IconMic, label: 'voz' },
+              { Icon: IconCamera, label: 'foto' },
+            ].map(({ Icon, label }) => (
+              <span
+                key={label}
+                className="p-1.5 rounded-lg"
+                style={{ background: '#fff', border: '1px solid var(--brand-border)', color: 'var(--brand-mid)' }}
+                aria-label={label}
+              >
+                <Icon size={13} />
+              </span>
+            ))}
           </div>
-        ))}
-      </div>
-      <div className="rounded-lg p-2.5" style={{ background: '#fff', border: '1px solid var(--brand-border)' }}>
-        <div className="flex gap-1 mb-1.5 items-center">
-          <div className="h-1.5 rounded-full" style={{ flex: 5, background: 'var(--brand)' }} />
-          <div className="h-1.5 rounded-full" style={{ flex: 2, background: 'var(--brand-border)' }} />
         </div>
-        <p className="text-[9px]" style={{ color: 'var(--brand-mid)' }}>Balance del mes — 71% de meta</p>
+
+        {/* Transform indicator */}
+        <div className="flex items-center gap-2 py-1 px-1 mb-2">
+          <div className="flex-1 h-px" style={{ background: 'var(--brand-border)' }} />
+          <span className="flex items-center gap-1" style={{ color: 'var(--brand-muted)' }}>
+            <IconSparkles size={11} />
+            <span className="text-[10px] font-medium">fiza lo organiza</span>
+          </span>
+          <div className="flex-1 h-px" style={{ background: 'var(--brand-border)' }} />
+        </div>
+
+        {/* Classified entries */}
+        <div className="flex flex-col gap-1.5 mb-2.5">
+          {entries.map(e => (
+            <div
+              key={e.type}
+              className="flex items-center gap-2 rounded-lg px-2.5 py-2"
+              style={{ background: e.bg, border: `1px solid ${e.border}` }}
+            >
+              <span
+                className="text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0"
+                style={{ background: '#fff', color: e.color, border: `1px solid ${e.border}` }}
+              >
+                {e.type}
+              </span>
+              <span className="flex-1 text-[11px] truncate" style={{ color: e.color }}>{e.desc}</span>
+              <span className="text-[11px] font-bold shrink-0" style={{ color: e.color }}>{e.amount}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Mini metrics bar */}
+        <div
+          className="rounded-xl p-2.5 flex justify-around"
+          style={{ background: 'var(--income-bg)', border: '1px solid var(--income-border)' }}
+        >
+          <div className="text-center">
+            <p className="text-[9px] font-bold" style={{ color: 'var(--brand-mid)' }}>INGRESOS</p>
+            <p className="text-sm font-bold" style={{ color: 'var(--brand)' }}>$4,200</p>
+          </div>
+          <div className="w-px" style={{ background: 'var(--income-border)' }} />
+          <div className="text-center">
+            <p className="text-[9px] font-bold" style={{ color: 'var(--brand-mid)' }}>GASTOS</p>
+            <p className="text-sm font-bold" style={{ color: 'var(--expense-text)' }}>$800</p>
+          </div>
+          <div className="w-px" style={{ background: 'var(--income-border)' }} />
+          <div className="text-center">
+            <p className="text-[9px] font-bold" style={{ color: 'var(--brand-mid)' }}>NETO</p>
+            <p className="text-sm font-bold" style={{ color: 'var(--brand)' }}>$3,400</p>
+          </div>
+        </div>
       </div>
     </div>
   )
 }
 
-/* ─────────────────────────────────────────
-   Datos de los pasos
-───────────────────────────────────────── */
+/* ─── Step Card ───────────────────────────────────────────────────────────── */
+
+function StepCard({
+  num,
+  title,
+  body,
+  icon: Icon,
+  isPro,
+}: {
+  num: string
+  title: string
+  body: string
+  icon: React.ComponentType<{ size?: number }>
+  isPro?: boolean
+}) {
+  return (
+    <div
+      className="rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden"
+      style={{
+        background: isPro
+          ? 'linear-gradient(145deg, var(--brand) 0%, #3d6050 100%)'
+          : '#fff',
+        border: isPro ? 'none' : '1px solid var(--brand-border)',
+        boxShadow: isPro
+          ? '0 6px 28px rgba(87,132,102,0.3)'
+          : '0 2px 12px rgba(87,132,102,0.07)',
+      }}
+    >
+      {isPro && (
+        <span
+          className="absolute top-3 right-3 text-[9px] font-bold px-2 py-0.5 rounded-full"
+          style={{ background: 'rgba(255,255,255,0.18)', color: '#fff' }}
+        >
+          PRO
+        </span>
+      )}
+
+      <div
+        className="w-10 h-10 rounded-xl flex items-center justify-center"
+        style={{
+          background: isPro ? 'rgba(255,255,255,0.15)' : 'var(--brand-chip)',
+          color: isPro ? '#fff' : 'var(--brand)',
+        }}
+      >
+        <Icon size={20} />
+      </div>
+
+      <div className="flex items-start gap-2.5">
+        <span
+          className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+          style={{
+            background: isPro ? 'rgba(255,255,255,0.18)' : 'var(--brand)',
+            color: '#fff',
+          }}
+        >
+          {num}
+        </span>
+        <div>
+          <p
+            className="text-sm font-bold mb-1"
+            style={{ color: isPro ? '#fff' : 'var(--brand)' }}
+          >
+            {title}
+          </p>
+          <p
+            className="text-xs leading-relaxed"
+            style={{ color: isPro ? 'rgba(255,255,255,0.78)' : 'var(--brand-mid)' }}
+          >
+            {body}
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ─── FAQ Item ────────────────────────────────────────────────────────────── */
+
+function FAQItem({
+  q, a, isOpen, onToggle,
+}: {
+  q: string
+  a: string
+  isOpen: boolean
+  onToggle: () => void
+}) {
+  return (
+    <button
+      onClick={onToggle}
+      className="w-full text-left rounded-xl px-4 py-4 flex gap-3 transition-all duration-150"
+      style={{
+        background: isOpen ? '#fff' : 'transparent',
+        border: `1px solid ${isOpen ? 'var(--brand-light)' : 'var(--brand-border)'}`,
+      }}
+    >
+      <div className="flex-1">
+        <p className="text-sm font-semibold" style={{ color: 'var(--brand)' }}>{q}</p>
+        {isOpen && (
+          <p className="text-sm leading-relaxed mt-2.5" style={{ color: 'var(--brand-mid)' }}>{a}</p>
+        )}
+      </div>
+      <span style={{ color: 'var(--brand-mid)' }}>
+        <IconChevronDown open={isOpen} />
+      </span>
+    </button>
+  )
+}
+
+/* ─── Data ────────────────────────────────────────────────────────────────── */
 
 const STEPS: Array<{
   num: string
   title: string
   body: string
-  Visual: React.ComponentType
+  Icon: React.ComponentType<{ size?: number }>
+  isPro?: boolean
 }> = [
   {
     num: '1',
     title: 'Dile lo que pasó',
-    body: 'Escribe, dicta o fotografía. Como quieras, como puedas.',
-    Visual: MockInput,
+    body: 'Escribe en lenguaje natural, dicta en voz o fotografía un recibo. Sin formularios, sin categorías manuales.',
+    Icon: IconPen,
   },
   {
     num: '2',
-    title: 'La IA lo organiza',
-    body: 'En segundos, cada peso queda clasificado y listo para revisarse.',
-    Visual: MockAI,
+    title: 'La IA lo clasifica sola',
+    body: 'Fiza entiende tu texto y lo convierte en ingresos, gastos y pendientes en segundos — automáticamente.',
+    Icon: IconSparkles,
   },
   {
     num: '3',
-    title: 'Ve tus números',
-    body: 'Sabes exactamente cuánto entraste, cuánto gastaste y cuánto te quedó.',
-    Visual: MockDashboard,
+    title: 'Ve tus números en tiempo real',
+    body: 'El dashboard se actualiza al instante. Sabes cuánto entraste, cuánto gastaste y cuánto te quedó.',
+    Icon: IconChart,
+  },
+  {
+    num: '4',
+    title: 'Reportes y pendientes automáticos',
+    body: 'Genera tu estado de resultados en PDF con un tap. Ve de un vistazo los compromisos que se vencen pronto.',
+    Icon: IconFileText,
+    isPro: true,
+  },
+]
+
+const BUSINESSES: Array<{
+  Icon: React.ComponentType<{ size?: number }>
+  type: string
+  quote: string
+}> = [
+  { Icon: IconUtensils, type: 'Taquerías y restaurantes', quote: '"Ya sé exactamente cuánto gané hoy"' },
+  { Icon: IconScissors, type: 'Estéticas y salones',      quote: '"Los pendientes de pago nunca se me olvidan"' },
+  { Icon: IconWrench,   type: 'Talleres mecánicos',        quote: '"El reporte mensual me lo mando yo solo"' },
+  { Icon: IconStore,    type: 'Tiendas y abarrotes',       quote: '"Llevo mis cuentas en el celular, no en papel"' },
+  { Icon: IconTruck,    type: 'Food trucks y puestos',     quote: '"Sé cuánto gané en cada evento o turno"' },
+  { Icon: IconBriefcase,type: 'Freelancers y vendedores',  quote: '"Lo anoto mientras atiendo al cliente"' },
+]
+
+const FEATURE_HIGHLIGHTS: Array<{
+  Icon: React.ComponentType<{ size?: number }>
+  title: string
+  body: string
+}> = [
+  {
+    Icon: IconFileText,
+    title: 'Reportes PDF mensuales',
+    body: 'Genera tu estado de resultados con un tap. Compártelo por WhatsApp o descárgalo — sin Excel, sin formatos raros.',
+  },
+  {
+    Icon: IconClock,
+    title: 'Pendientes y vencimientos',
+    body: 'Registra lo que debes o te deben. Fiza te los muestra en el dashboard antes de que se te pasen.',
+  },
+  {
+    Icon: IconHistory,
+    title: 'Historial completo con filtros',
+    body: 'Filtra por hoy, semana, mes, año o fechas exactas. Consulta cómo ibas en cualquier período.',
   },
 ]
 
 const FREE_FEATURES = [
   '10 movimientos al día',
   'Texto, voz y foto',
-  'Historial 30 días',
+  'Historial de 30 días',
   'Dashboard con métricas',
+  'Categorías automáticas',
 ]
 
 const PRO_FEATURES = [
-  'Sin límite de movimientos',
+  'Movimientos sin límite',
   'Texto, voz y foto',
   'Historial completo',
+  'Filtros avanzados y rangos personalizados',
+  'Reportes PDF mensuales',
+  'Pendientes y vencimientos',
+  'Insights diarios inteligentes',
   'Todos tus dispositivos',
 ]
 
-/* ─────────────────────────────────────────
-   Página
-───────────────────────────────────────── */
+const TESTIMONIALS = [
+  {
+    quote: 'Antes anotaba todo en un cuaderno y tardaba horas los domingos sumando. Ahora lo registro de camino a casa.',
+    name: 'María G.',
+    business: 'Taquería, CDMX',
+    stars: 5,
+  },
+  {
+    quote: 'El reporte PDF lo comparto directo con mi socio por WhatsApp. Nada de explicaciones extras.',
+    name: 'Jorge M.',
+    business: 'Taller mecánico, Guadalajara',
+    stars: 5,
+  },
+  {
+    quote: 'Ya no se me olvida cobrar lo que me deben. Los pendientes están ahí en el dashboard.',
+    name: 'Carmen R.',
+    business: 'Estética, Monterrey',
+    stars: 5,
+  },
+]
+
+const FAQ = [
+  {
+    q: '¿Es seguro guardar mis finanzas aquí?',
+    a: 'Sí. Tus datos se guardan con cifrado en reposo y en tránsito. Nunca compartimos ni vendemos tu información. Puedes exportar o eliminar tu cuenta cuando quieras.',
+  },
+  {
+    q: '¿Necesito saber de contabilidad?',
+    a: 'Para nada. Fiza está diseñada para dueños de negocio, no para contadores. Solo dile lo que pasó en tu día en tus propias palabras — la IA se encarga de clasificar todo.',
+  },
+  {
+    q: '¿Para qué tipos de negocio funciona?',
+    a: 'Para cualquier negocio pequeño: taquerías, estéticas, talleres, tiendas, food trucks, freelancers, y cualquier actividad con ingresos y gastos — en efectivo o transferencia.',
+  },
+  {
+    q: '¿Qué pasa con mis datos si cancelo?',
+    a: 'Tu cuenta continúa en el plan gratuito con acceso a los últimos 30 días. Puedes descargar tus reportes antes de cancelar. No borramos tus datos.',
+  },
+  {
+    q: '¿Funciona en celular?',
+    a: 'Sí, está optimizada para móvil desde el primer día. Funciona en cualquier navegador moderno — sin descargar nada de la App Store ni Google Play.',
+  },
+  {
+    q: '¿En qué se diferencia de una libreta o de Excel?',
+    a: 'Una libreta no clasifica ni calcula sola. Excel requiere formatos y conocimientos técnicos. Fiza entiende lenguaje natural — escribe como le hablarías a alguien, y ella organiza todo.',
+  },
+]
+
+/* ─── Page ────────────────────────────────────────────────────────────────── */
 
 export default function HomePage() {
-  const carouselRef = useRef<HTMLDivElement>(null)
-  const [activeStep, setActiveStep] = useState(0)
+  const [scrolled, setScrolled]   = useState(false)
+  const [openFAQ, setOpenFAQ]     = useState<number | null>(null)
 
   useEffect(() => {
-    const el = carouselRef.current
-    if (!el) return
-    const handler = () => {
-      const w = el.scrollWidth / STEPS.length
-      setActiveStep(Math.min(Math.round(el.scrollLeft / w), STEPS.length - 1))
-    }
-    el.addEventListener('scroll', handler, { passive: true })
-    return () => el.removeEventListener('scroll', handler)
+    const handler = () => setScrolled(window.scrollY > 20)
+    window.addEventListener('scroll', handler, { passive: true })
+    return () => window.removeEventListener('scroll', handler)
   }, [])
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#fff' }}>
 
-      {/* ── Navbar ── */}
+      {/* ── Navbar ──────────────────────────────────────────────────────────── */}
       <header
-        className="sticky top-0 z-20 bg-white flex items-center justify-between px-4 shrink-0"
+        className="sticky top-0 z-20 flex items-center justify-between px-5 shrink-0 transition-all duration-200"
         style={{
-          borderBottom: '1px solid var(--brand-border)',
-          height: '56px',
+          height: '60px',
           paddingTop: 'env(safe-area-inset-top, 0px)',
+          background: scrolled ? 'rgba(255,255,255,0.92)' : '#fff',
+          backdropFilter: scrolled ? 'blur(12px)' : 'none',
+          WebkitBackdropFilter: scrolled ? 'blur(12px)' : 'none',
+          borderBottom: scrolled ? '1px solid var(--brand-border)' : '1px solid transparent',
         }}
       >
-        <img src="/logo-green.png" alt="fiza" style={{ height: '28px', width: 'auto' }} />
-        <Link
-          href="/login"
-          className="text-sm font-semibold px-4 py-2 rounded-lg border transition-colors min-h-[40px] flex items-center"
-          style={{ borderColor: 'var(--brand)', color: 'var(--brand)' }}
-        >
-          Iniciar sesión
-        </Link>
-      </header>
+        {/* Logo */}
+        <img src="/logo-green.png" alt="fiza" style={{ height: '26px', width: 'auto' }} />
 
-      {/* ── Hero ── */}
-      <section
-        className="flex flex-col items-center text-center px-5 pt-20 pb-16"
-        style={{ background: 'linear-gradient(115deg, #92C3A5 25%, #DAE68F 75%)' }}
-      >
-        <h1
-          className="font-bold leading-tight mb-5"
-          style={{ color: '#fff', fontSize: 'clamp(2rem, 8vw, 2.75rem)', maxWidth: '340px' }}
-        >
-          Tus cuentas,<br />sin cuentos.
-        </h1>
+        {/* Nav links — desktop only */}
+        <nav className="hidden md:flex items-center gap-7" aria-label="Secciones">
+          {[
+            { href: '#como-funciona', label: 'Cómo funciona' },
+            { href: '#precios',       label: 'Precios' },
+            { href: '#para-quien',    label: 'Para quién es' },
+          ].map(link => (
+            <a
+              key={link.href}
+              href={link.href}
+              className="text-sm font-medium transition-opacity hover:opacity-70"
+              style={{ color: 'var(--brand)' }}
+            >
+              {link.label}
+            </a>
+          ))}
+        </nav>
 
-        <p
-          className="text-base leading-relaxed mb-10"
-          style={{ color: 'rgba(255,255,255,0.88)', maxWidth: '300px' }}
-        >
-          Escribe, dicta o fotografía lo que pasó en tu negocio.
-          fiza lo organiza todo automáticamente.
-        </p>
-
-        <div className="flex flex-col gap-3 w-full" style={{ maxWidth: '320px' }}>
-          <Link
-            href="/login?mode=register"
-            className="w-full py-4 rounded-xl font-bold text-lg text-center min-h-[56px] flex items-center justify-center gap-2"
-            style={{
-              background: '#fff',
-              color: 'var(--brand)',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.13)',
-            }}
-          >
-            Empieza gratis <span>→</span>
-          </Link>
+        {/* Auth buttons */}
+        <div className="flex items-center gap-2">
           <Link
             href="/login"
-            className="text-sm text-center py-2"
-            style={{ color: 'rgba(255,255,255,0.70)' }}
+            className="hidden md:flex text-sm font-medium px-4 py-2 rounded-lg min-h-[36px] items-center transition-opacity hover:opacity-70"
+            style={{ color: 'var(--brand)' }}
           >
-            Ya tengo cuenta — Iniciar sesión
+            Iniciar sesión
           </Link>
+          <Link
+            href="/login?mode=register"
+            className="text-sm font-bold px-4 py-2 rounded-lg min-h-[36px] flex items-center text-white"
+            style={{ background: 'var(--brand)' }}
+          >
+            Empieza gratis
+          </Link>
+        </div>
+      </header>
+
+      {/* ── Hero ────────────────────────────────────────────────────────────── */}
+      <section
+        className="relative overflow-hidden"
+        style={{ background: 'linear-gradient(135deg, #3d6050 0%, #578466 35%, #92C3A5 70%, #DAE68F 100%)' }}
+      >
+        <div className="max-w-5xl mx-auto px-5 pt-16 pb-24 md:py-20 md:pb-28 flex flex-col md:flex-row items-center gap-10 md:gap-14">
+
+          {/* Text */}
+          <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left">
+            {/* Eyebrow pill */}
+            <span
+              className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full mb-5"
+              style={{ background: 'rgba(255,255,255,0.18)', color: '#fff' }}
+            >
+              <IconSparkles size={12} />
+              Contabilidad sin contadores
+            </span>
+
+            <h1
+              className="font-bold leading-tight mb-4"
+              style={{ color: '#fff', fontSize: 'clamp(2.2rem, 7vw, 3.2rem)', maxWidth: '440px' }}
+            >
+              Tus cuentas,<br />sin cuentos.
+            </h1>
+
+            <p
+              className="text-base leading-relaxed mb-8"
+              style={{ color: 'rgba(255,255,255,0.88)', maxWidth: '390px' }}
+            >
+              Dile lo que vendiste y gastaste hoy — en tus propias palabras.
+              Fiza lo clasifica, calcula tu neto y te avisa cuando vencen tus pendientes.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <Link
+                href="/login?mode=register"
+                className="px-7 py-3.5 rounded-xl font-bold text-base text-center min-h-[52px] flex items-center justify-center gap-2 transition-transform active:scale-95"
+                style={{ background: '#fff', color: 'var(--brand)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}
+              >
+                Empieza gratis
+                <span aria-hidden="true">→</span>
+              </Link>
+              <Link
+                href="/login?mode=register"
+                className="px-7 py-3.5 rounded-xl font-semibold text-base text-center min-h-[52px] flex items-center justify-center"
+                style={{
+                  background: 'rgba(255,255,255,0.15)',
+                  color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                }}
+              >
+                7 días gratis con Pro
+              </Link>
+            </div>
+
+            <p className="text-xs mt-3" style={{ color: 'rgba(255,255,255,0.58)' }}>
+              Sin tarjeta de crédito · Cancela cuando quieras
+            </p>
+          </div>
+
+          {/* Mockup */}
+          <div className="flex-shrink-0 w-full md:w-auto flex justify-center">
+            <AppMockup />
+          </div>
+        </div>
+
+        {/* Wave transition to white */}
+        <div className="absolute bottom-0 left-0 right-0" aria-hidden="true">
+          <svg viewBox="0 0 1200 52" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: '52px' }}>
+            <path d="M0,32 C200,52 400,12 600,28 C800,44 1000,8 1200,28 L1200,52 L0,52 Z" fill="#fff"/>
+          </svg>
         </div>
       </section>
 
-      {/* ── Cómo funciona ── */}
-      <section className="pt-12 pb-2 bg-white">
-        <p
-          className="text-xs font-bold text-center mb-7 px-4"
-          style={{ color: 'var(--brand-mid)', letterSpacing: '0.12em' }}
-        >
-          CÓMO FUNCIONA
-        </p>
-
-        <div className="md:max-w-4xl md:mx-auto md:px-8">
-          <div
-            ref={carouselRef}
-            role="list"
-            aria-label="Cómo funciona fiza"
-            className="ff-carousel no-scrollbar flex gap-4"
-            style={{
-              overflowX: 'auto',
-              scrollSnapType: 'x mandatory',
-              WebkitOverflowScrolling: 'touch',
-              scrollbarWidth: 'none',
-              padding: '4px 24px 20px',
-              paddingRight: '52px',
-            }}
+      {/* ── Social proof ────────────────────────────────────────────────────── */}
+      <section className="pt-12 pb-14 px-4 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <p
+            className="text-xs font-bold text-center mb-8"
+            style={{ color: 'var(--brand-muted)', letterSpacing: '0.12em' }}
           >
-            {STEPS.map(step => (
+            LO QUE DICEN LOS DUEÑOS DE NEGOCIO
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {TESTIMONIALS.map(t => (
               <div
-                key={step.num}
-                role="listitem"
-                className="flex flex-col gap-3 bg-white rounded-2xl p-4 shrink-0"
-                style={{
-                  width: '240px',
-                  scrollSnapAlign: 'start',
-                  border: '1px solid var(--brand-border)',
-                  boxShadow: '0 2px 12px rgba(87,132,102,0.08)',
-                }}
+                key={t.name}
+                className="rounded-2xl p-5 flex flex-col gap-3"
+                style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}
               >
-                <step.Visual />
-                <div className="flex items-start gap-2.5">
-                  <span
-                    className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                    style={{ background: 'var(--brand)' }}
-                  >
-                    {step.num}
-                  </span>
-                  <div>
-                    <p className="text-sm font-bold mb-0.5" style={{ color: 'var(--brand)' }}>{step.title}</p>
-                    <p className="text-xs italic leading-snug" style={{ color: 'var(--brand-mid)' }}>{step.body}</p>
-                  </div>
+                <div className="flex gap-0.5" style={{ color: '#F59E0B' }}>
+                  {Array.from({ length: t.stars }).map((_, i) => (
+                    <IconStar key={i} size={14} />
+                  ))}
+                </div>
+                <p className="text-sm leading-relaxed italic flex-1" style={{ color: 'var(--brand)' }}>
+                  {t.quote}
+                </p>
+                <div>
+                  <p className="text-xs font-bold" style={{ color: 'var(--brand)' }}>{t.name}</p>
+                  <p className="text-xs" style={{ color: 'var(--brand-muted)' }}>{t.business}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
-
-        {/* Dots — solo visibles en mobile */}
-        <div className="flex md:hidden justify-center gap-2 pb-10">
-          {STEPS.map((_, i) => (
-            <div
-              key={i}
-              className="rounded-full transition-all duration-300"
-              style={{
-                width:      activeStep === i ? '20px' : '8px',
-                height:     '8px',
-                background: activeStep === i ? 'var(--brand)' : 'var(--brand-border)',
-              }}
-            />
-          ))}
-        </div>
-        <div className="hidden md:block pb-10" />
       </section>
 
-      {/* ── Para quién es ── */}
-      <section className="px-4 py-12" style={{ background: 'var(--brand-chip)' }}>
-        <div className="max-w-lg mx-auto">
-          <div
-            className="bg-white rounded-2xl p-8"
-            style={{ border: '1px solid var(--brand-border)', boxShadow: '0 2px 16px rgba(87,132,102,0.07)' }}
+      {/* ── Cómo funciona ───────────────────────────────────────────────────── */}
+      <section id="como-funciona" className="py-14 px-4" style={{ background: 'var(--brand-chip)' }}>
+        <div className="max-w-4xl mx-auto">
+          <p
+            className="text-xs font-bold text-center mb-2"
+            style={{ color: 'var(--brand-muted)', letterSpacing: '0.12em' }}
           >
-            <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--brand)' }}>
-              Para negocios como el tuyo
-            </h2>
-            <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--brand-mid)' }}>
-              Taquerías &nbsp;·&nbsp; Tiendas de abarrotes &nbsp;·&nbsp; Talleres &nbsp;·&nbsp;
-              Estéticas &nbsp;·&nbsp; Food trucks &nbsp;·&nbsp; Vendedores de cualquier cosa
-            </p>
-            <p
-              className="text-sm italic leading-relaxed pt-5"
-              style={{ color: 'var(--brand)', borderTop: '1px solid var(--brand-border)' }}
-            >
-              Si llevas tus cuentas en un cuaderno, en tu cabeza, o en el WhatsApp de tu familia
-              — fiza es para ti.
-            </p>
+            CÓMO FUNCIONA
+          </p>
+          <h2 className="text-2xl font-bold text-center mb-2" style={{ color: 'var(--brand)' }}>
+            Tan fácil como mandar un mensaje
+          </h2>
+          <p
+            className="text-sm text-center mb-9"
+            style={{ color: 'var(--brand-mid)', maxWidth: '340px', margin: '0 auto 2.25rem' }}
+          >
+            No necesitas saber de contabilidad. Solo cuéntale lo que pasó.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            {STEPS.map(s => (
+              <StepCard
+                key={s.num}
+                num={s.num}
+                title={s.title}
+                body={s.body}
+                icon={s.Icon}
+                isPro={s.isPro}
+              />
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── Precios ── */}
-      <section className="px-4 py-12 bg-white">
+      {/* ── Para negocios como el tuyo ──────────────────────────────────────── */}
+      <section id="para-quien" className="py-14 px-4 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <p
+            className="text-xs font-bold text-center mb-2"
+            style={{ color: 'var(--brand-muted)', letterSpacing: '0.12em' }}
+          >
+            PARA QUIÉN ES
+          </p>
+          <h2 className="text-2xl font-bold text-center mb-9" style={{ color: 'var(--brand)' }}>
+            Para negocios como el tuyo
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {BUSINESSES.map(b => (
+              <div
+                key={b.type}
+                className="rounded-2xl p-4 flex flex-col gap-3"
+                style={{
+                  background: '#fff',
+                  border: '1px solid var(--brand-border)',
+                  boxShadow: '0 2px 12px rgba(87,132,102,0.06)',
+                }}
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: 'var(--brand-chip)', color: 'var(--brand)' }}
+                >
+                  <b.Icon size={20} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold mb-1" style={{ color: 'var(--brand)' }}>{b.type}</p>
+                  <p className="text-xs italic leading-snug" style={{ color: 'var(--brand-mid)' }}>{b.quote}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p
+            className="text-sm italic text-center mt-8 max-w-md mx-auto"
+            style={{ color: 'var(--brand-mid)' }}
+          >
+            Si llevas tus cuentas en un cuaderno, en tu cabeza, o en el WhatsApp de tu familia
+            — fiza es para ti.
+          </p>
+        </div>
+      </section>
+
+      {/* ── Features destacados ─────────────────────────────────────────────── */}
+      <section
+        className="py-14 px-4"
+        style={{ background: 'linear-gradient(145deg, #3d6050 0%, #578466 100%)' }}
+      >
+        <div className="max-w-4xl mx-auto">
+          <p
+            className="text-xs font-bold text-center mb-2"
+            style={{ color: 'rgba(255,255,255,0.55)', letterSpacing: '0.12em' }}
+          >
+            LO QUE HACE POR TI
+          </p>
+          <h2 className="text-2xl font-bold text-center mb-9" style={{ color: '#fff' }}>
+            Más que registrar — fiza trabaja para ti
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {FEATURE_HIGHLIGHTS.map(f => (
+              <div
+                key={f.title}
+                className="rounded-2xl p-6 flex flex-col gap-4"
+                style={{
+                  background: 'rgba(255,255,255,0.09)',
+                  border: '1px solid rgba(255,255,255,0.14)',
+                }}
+              >
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center"
+                  style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}
+                >
+                  <f.Icon size={22} />
+                </div>
+                <div>
+                  <p className="text-base font-bold mb-2" style={{ color: '#fff' }}>{f.title}</p>
+                  <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.76)' }}>{f.body}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Precios ─────────────────────────────────────────────────────────── */}
+      <section id="precios" className="py-14 px-4 bg-white">
         <div className="max-w-lg mx-auto">
-          <h2 className="text-xl font-bold text-center mb-7" style={{ color: 'var(--brand)' }}>
+          <p
+            className="text-xs font-bold text-center mb-2"
+            style={{ color: 'var(--brand-muted)', letterSpacing: '0.12em' }}
+          >
+            PRECIOS
+          </p>
+          <h2 className="text-2xl font-bold text-center mb-2" style={{ color: 'var(--brand)' }}>
             Simple y sin sorpresas
           </h2>
+          <p className="text-sm text-center mb-10" style={{ color: 'var(--brand-mid)' }}>
+            Empieza gratis, sube cuando lo necesites.
+          </p>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
             {/* Free */}
             <div
-              className="rounded-xl p-4 flex flex-col gap-3"
+              className="rounded-2xl p-6 flex flex-col gap-4"
               style={{ background: '#fff', border: '1px solid var(--brand-border)' }}
             >
               <div>
-                <p className="text-[10px] font-bold tracking-widest mb-1.5" style={{ color: 'var(--brand-muted)' }}>
+                <p className="text-[11px] font-bold tracking-widest mb-2" style={{ color: 'var(--brand-muted)' }}>
                   GRATIS
                 </p>
-                <p className="text-2xl font-bold" style={{ color: 'var(--brand)' }}>$0</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-bold" style={{ color: 'var(--brand)' }}>$0</span>
+                  <span className="text-sm" style={{ color: 'var(--brand-mid)' }}>/mes</span>
+                </div>
               </div>
-              <ul className="flex flex-col gap-2 flex-1">
+              <ul className="flex flex-col gap-2.5 flex-1">
                 {FREE_FEATURES.map(f => (
-                  <li key={f} className="flex items-start gap-1.5">
-                    <span className="text-xs shrink-0 mt-px font-bold" style={{ color: 'var(--brand)' }}>✓</span>
-                    <span className="text-xs leading-snug" style={{ color: 'var(--brand)' }}>{f}</span>
+                  <li key={f} className="flex items-start gap-2">
+                    <span style={{ color: 'var(--brand)', marginTop: '2px', flexShrink: 0 }}>
+                      <IconCheck size={15} />
+                    </span>
+                    <span className="text-sm leading-snug" style={{ color: 'var(--brand)' }}>{f}</span>
                   </li>
                 ))}
               </ul>
               <Link
                 href="/login?mode=register"
-                className="w-full py-2.5 rounded-xl text-sm font-semibold text-center border min-h-[40px] flex items-center justify-center"
+                className="w-full py-3 rounded-xl text-sm font-semibold text-center border min-h-[44px] flex items-center justify-center transition-opacity hover:opacity-75"
                 style={{ borderColor: 'var(--brand)', color: 'var(--brand)' }}
               >
                 Empieza gratis
@@ -352,55 +884,134 @@ export default function HomePage() {
 
             {/* Pro */}
             <div
-              className="rounded-xl p-4 flex flex-col gap-3"
-              style={{ background: '#EEFBE8', border: '2px solid var(--brand)' }}
+              className="rounded-2xl p-6 flex flex-col gap-4 relative"
+              style={{ background: 'var(--pro-bg)', border: '2px solid var(--brand)' }}
             >
-              <div className="text-center -mt-1">
-                <span
-                  className="text-[9px] font-bold px-2 py-0.5 rounded-full text-white"
-                  style={{ background: 'var(--brand)' }}
-                >
-                  MÁS POPULAR
-                </span>
-              </div>
+              <span
+                className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[10px] font-bold px-3 py-1 rounded-full text-white whitespace-nowrap"
+                style={{ background: 'var(--brand)' }}
+              >
+                MÁS POPULAR
+              </span>
               <div>
-                <p className="text-[10px] font-bold tracking-widest mb-1.5" style={{ color: 'var(--brand)' }}>
+                <p className="text-[11px] font-bold tracking-widest mb-2" style={{ color: 'var(--brand)' }}>
                   PRO
                 </p>
-                <p className="text-2xl font-bold" style={{ color: 'var(--brand)' }}>
-                  $49
-                  <span className="text-sm font-normal ml-0.5" style={{ color: 'var(--brand-mid)' }}>/mes</span>
-                </p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-bold" style={{ color: 'var(--brand)' }}>$49</span>
+                  <span className="text-sm" style={{ color: 'var(--brand-mid)' }}>/mes</span>
+                </div>
               </div>
-              <ul className="flex flex-col gap-2 flex-1">
+              <ul className="flex flex-col gap-2.5 flex-1">
                 {PRO_FEATURES.map(f => (
-                  <li key={f} className="flex items-start gap-1.5">
-                    <span className="text-xs shrink-0 mt-px font-bold" style={{ color: 'var(--brand)' }}>✓</span>
-                    <span className="text-xs leading-snug" style={{ color: 'var(--brand)' }}>{f}</span>
+                  <li key={f} className="flex items-start gap-2">
+                    <span style={{ color: 'var(--brand)', marginTop: '2px', flexShrink: 0 }}>
+                      <IconCheck size={15} />
+                    </span>
+                    <span className="text-sm leading-snug" style={{ color: 'var(--brand)' }}>{f}</span>
                   </li>
                 ))}
               </ul>
               <Link
                 href="/login?mode=register"
-                className="w-full py-2.5 rounded-xl text-sm font-bold text-center text-white min-h-[40px] flex items-center justify-center"
+                className="w-full py-3 rounded-xl text-sm font-bold text-center text-white min-h-[44px] flex items-center justify-center transition-transform active:scale-95"
                 style={{ background: 'var(--brand)' }}
               >
-                Suscribirme
+                Probar Pro 7 días gratis
               </Link>
             </div>
           </div>
 
-          <p className="text-xs text-center mt-4" style={{ color: 'var(--brand-muted)' }}>
-            Cancela cuando quieras. Sin permanencia.
+          {/* Money-back guarantee */}
+          <div
+            className="mt-4 rounded-xl p-4 flex items-center gap-3"
+            style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}
+          >
+            <span style={{ color: 'var(--brand)', flexShrink: 0 }}>
+              <IconShield size={20} />
+            </span>
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--brand)' }}>
+              <span className="font-bold">Garantía de 30 días.</span>{' '}
+              Si en el primer mes no le encuentras utilidad, te devolvemos tu dinero — sin preguntas.
+            </p>
+          </div>
+
+          <p className="text-xs text-center mt-3" style={{ color: 'var(--brand-muted)' }}>
+            Cancela cuando quieras · Sin permanencia · Sin letra chica
           </p>
         </div>
       </section>
 
-      {/* ── Footer ── */}
-      <footer className="py-8 text-center mt-auto" style={{ background: 'var(--brand)' }}>
-        <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.72)' }}>
-          fiza &nbsp;·&nbsp; © 2026 fiza.mx
-        </p>
+      {/* ── FAQ ─────────────────────────────────────────────────────────────── */}
+      <section id="faq" className="py-14 px-4" style={{ background: 'var(--brand-chip)' }}>
+        <div className="max-w-xl mx-auto">
+          <p
+            className="text-xs font-bold text-center mb-2"
+            style={{ color: 'var(--brand-muted)', letterSpacing: '0.12em' }}
+          >
+            PREGUNTAS FRECUENTES
+          </p>
+          <h2 className="text-2xl font-bold text-center mb-8" style={{ color: 'var(--brand)' }}>
+            ¿Tienes dudas?
+          </h2>
+          <div className="flex flex-col gap-2.5">
+            {FAQ.map((item, i) => (
+              <FAQItem
+                key={i}
+                q={item.q}
+                a={item.a}
+                isOpen={openFAQ === i}
+                onToggle={() => setOpenFAQ(openFAQ === i ? null : i)}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Footer ──────────────────────────────────────────────────────────── */}
+      <footer className="pt-12 pb-8 px-5" style={{ background: 'var(--brand)' }}>
+        <div className="max-w-4xl mx-auto">
+
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-8">
+            {/* Brand */}
+            <div className="flex flex-col gap-2">
+              <img src="/logo-white.png" alt="fiza" style={{ height: '26px', width: 'auto' }} />
+              <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.62)', maxWidth: '240px' }}>
+                La forma más fácil de llevar las cuentas de tu negocio.
+              </p>
+            </div>
+
+            {/* Links */}
+            <nav className="flex flex-wrap gap-x-6 gap-y-2" aria-label="Footer">
+              {[
+                { label: 'Privacidad', href: '/privacidad' },
+                { label: 'Términos',   href: '/terminos' },
+                { label: 'Contacto',   href: 'mailto:hola@fiza.mx' },
+              ].map(link => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className="text-sm transition-opacity hover:opacity-80"
+                  style={{ color: 'rgba(255,255,255,0.72)' }}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          <div
+            className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-6"
+            style={{ borderTop: '1px solid rgba(255,255,255,0.14)' }}
+          >
+            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              © 2026 fiza.mx — Todos los derechos reservados
+            </p>
+            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              Hecho en México 🇲🇽
+            </p>
+          </div>
+        </div>
       </footer>
 
     </div>
