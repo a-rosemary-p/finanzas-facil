@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { WaveDivider, WaveUnderline } from '@/components/ui/wave'
 
 /* ─── SVG Icons ───────────────────────────────────────────────────────────── */
 
@@ -179,74 +180,6 @@ function IconBriefcase({ size = 22 }: { size?: number }) {
     </svg>
   )
 }
-
-/* ─── Wave components — v2 design system ─────────────────────────────────── */
-/*
- * Rules (v2):  stroke only · never fill · stroke-linecap round
- *              opacity 25–70 % in UI
- *
- * Two weights used in UI:
- *   Hairline  — section divider  (viewBox 1200×12, amp 6, w 1)
- *   Light     — headline underline (viewBox 600×18, amp 6, w 1.5)
- */
-
-/**
- * Hairline stroke wave — section divider (replaces border-bottom).
- * Absolutely positioned at the bottom of its parent; parent must be
- * position: relative (add via inline style or className).
- */
-function WaveDivider({
-  color = 'var(--brand-light)',
-  opacity = 0.6,
-}: {
-  color?: string
-  opacity?: number
-}) {
-  return (
-    <div
-      aria-hidden="true"
-      style={{ position: 'absolute', left: 0, right: 0, bottom: 0, lineHeight: 0, pointerEvents: 'none' }}
-    >
-      <svg viewBox="0 0 1200 12" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: '12px' }}>
-        <path
-          d="M 0 6 C 50 0, 100 12, 150 6 S 250 0, 300 6 S 400 12, 450 6 S 550 0, 600 6 S 700 12, 750 6 S 850 0, 900 6 S 1000 12, 1050 6 S 1150 0, 1200 6"
-          fill="none"
-          stroke={color}
-          strokeWidth="1"
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
-          opacity={opacity}
-        />
-      </svg>
-    </div>
-  )
-}
-
-/**
- * Light stroke wave — headline underline.
- * Inline block; max 520 px per design spec.
- * Place directly after an h1 or key headline element.
- */
-function WaveUnderline({ color = 'var(--brand-light)' }: { color?: string }) {
-  return (
-    <svg
-      viewBox="0 0 600 18"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-      style={{ display: 'block', width: '100%', maxWidth: '420px', height: '10px' }}
-    >
-      <path
-        d="M 0 9 C 25 3, 50 15, 75 9 S 125 3, 150 9 S 200 15, 225 9 S 275 3, 300 9 S 350 15, 375 9 S 425 3, 450 9 S 500 15, 525 9 S 575 3, 600 9"
-        fill="none"
-        stroke={color}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        vectorEffect="non-scaling-stroke"
-      />
-    </svg>
-  )
-}
-
 
 /* ─── Step Card ───────────────────────────────────────────────────────────── */
 
@@ -606,7 +539,7 @@ export default function HomePage() {
           <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left">
             {/* Eyebrow pill */}
             <span
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full mb-5"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full mb-3"
               style={{
                 background: 'rgba(255,255,255,0.16)',
                 color: '#fff',
@@ -637,7 +570,7 @@ export default function HomePage() {
 
             {/* Functional tagline — official brand copy */}
             <p
-              className="font-medium mb-5"
+              className="font-medium mb-3"
               style={{
                 color: 'rgba(255,255,255,0.72)',
                 fontSize: '15px',
@@ -651,7 +584,7 @@ export default function HomePage() {
 
             {/* Lede */}
             <p
-              className="leading-relaxed mb-8"
+              className="leading-relaxed mb-5"
               style={{
                 color: 'rgba(255,255,255,0.88)',
                 fontSize: '17px',
@@ -705,7 +638,7 @@ export default function HomePage() {
               draggable={false}
               style={{
                 width: '100%',
-                maxWidth: '260px',
+                maxWidth: '340px',
                 height: 'auto',
                 display: 'block',
                 filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.35))',
@@ -714,12 +647,18 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Wave divider — hairline stroke (v2 design system: stroke only, never fill) */}
-        <WaveDivider color="rgba(255,255,255,0.45)" opacity={1} />
+        {/* Hero wave — filled solid transition to paper.
+            Deliberate exception to the stroke-only rule: the filled shape
+            creates a smooth gradient→paper flow that the hairline can't achieve. */}
+        <div className="absolute bottom-0 left-0 right-0" aria-hidden="true">
+          <svg viewBox="0 0 1200 52" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: '52px' }}>
+            <path d="M0,32 C200,52 400,12 600,28 C800,44 1000,8 1200,28 L1200,52 L0,52 Z" fill="var(--paper)"/>
+          </svg>
+        </div>
       </section>
 
       {/* ── Ciudades ────────────────────────────────────────────────────────── */}
-      <section className="pt-12 pb-14 px-4" style={{ background: 'var(--paper)', position: 'relative' }}>
+      <section className="pt-12 pb-14 px-4" style={{ background: 'var(--paper)', position: 'relative', overflow: 'hidden' }}>
         <div className="max-w-3xl mx-auto">
           <p className="text-center mb-2" style={eyebrowStyle}>Ya en todo México</p>
           <p className="text-sm text-center mb-7" style={{ color: 'var(--ink-500)', fontSize: '17px', lineHeight: 1.55 }}>
@@ -753,11 +692,11 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-        <WaveDivider />
+        <WaveDivider fill="var(--paper-2)" />
       </section>
 
       {/* ── Cómo funciona ───────────────────────────────────────────────────── */}
-      <section id="como-funciona" className="py-14 px-4" style={{ background: 'var(--paper-2)', position: 'relative' }}>
+      <section id="como-funciona" className="py-14 px-4" style={{ background: 'var(--paper-2)', position: 'relative', overflow: 'hidden' }}>
         <div className="max-w-4xl mx-auto">
           <p className="text-center mb-3" style={eyebrowStyle}>Cómo funciona</p>
           <h2 className="text-center mb-3" style={secTitleStyle}>
@@ -782,11 +721,11 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-        <WaveDivider />
+        <WaveDivider fill="var(--paper)" />
       </section>
 
       {/* ── Para negocios ───────────────────────────────────────────────────── */}
-      <section id="para-quien" className="py-14 px-4" style={{ background: 'var(--paper)', position: 'relative' }}>
+      <section id="para-quien" className="py-14 px-4" style={{ background: 'var(--paper)', position: 'relative', overflow: 'hidden' }}>
         <div className="max-w-4xl mx-auto">
           <p className="text-center mb-3" style={eyebrowStyle}>Para quién es</p>
           <h2 className="text-center mb-9" style={secTitleStyle}>
@@ -834,13 +773,13 @@ export default function HomePage() {
             — fiza es para ti.
           </p>
         </div>
-        <WaveDivider />
+        <WaveDivider fill="#3d6050" />
       </section>
 
       {/* ── Features destacados ─────────────────────────────────────────────── */}
       <section
         className="py-14 px-4"
-        style={{ background: 'linear-gradient(145deg, #3d6050 0%, #578466 100%)', position: 'relative' }}
+        style={{ background: 'linear-gradient(145deg, #3d6050 0%, #578466 100%)', position: 'relative', overflow: 'hidden' }}
       >
         <div className="max-w-4xl mx-auto">
           <p
@@ -886,11 +825,11 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-        <WaveDivider color="rgba(255,255,255,0.35)" opacity={1} />
+        <WaveDivider fill="var(--paper-2)" />
       </section>
 
       {/* ── Precios ─────────────────────────────────────────────────────────── */}
-      <section id="precios" className="py-14 px-4" style={{ background: 'var(--paper-2)', position: 'relative' }}>
+      <section id="precios" className="py-14 px-4" style={{ background: 'var(--paper-2)', position: 'relative', overflow: 'hidden' }}>
         <div className="max-w-lg mx-auto">
           <p className="text-center mb-3" style={eyebrowStyle}>Precios</p>
           <h2 className="text-center mb-2" style={secTitleStyle}>
@@ -1033,11 +972,11 @@ export default function HomePage() {
             Cancela cuando quieras · Sin permanencia · Sin letra chica
           </p>
         </div>
-        <WaveDivider />
+        <WaveDivider fill="var(--paper)" />
       </section>
 
       {/* ── FAQ ─────────────────────────────────────────────────────────────── */}
-      <section id="faq" className="py-14 px-4" style={{ background: 'var(--paper)', position: 'relative' }}>
+      <section id="faq" className="py-14 px-4" style={{ background: 'var(--paper)', position: 'relative', overflow: 'hidden' }}>
         <div className="max-w-xl mx-auto">
           <p className="text-center mb-3" style={eyebrowStyle}>Preguntas frecuentes</p>
           <h2 className="text-center mb-8" style={secTitleStyle}>
@@ -1055,7 +994,7 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-        <WaveDivider />
+        <WaveDivider fill="var(--brand)" />
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────────────────── */}

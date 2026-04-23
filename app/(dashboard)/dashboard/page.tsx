@@ -13,6 +13,7 @@ import { PendingCommitments } from '@/components/dashboard/pending-commitments'
 import { getPeriodLabel, groupMovementsByDate } from '@/lib/utils'
 import { TYPE_FILTER_CONFIG } from '@/lib/constants'
 import type { DateFilter, TypeFilter, Entry, PendingMovement } from '@/types'
+import { WaveRule } from '@/components/ui/wave'
 
 type Mode = 'dashboard' | 'confirming'
 
@@ -194,7 +195,7 @@ function DashboardInner() {
                     {item.label}
                   </a>
                 ))}
-                <div style={{ borderTop: '1px solid var(--brand-border)' }}>
+                <div><WaveRule />
                   <button
                     type="button"
                     onClick={() => { setMenuOpen(false); logout() }}
@@ -268,7 +269,7 @@ function DashboardInner() {
                   </label>
                 </div>
               </div>
-              <div style={{ height: '1px', background: 'var(--brand-light)' }} />
+              <WaveRule color="var(--brand-light)" />
               <div className="grid grid-cols-3 gap-3">
                 <MetricCard label="Ingresos" value={metrics.income} color="#578466" bg="#DAE68F" border="#92C3A5" sign="+" />
                 <MetricCard label="Gastos" value={metrics.expenses} color="#D0481A" bg="#FAD5BF" border="#F79366" sign="−" />
@@ -328,7 +329,7 @@ function DashboardInner() {
                     </span>
                   )}
                 </h2>
-                <div className="mt-2" style={{ height: '1px', background: 'var(--brand-light)' }} />
+                <div className="mt-2"><WaveRule color="var(--brand-light)" /></div>
               </div>
 
               {loading ? (

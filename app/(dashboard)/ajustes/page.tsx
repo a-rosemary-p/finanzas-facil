@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import type { SettingsUpdate } from '@/types'
+import { WaveRule } from '@/components/ui/wave'
 
 type EditingSection = 'cuenta' | 'password' | null
 
@@ -69,9 +70,10 @@ function SectionCard({
 
 function ReadRow({ label, value }: { label: string; value?: string }) {
   return (
-    <div className="flex flex-col gap-1 py-3" style={{ borderBottom: '1px solid var(--brand-border)' }}>
+    <div className="flex flex-col gap-1 pt-3">
       <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>{label}</p>
       <p className="text-sm" style={{ color: value ? 'var(--brand)' : 'var(--brand-muted)' }}>{value || '—'}</p>
+      <WaveRule />
     </div>
   )
 }
@@ -80,24 +82,27 @@ function ToggleRow({ label, description, checked, onChange }: {
   label: string; description?: string; checked: boolean; onChange: (v: boolean) => void
 }) {
   return (
-    <div className="flex items-start justify-between py-3 gap-4" style={{ borderBottom: '1px solid var(--brand-border)' }}>
-      <div className="flex flex-col gap-0.5 flex-1">
-        <p className="text-sm font-medium" style={{ color: 'var(--brand)' }}>{label}</p>
-        {description && <p className="text-xs" style={{ color: 'var(--brand-muted)' }}>{description}</p>}
+    <div className="flex flex-col pt-3">
+      <div className="flex items-start justify-between pb-1 gap-4">
+        <div className="flex flex-col gap-0.5 flex-1">
+          <p className="text-sm font-medium" style={{ color: 'var(--brand)' }}>{label}</p>
+          {description && <p className="text-xs" style={{ color: 'var(--brand-muted)' }}>{description}</p>}
+        </div>
+        <button
+          type="button"
+          onClick={() => onChange(!checked)}
+          className="relative flex-shrink-0 w-11 h-6 rounded-full transition-colors mt-0.5"
+          style={{ background: checked ? 'var(--brand)' : 'var(--brand-border)' }}
+          aria-checked={checked}
+          role="switch"
+        >
+          <span
+            className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
+            style={{ transform: checked ? 'translateX(20px)' : 'translateX(0)' }}
+          />
+        </button>
       </div>
-      <button
-        type="button"
-        onClick={() => onChange(!checked)}
-        className="relative flex-shrink-0 w-11 h-6 rounded-full transition-colors mt-0.5"
-        style={{ background: checked ? 'var(--brand)' : 'var(--brand-border)' }}
-        aria-checked={checked}
-        role="switch"
-      >
-        <span
-          className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
-          style={{ transform: checked ? 'translateX(20px)' : 'translateX(0)' }}
-        />
-      </button>
+      <WaveRule />
     </div>
   )
 }
@@ -334,7 +339,8 @@ export default function AjustesPage() {
                   {item.label}
                 </a>
               ))}
-              <div style={{ borderTop: '1px solid var(--brand-border)' }}>
+              <div>
+                <WaveRule />
                 <button
                   type="button"
                   onClick={() => { setMenuOpen(false); logout() }}
@@ -368,7 +374,7 @@ export default function AjustesPage() {
         >
           <div className="flex flex-col pt-1">
             {/* Moneda preferida */}
-            <div className="flex flex-col gap-2 py-3" style={{ borderBottom: '1px solid var(--brand-border)' }}>
+            <div className="flex flex-col gap-2 pt-3">
               <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>
                 Moneda preferida
               </p>
@@ -389,6 +395,7 @@ export default function AjustesPage() {
                   <span className="text-[10px] font-medium" style={{ color: '#bbb' }}>Próximamente</span>
                 </div>
               </div>
+              <WaveRule />
             </div>
 
             {/* Toggles en vivo */}
@@ -460,13 +467,14 @@ export default function AjustesPage() {
         >
           {profile.plan === 'free' ? (
             <div className="flex flex-col gap-3 pt-1">
-              <div className="flex flex-col gap-1 py-3" style={{ borderBottom: '1px solid var(--brand-border)' }}>
+              <div className="flex flex-col gap-1 pt-3">
                 <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>
                   Plan actual
                 </p>
                 <p className="text-sm font-semibold" style={{ color: 'var(--brand)' }}>
                   Free — 10 movimientos por día
                 </p>
+                <WaveRule />
               </div>
               <button
                 onClick={handleUpgrade} disabled={checkoutLoading}
@@ -485,13 +493,14 @@ export default function AjustesPage() {
             </div>
           ) : (
             <div className="flex flex-col gap-3 pt-1">
-              <div className="flex flex-col gap-1 py-3" style={{ borderBottom: '1px solid var(--brand-border)' }}>
+              <div className="flex flex-col gap-1 pt-3">
                 <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>
                   Plan actual
                 </p>
                 <p className="text-sm font-semibold" style={{ color: 'var(--brand)' }}>
                   Pro ✓ — Movimientos ilimitados
                 </p>
+                <WaveRule />
               </div>
               <button
                 onClick={handlePortal} disabled={portalLoading}

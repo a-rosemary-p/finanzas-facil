@@ -5,17 +5,19 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
 import { GIROS, ESTADOS_MX } from '@/lib/constants'
 import type { ProfileUpdate } from '@/types'
+import { WaveRule } from '@/components/ui/wave'
 
 // ── Campo en modo lectura ───────────────────────────────────
 function ReadField({ label, value }: { label: string; value?: string }) {
   return (
-    <div className="flex flex-col gap-1 py-3" style={{ borderBottom: '1px solid var(--brand-border)' }}>
+    <div className="flex flex-col gap-1 pt-3">
       <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>
         {label}
       </p>
       <p className="text-sm" style={{ color: value ? 'var(--brand)' : 'var(--brand-muted)' }}>
         {value || '—'}
       </p>
+      <WaveRule />
     </div>
   )
 }
@@ -175,7 +177,7 @@ export default function PerfilPage() {
                   {item.label}
                 </a>
               ))}
-              <div style={{ borderTop: '1px solid var(--brand-border)' }}>
+              <div><WaveRule />
                 <button
                   type="button"
                   onClick={() => { setMenuOpen(false); logout() }}
@@ -272,13 +274,14 @@ export default function PerfilPage() {
                 <ReadField label="Nombre del negocio o tuyo" value={profile.displayName} />
                 <ReadField label="Giro / Industria" value={profile.giro} />
                 <ReadField label="Ciudad" value={profile.ciudad} />
-                <div className="flex flex-col gap-1 py-3">
+                <div className="flex flex-col gap-1 pt-3">
                   <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>
                     Estado
                   </p>
                   <p className="text-sm" style={{ color: profile.estado ? 'var(--brand)' : 'var(--brand-muted)' }}>
                     {profile.estado || '—'}
                   </p>
+                  <WaveRule />
                 </div>
               </div>
             )}
@@ -293,26 +296,30 @@ export default function PerfilPage() {
             </p>
           </div>
           <div className="px-4 pb-4">
-            <div className="flex flex-col gap-1 py-3" style={{ borderBottom: '1px solid var(--brand-border)' }}>
+            <div className="flex flex-col gap-1 pt-3">
               <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>Correo</p>
               <p className="text-sm" style={{ color: 'var(--brand)' }}>{profile.email}</p>
+              <WaveRule />
             </div>
-            <div className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid var(--brand-border)' }}>
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>Plan</p>
-                <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--brand)' }}>
-                  {profile.plan === 'pro' ? 'Pro ✓' : 'Free'}
-                </p>
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between py-3">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>Plan</p>
+                  <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--brand)' }}>
+                    {profile.plan === 'pro' ? 'Pro ✓' : 'Free'}
+                  </p>
+                </div>
+                {profile.plan === 'free' && (
+                  <a
+                    href="/dashboard"
+                    className="text-xs font-bold px-3 py-2 rounded-lg text-white min-h-[36px] flex items-center"
+                    style={{ background: 'var(--brand)' }}
+                  >
+                    Actualizar a Pro
+                  </a>
+                )}
               </div>
-              {profile.plan === 'free' && (
-                <a
-                  href="/dashboard"
-                  className="text-xs font-bold px-3 py-2 rounded-lg text-white min-h-[36px] flex items-center"
-                  style={{ background: 'var(--brand)' }}
-                >
-                  Actualizar a Pro
-                </a>
-              )}
+              <WaveRule />
             </div>
             <div className="flex items-center justify-between py-3">
               <div>
