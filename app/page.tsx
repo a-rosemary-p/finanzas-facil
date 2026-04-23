@@ -738,7 +738,7 @@ export default function HomePage() {
                   border: '1px solid rgba(255,255,255,0.28)',
                 }}
               >
-                7 días gratis con Pro
+                30 días gratis con Pro
               </Link>
             </div>
 
@@ -1045,7 +1045,7 @@ export default function HomePage() {
                 onMouseEnter={e => { e.currentTarget.style.background = '#4A7359' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'var(--brand)' }}
               >
-                Probar Pro 7 días gratis
+                Probar Pro 30 días gratis
               </Link>
             </div>
           </div>
