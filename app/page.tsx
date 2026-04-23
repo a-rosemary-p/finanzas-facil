@@ -180,6 +180,73 @@ function IconBriefcase({ size = 22 }: { size?: number }) {
   )
 }
 
+/* ─── Wave components — v2 design system ─────────────────────────────────── */
+/*
+ * Rules (v2):  stroke only · never fill · stroke-linecap round
+ *              opacity 25–70 % in UI
+ *
+ * Two weights used in UI:
+ *   Hairline  — section divider  (viewBox 1200×12, amp 6, w 1)
+ *   Light     — headline underline (viewBox 600×18, amp 6, w 1.5)
+ */
+
+/**
+ * Hairline stroke wave — section divider (replaces border-bottom).
+ * Absolutely positioned at the bottom of its parent; parent must be
+ * position: relative (add via inline style or className).
+ */
+function WaveDivider({
+  color = 'var(--brand-light)',
+  opacity = 0.6,
+}: {
+  color?: string
+  opacity?: number
+}) {
+  return (
+    <div
+      aria-hidden="true"
+      style={{ position: 'absolute', left: 0, right: 0, bottom: 0, lineHeight: 0, pointerEvents: 'none' }}
+    >
+      <svg viewBox="0 0 1200 12" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: '12px' }}>
+        <path
+          d="M 0 6 C 50 0, 100 12, 150 6 S 250 0, 300 6 S 400 12, 450 6 S 550 0, 600 6 S 700 12, 750 6 S 850 0, 900 6 S 1000 12, 1050 6 S 1150 0, 1200 6"
+          fill="none"
+          stroke={color}
+          strokeWidth="1"
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+          opacity={opacity}
+        />
+      </svg>
+    </div>
+  )
+}
+
+/**
+ * Light stroke wave — headline underline.
+ * Inline block; max 520 px per design spec.
+ * Place directly after an h1 or key headline element.
+ */
+function WaveUnderline({ color = 'var(--brand-light)' }: { color?: string }) {
+  return (
+    <svg
+      viewBox="0 0 600 18"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+      style={{ display: 'block', width: '100%', maxWidth: '420px', height: '10px' }}
+    >
+      <path
+        d="M 0 9 C 25 3, 50 15, 75 9 S 125 3, 150 9 S 200 15, 225 9 S 275 3, 300 9 S 350 15, 375 9 S 425 3, 450 9 S 500 15, 525 9 S 575 3, 600 9"
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  )
+}
+
 /* ─── App Mockup ──────────────────────────────────────────────────────────── */
 
 function AppMockup() {
@@ -673,7 +740,7 @@ export default function HomePage() {
 
             {/* Main headline */}
             <h1
-              className="font-bold mb-3"
+              className="font-bold mb-2"
               style={{
                 color: '#fff',
                 fontSize: 'clamp(3rem, 9vw, 5.5rem)',
@@ -684,6 +751,9 @@ export default function HomePage() {
             >
               Tus cuentas,<br />sin cuentos.
             </h1>
+
+            {/* Wave underline — Light weight (v2 design system) */}
+            <WaveUnderline color="rgba(255,255,255,0.42)" />
 
             {/* Functional tagline — official brand copy */}
             <p
@@ -753,16 +823,12 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Wave */}
-        <div className="absolute bottom-0 left-0 right-0" aria-hidden="true">
-          <svg viewBox="0 0 1200 52" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: '52px' }}>
-            <path d="M0,32 C200,52 400,12 600,28 C800,44 1000,8 1200,28 L1200,52 L0,52 Z" fill="var(--paper)"/>
-          </svg>
-        </div>
+        {/* Wave divider — hairline stroke (v2 design system: stroke only, never fill) */}
+        <WaveDivider color="rgba(255,255,255,0.45)" opacity={1} />
       </section>
 
       {/* ── Ciudades ────────────────────────────────────────────────────────── */}
-      <section className="pt-12 pb-14 px-4" style={{ background: 'var(--paper)' }}>
+      <section className="pt-12 pb-14 px-4" style={{ background: 'var(--paper)', position: 'relative' }}>
         <div className="max-w-3xl mx-auto">
           <p className="text-center mb-2" style={eyebrowStyle}>Ya en todo México</p>
           <p className="text-sm text-center mb-7" style={{ color: 'var(--ink-500)', fontSize: '17px', lineHeight: 1.55 }}>
@@ -796,10 +862,11 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+        <WaveDivider />
       </section>
 
       {/* ── Cómo funciona ───────────────────────────────────────────────────── */}
-      <section id="como-funciona" className="py-14 px-4" style={{ background: 'var(--paper-2)' }}>
+      <section id="como-funciona" className="py-14 px-4" style={{ background: 'var(--paper-2)', position: 'relative' }}>
         <div className="max-w-4xl mx-auto">
           <p className="text-center mb-3" style={eyebrowStyle}>Cómo funciona</p>
           <h2 className="text-center mb-3" style={secTitleStyle}>
@@ -824,10 +891,11 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+        <WaveDivider />
       </section>
 
       {/* ── Para negocios ───────────────────────────────────────────────────── */}
-      <section id="para-quien" className="py-14 px-4" style={{ background: 'var(--paper)' }}>
+      <section id="para-quien" className="py-14 px-4" style={{ background: 'var(--paper)', position: 'relative' }}>
         <div className="max-w-4xl mx-auto">
           <p className="text-center mb-3" style={eyebrowStyle}>Para quién es</p>
           <h2 className="text-center mb-9" style={secTitleStyle}>
@@ -875,12 +943,13 @@ export default function HomePage() {
             — fiza es para ti.
           </p>
         </div>
+        <WaveDivider />
       </section>
 
       {/* ── Features destacados ─────────────────────────────────────────────── */}
       <section
         className="py-14 px-4"
-        style={{ background: 'linear-gradient(145deg, #3d6050 0%, #578466 100%)' }}
+        style={{ background: 'linear-gradient(145deg, #3d6050 0%, #578466 100%)', position: 'relative' }}
       >
         <div className="max-w-4xl mx-auto">
           <p
@@ -926,10 +995,11 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+        <WaveDivider color="rgba(255,255,255,0.35)" opacity={1} />
       </section>
 
       {/* ── Precios ─────────────────────────────────────────────────────────── */}
-      <section id="precios" className="py-14 px-4" style={{ background: 'var(--paper-2)' }}>
+      <section id="precios" className="py-14 px-4" style={{ background: 'var(--paper-2)', position: 'relative' }}>
         <div className="max-w-lg mx-auto">
           <p className="text-center mb-3" style={eyebrowStyle}>Precios</p>
           <h2 className="text-center mb-2" style={secTitleStyle}>
@@ -1072,10 +1142,11 @@ export default function HomePage() {
             Cancela cuando quieras · Sin permanencia · Sin letra chica
           </p>
         </div>
+        <WaveDivider />
       </section>
 
       {/* ── FAQ ─────────────────────────────────────────────────────────────── */}
-      <section id="faq" className="py-14 px-4" style={{ background: 'var(--paper)' }}>
+      <section id="faq" className="py-14 px-4" style={{ background: 'var(--paper)', position: 'relative' }}>
         <div className="max-w-xl mx-auto">
           <p className="text-center mb-3" style={eyebrowStyle}>Preguntas frecuentes</p>
           <h2 className="text-center mb-8" style={secTitleStyle}>
@@ -1093,6 +1164,7 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+        <WaveDivider />
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────────────────── */}

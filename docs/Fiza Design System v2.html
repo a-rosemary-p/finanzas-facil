@@ -1,0 +1,1554 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Fiza — Brand & Design System v2</title>
+<template id="__bundler_thumbnail" data-bg-color="#F4F6EB">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#F4F6EB"/>
+    <text x="600" y="420" font-family="Helvetica, Arial, sans-serif" font-weight="700"
+          font-size="260" letter-spacing="-8" text-anchor="middle" fill="#578466">fiza</text>
+    <path d="M 200 560 C 320 500, 440 620, 560 560 S 800 500, 920 560 S 1080 620, 1000 560"
+          fill="none" stroke="#92C3A5" stroke-width="8" stroke-linecap="round"/>
+    <path d="M 260 600 C 380 550, 500 650, 620 600 S 860 550, 980 600"
+          fill="none" stroke="#92C3A5" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+  </svg>
+</template>
+<style>
+  @font-face {
+    font-family: 'Outfit';
+    src: url('assets/Outfit.ttf') format('truetype-variations');
+    font-weight: 100 900;
+    font-display: swap;
+  }
+
+  /* ============ Token layer — mirrors app/globals.css v0.22 ============ */
+  :root {
+    /* brand (spec) */
+    --brand:          #578466;
+    --brand-mid:      #6B8C78;
+    --brand-light:    #92C3A5;
+    --brand-border:   #D9E8D0;
+    --brand-chip:     #F4F6EB;
+    --brand-muted:    #8AAB94;
+    --brand-lime:     #DAE68F;
+
+    /* movement type (spec) */
+    --income-bg:      #DAE68F;
+    --income-border:  #92C3A5;
+    --income-text:    #578466;
+    --expense-bg:     #FAD5BF;
+    --expense-border: #F79366;
+    --expense-text:   #D0481A;
+    --pending-bg:     #FFF5CC;
+    --pending-border: #FFCE57;
+    --pending-text:   #B89010;
+
+    --danger:         #D0481A;
+    --danger-bg:      #FFF0EA;
+    --danger-border:  #FAD5BF;
+    --investment:     #FFCE57;
+    --investment-text:#B89010;
+    --pro-bg:         #EEFBE8;
+
+    /* extension — neutrals / grays (additive, app-compatible) */
+    --ink-900: #0E1711;
+    --ink-700: #243028;
+    --ink-500: #4A5A50;
+    --ink-300: #8C9C92;
+    --ink-100: #C9D4CC;
+    --paper:   #FCFDF8;
+    --paper-2: #F7F9F1;
+
+    /* radius (additive) */
+    --r-sm: 6px;
+    --r-md: 10px;
+    --r-lg: 12px;
+    --r-xl: 16px;
+    --r-pill: 999px;
+
+    /* shadow (additive, matches shadow-sm usage) */
+    --sh-1: 0 1px 2px rgba(14,23,17,0.04), 0 1px 1px rgba(14,23,17,0.03);
+    --sh-2: 0 4px 12px rgba(14,23,17,0.06), 0 2px 4px rgba(14,23,17,0.04);
+    --sh-3: 0 12px 32px rgba(14,23,17,0.10), 0 4px 8px rgba(14,23,17,0.05);
+
+    /* spacing scale 4/8 */
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+    --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px; --sp-12: 48px; --sp-16: 64px;
+
+    /* type */
+    --f-sans: 'Outfit', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --f-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+    /* app bg (spec) */
+    --bg-grad: linear-gradient(115deg, #BFDACB 25%, #E8F0B9 75%);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--f-sans);
+    background: var(--paper);
+    color: var(--ink-900);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "ss01","cv11";
+  }
+
+  a { color: var(--brand); text-decoration: none; }
+  code, .mono { font-family: var(--f-mono); font-size: 0.85em; }
+
+  /* layout */
+  .shell { max-width: 1240px; margin: 0 auto; padding: 0 var(--sp-8); }
+  .grid { display: grid; gap: var(--sp-6); }
+
+  /* top bar */
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(252,253,248,0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--brand-border);
+  }
+  .topbar-inner {
+    display: flex; align-items: center; gap: var(--sp-6);
+    padding: var(--sp-4) var(--sp-8);
+    max-width: 1240px; margin: 0 auto;
+  }
+  .topbar img { height: 28px; width: auto; display: block; }
+  .topbar nav { display: flex; gap: var(--sp-5); font-size: 14px; color: var(--ink-500); margin-left: auto; }
+  .topbar nav a:hover { color: var(--brand); }
+  .topbar .version { font-size: 12px; color: var(--ink-300); font-family: var(--f-mono); }
+
+  /* hero */
+  .hero {
+    padding: var(--sp-16) 0 var(--sp-10);
+    position: relative;
+  }
+  .hero::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 12px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 12' preserveAspectRatio='none'><path d='M 0 6 C 50 0, 100 12, 150 6 S 250 0, 300 6 S 400 12, 450 6 S 550 0, 600 6 S 700 12, 750 6 S 850 0, 900 6 S 1000 12, 1050 6 S 1150 0, 1200 6' fill='none' stroke='%2392C3A5' stroke-width='1' stroke-linecap='round' vector-effect='non-scaling-stroke'/></svg>");
+    background-repeat: no-repeat; background-size: 100% 100%; opacity: 0.7;
+  }
+  .hero-underline { margin: var(--sp-2) 0 var(--sp-5); max-width: 520px; color: var(--brand-light); }
+  .hero-underline svg { display: block; width: 100%; height: 16px; }
+  .hero .eyebrow {
+    font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--brand); font-weight: 600;
+  }
+  .hero h1 {
+    font-size: clamp(48px, 6vw, 88px);
+    line-height: 0.95; margin: var(--sp-4) 0 var(--sp-5);
+    font-weight: 700; letter-spacing: -0.02em;
+  }
+  .hero h1 .accent { color: var(--brand); }
+  .hero .lede {
+    font-size: 20px; line-height: 1.5; max-width: 720px;
+    color: var(--ink-700);
+  }
+  .hero .meta {
+    display: flex; gap: var(--sp-6); margin-top: var(--sp-8);
+    font-family: var(--f-mono); font-size: 12px; color: var(--ink-500);
+  }
+  .hero .meta span b { color: var(--ink-900); font-weight: 600; }
+
+  /* ========= WAVE · brand signature element ========= */
+  /* La ola — una sola primitiva, 5 pesos. Siempre stroke, nunca fill. */
+  .wave {
+    display: block;
+    width: 100%;
+    height: auto;
+    color: var(--brand-light);
+    overflow: visible;
+  }
+  .wave path { fill: none; stroke: currentColor; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+
+  /* section divider wave — replaces straight border-bottom on section.block */
+  section.block { padding: var(--sp-16) 0; position: relative; }
+  section.block::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 12px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 12' preserveAspectRatio='none'><path d='M 0 6 C 50 0, 100 12, 150 6 S 250 0, 300 6 S 400 12, 450 6 S 550 0, 600 6 S 700 12, 750 6 S 850 0, 900 6 S 1000 12, 1050 6 S 1150 0, 1200 6' fill='none' stroke='%2392C3A5' stroke-width='1' stroke-linecap='round' vector-effect='non-scaling-stroke'/></svg>");
+    background-repeat: no-repeat; background-size: 100% 100%; opacity: 0.7;
+  }
+  section.block:last-of-type::after { display: none; }
+  .sec-head { display: grid; grid-template-columns: 220px 1fr; gap: var(--sp-8); margin-bottom: var(--sp-10); }
+  .sec-num {
+    font-family: var(--f-mono); font-size: 13px; color: var(--brand);
+    letter-spacing: 0.12em;
+  }
+  .sec-title { font-size: 40px; line-height: 1.05; margin: var(--sp-2) 0 var(--sp-4); font-weight: 700; letter-spacing: -0.01em; }
+  .sec-sub { font-size: 17px; color: var(--ink-500); max-width: 720px; line-height: 1.5; }
+
+  h3.kicker { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-500); margin: 0 0 var(--sp-4); font-weight: 600; }
+
+  /* ========= LOGO ========= */
+  .logo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4); }
+  .logo-card {
+    border: 1px solid var(--brand-border);
+    border-radius: var(--r-lg);
+    background: white;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .logo-stage {
+    display: flex; align-items: center; justify-content: center;
+    height: 180px;
+    padding: var(--sp-6);
+  }
+  .logo-stage img { max-width: 60%; max-height: 80px; object-fit: contain; }
+  .logo-stage.stage-lime { background: var(--brand-lime); }
+  .logo-stage.stage-brand { background: var(--brand); }
+  .logo-stage.stage-paper { background: var(--paper-2); }
+  .logo-stage.stage-ink   { background: var(--ink-900); }
+  .logo-stage.stage-grad  { background: var(--bg-grad); }
+  .logo-stage.stage-chip  { background: var(--brand-chip); }
+  .logo-card-foot {
+    padding: var(--sp-3) var(--sp-4);
+    border-top: 1px solid var(--brand-border);
+    font-family: var(--f-mono); font-size: 12px; color: var(--ink-500);
+    display: flex; justify-content: space-between;
+  }
+
+  /* clearspace */
+  .clearspace {
+    display: flex; gap: var(--sp-8); align-items: flex-start;
+    border: 1px solid var(--brand-border); border-radius: var(--r-lg);
+    padding: var(--sp-6); background: var(--paper-2);
+  }
+  .cs-box {
+    position: relative; padding: 48px;
+    background:
+      repeating-linear-gradient(45deg, transparent 0 6px, rgba(87,132,102,0.10) 6px 7px);
+    border: 1px dashed var(--brand-light);
+  }
+  .cs-box::before, .cs-box::after {
+    content: ''; position: absolute; border: 1px dashed rgba(87,132,102,0.4);
+  }
+  .cs-box::before { inset: 16px; }
+  .cs-box img { display: block; height: 72px; width: auto; position: relative; }
+  .cs-note { flex: 1; font-size: 14px; color: var(--ink-500); line-height: 1.6; }
+  .cs-note b { color: var(--ink-900); font-weight: 600; }
+
+  /* misuse */
+  .misuse { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3); }
+  .mis-card {
+    border: 1px solid var(--brand-border); border-radius: var(--r-lg);
+    aspect-ratio: 1.15 / 1; position: relative; overflow: hidden;
+    background: white; display: flex; align-items: center; justify-content: center;
+  }
+  .mis-card .mis-img { max-width: 65%; max-height: 60%; object-fit: contain; }
+  .mis-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to top right, transparent calc(50% - 1px), var(--danger) 50%, transparent calc(50% + 1px));
+    pointer-events: none;
+  }
+  .mis-label {
+    position: absolute; bottom: var(--sp-2); left: var(--sp-3);
+    font-family: var(--f-mono); font-size: 11px; color: var(--danger); text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .mis-stretch img { transform: scaleX(1.8); }
+  .mis-rotate img  { transform: rotate(-12deg); }
+  .mis-color   { background: #FF3DAC; }
+  .mis-color img { filter: brightness(0) invert(1); }
+  .mis-shadow img { filter: drop-shadow(6px 6px 0 var(--investment)); }
+
+  /* ========= COLOR ========= */
+  .swatch-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--sp-2); margin-bottom: var(--sp-3); }
+  .swatch {
+    border-radius: var(--r-md); border: 1px solid var(--brand-border);
+    overflow: hidden; background: white;
+  }
+  .sw-chip { height: 88px; }
+  .sw-body { padding: var(--sp-3); }
+  .sw-name { font-weight: 600; font-size: 13px; }
+  .sw-var  { font-family: var(--f-mono); font-size: 11px; color: var(--ink-500); margin-top: 2px; }
+  .sw-hex  { font-family: var(--f-mono); font-size: 11px; color: var(--ink-500); }
+
+  .palette-block { margin-bottom: var(--sp-8); }
+  .palette-block h3.kicker { display: flex; align-items: center; gap: var(--sp-3); }
+  .palette-block h3.kicker .tag {
+    font-family: var(--f-mono); text-transform: none; letter-spacing: 0;
+    padding: 2px 8px; background: var(--brand-chip); color: var(--brand);
+    border-radius: var(--r-pill); border: 1px solid var(--brand-border);
+  }
+
+  /* semantic pair */
+  .pairs { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3); }
+  .pair-card {
+    border: 1px solid var(--brand-border); border-radius: var(--r-lg);
+    overflow: hidden; background: white;
+  }
+  .pair-head { padding: var(--sp-5); font-size: 14px; font-weight: 600; border-bottom: 1px solid; }
+  .pair-tokens { padding: var(--sp-4); font-family: var(--f-mono); font-size: 11px; color: var(--ink-500); line-height: 1.8; }
+  .pair-tokens span { display: block; }
+
+  /* ========= TYPE ========= */
+  .type-specimen {
+    padding: var(--sp-10);
+    background: var(--paper-2);
+    border: 1px solid var(--brand-border);
+    border-radius: var(--r-xl);
+  }
+  .type-giant {
+    font-size: clamp(120px, 18vw, 240px);
+    line-height: 0.85; letter-spacing: -0.04em;
+    font-weight: 700; color: var(--brand);
+  }
+  .type-scale { display: grid; grid-template-columns: 160px 1fr 140px; gap: var(--sp-4); align-items: baseline;
+    padding: var(--sp-4) 0; border-top: 1px solid var(--brand-border); }
+  .type-scale:first-child { border-top: none; }
+  .type-scale .ts-label { font-family: var(--f-mono); font-size: 12px; color: var(--ink-500); }
+  .type-scale .ts-sample { font-weight: 500; }
+  .type-scale .ts-meta { font-family: var(--f-mono); font-size: 11px; color: var(--ink-500); text-align: right; }
+
+  .weights { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-4); }
+  .weight-card {
+    border: 1px solid var(--brand-border); border-radius: var(--r-lg);
+    padding: var(--sp-5); background: white;
+  }
+  .weight-card .w-big { font-size: 56px; line-height: 1; margin-bottom: var(--sp-3); letter-spacing: -0.02em; }
+  .weight-card .w-meta { font-family: var(--f-mono); font-size: 11px; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* ========= SPACING / SHADOW / RADIUS ========= */
+  .spacing-row { display: grid; grid-template-columns: 80px 1fr 80px; gap: var(--sp-3); align-items: center; padding: var(--sp-3) 0; border-top: 1px solid var(--brand-border); }
+  .spacing-row:first-child { border-top: none; }
+  .sp-bar { height: 12px; background: var(--brand-light); border-radius: var(--r-sm); }
+  .sp-label { font-family: var(--f-mono); font-size: 12px; color: var(--ink-500); }
+
+  .radii { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--sp-4); }
+  .radius-card {
+    border: 1px solid var(--brand-border); padding: var(--sp-5);
+    background: white; text-align: center;
+  }
+  .radius-card .r-box { height: 88px; background: var(--brand-chip); border: 1px solid var(--brand-border); margin-bottom: var(--sp-3); }
+  .radius-card .r-name { font-weight: 600; font-size: 13px; }
+  .radius-card .r-meta { font-family: var(--f-mono); font-size: 11px; color: var(--ink-500); margin-top: 2px; }
+
+  .shadows { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4); }
+  .shadow-card {
+    padding: var(--sp-8); background: var(--paper-2);
+    border-radius: var(--r-lg);
+  }
+  .shadow-box {
+    background: white; height: 120px; border-radius: var(--r-lg);
+    border: 1px solid var(--brand-border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--f-mono); font-size: 12px; color: var(--ink-500);
+  }
+  .shadow-box.s1 { box-shadow: var(--sh-1); }
+  .shadow-box.s2 { box-shadow: var(--sh-2); }
+  .shadow-box.s3 { box-shadow: var(--sh-3); }
+
+  /* ========= COMPONENT DEMOS ========= */
+  .demo {
+    border: 1px solid var(--brand-border);
+    border-radius: var(--r-xl);
+    overflow: hidden;
+    background: white;
+  }
+  .demo-head {
+    padding: var(--sp-3) var(--sp-5);
+    border-bottom: 1px solid var(--brand-border);
+    background: var(--paper-2);
+    font-family: var(--f-mono); font-size: 11px;
+    color: var(--ink-500); letter-spacing: 0.08em; text-transform: uppercase;
+    display: flex; justify-content: space-between;
+  }
+  .demo-body { padding: var(--sp-6); background: var(--bg-grad); }
+  .demo-body.plain { background: white; }
+  .comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); }
+
+  /* ====== Fiza component styles (faithful to spec) ====== */
+  /* card */
+  .fz-card {
+    background: white; border-radius: var(--r-xl);
+    border: 1px solid var(--brand-border);
+    box-shadow: var(--sh-1);
+    padding: var(--sp-5);
+  }
+
+  /* buttons */
+  .fz-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+    font-family: var(--f-sans); font-weight: 700; font-size: 15px;
+    min-height: 44px; padding: 0 var(--sp-5);
+    border-radius: var(--r-lg); border: 1px solid transparent; cursor: pointer;
+    transition: transform 0.08s ease, background 0.15s ease;
+  }
+  .fz-btn:active { transform: translateY(1px); }
+  .fz-btn--primary { background: var(--brand); color: white; }
+  .fz-btn--primary:hover { background: #4A7359; }
+  .fz-btn--secondary { background: white; color: var(--brand); border-color: var(--brand-border); }
+  .fz-btn--ghost { background: transparent; color: var(--ink-700); }
+  .fz-btn--danger { background: var(--danger-bg); color: var(--danger); border-color: var(--danger-border); }
+  .fz-btn--paid {
+    background: var(--expense-bg); color: var(--expense-text);
+    border-color: var(--expense-border); font-weight: 600; font-size: 13px;
+    min-height: 32px; padding: 0 var(--sp-3);
+  }
+  .fz-btn--sm { min-height: 32px; font-size: 13px; padding: 0 var(--sp-3); }
+  .fz-btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+  /* input */
+  .fz-input {
+    width: 100%; font-family: var(--f-sans); font-size: 16px;
+    min-height: 44px; padding: 10px 14px;
+    border: 1px solid var(--brand-border); border-radius: var(--r-md);
+    background: white; color: var(--ink-900);
+  }
+  .fz-input:focus { outline: 2px solid var(--brand-light); outline-offset: -1px; border-color: var(--brand-light); }
+  .fz-input::placeholder { color: var(--brand-muted); }
+  .fz-textarea { min-height: 120px; resize: vertical; }
+
+  /* chips & pills */
+  .fz-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: var(--r-pill);
+    background: var(--brand-chip); border: 1px solid var(--brand-border);
+    font-size: 13px; color: var(--ink-700); font-weight: 500;
+    cursor: pointer;
+  }
+  .fz-chip.is-active {
+    background: var(--brand-light); border-color: var(--brand-light);
+    color: var(--brand); font-weight: 600;
+  }
+
+  /* type pills (filter) */
+  .fz-type-pill {
+    display: inline-flex; align-items: center; padding: 6px 12px; border-radius: var(--r-pill);
+    font-size: 13px; border: 1px solid; font-weight: 500;
+  }
+  .fz-type-pill.ingreso.is-active { background: var(--income-bg); color: var(--income-text); border-color: var(--income-border); font-weight: 600; }
+  .fz-type-pill.gasto.is-active  { background: var(--expense-bg); color: var(--expense-text); border-color: var(--expense-border); font-weight: 600; }
+  .fz-type-pill.pendiente.is-active { background: var(--pending-bg); color: var(--pending-text); border-color: var(--pending-border); font-weight: 600; }
+  .fz-type-pill.all.is-active { background: var(--brand-chip); color: var(--brand); border-color: var(--brand-light); font-weight: 600; }
+  .fz-type-pill.is-idle { background: white; color: var(--ink-500); border-color: var(--brand-border); }
+
+  /* plan badge */
+  .fz-badge {
+    display: inline-flex; align-items: center; padding: 4px 10px;
+    border-radius: var(--r-pill); font-size: 12px; font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .fz-badge--pro { background: var(--brand); color: white; }
+  .fz-badge--free { background: var(--brand-lime); color: var(--ink-900); }
+  .fz-badge--pro-outline { background: var(--pro-bg); color: var(--brand); border: 1px solid var(--brand-border); }
+
+  /* metric card */
+  .fz-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
+  .fz-metric {
+    border-radius: var(--r-lg); padding: var(--sp-4); border: 1px solid;
+    position: relative; overflow: hidden;
+  }
+  /* sparkline wave inside metric cards */
+  .fz-metric .spark {
+    position: absolute; left: 0; right: 0; bottom: 8px;
+    height: 28px; opacity: 0.28;
+    pointer-events: none;
+  }
+  .fz-metric .spark svg { display: block; width: 100%; height: 100%; }
+  .fz-metric > .m-label, .fz-metric > .m-value { position: relative; }
+  .fz-metric .m-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; opacity: 0.8; }
+  .fz-metric .m-value { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin-top: 4px; }
+  .fz-metric.income  { background: var(--income-bg); border-color: var(--income-border); color: var(--income-text); }
+  .fz-metric.expense { background: var(--expense-bg); border-color: var(--expense-border); color: var(--expense-text); }
+  .fz-metric.net-pos { background: var(--income-bg); border-color: var(--income-border); color: var(--income-text); }
+  .fz-metric.net-neg { background: var(--expense-bg); border-color: var(--expense-border); color: var(--expense-text); }
+
+  /* movement card */
+  .fz-movement {
+    display: flex; align-items: center; gap: var(--sp-3);
+    padding: var(--sp-3) var(--sp-4);
+    background: white; border: 1px solid var(--brand-border); border-radius: var(--r-md);
+  }
+  .fz-mov-type {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 4px 8px; border-radius: var(--r-sm); border: 1px solid; flex-shrink: 0;
+  }
+  .fz-mov-type.ingreso { background: var(--income-bg); color: var(--income-text); border-color: var(--income-border); }
+  .fz-mov-type.gasto { background: var(--expense-bg); color: var(--expense-text); border-color: var(--expense-border); }
+  .fz-mov-type.pendiente { background: var(--pending-bg); color: var(--pending-text); border-color: var(--pending-border); }
+  .fz-mov-desc { flex: 1; font-size: 15px; color: var(--ink-900); }
+  .fz-mov-desc .sub { font-size: 12px; color: var(--ink-500); display: block; }
+  .fz-mov-amt { font-weight: 700; font-size: 16px; letter-spacing: -0.01em; }
+  .fz-mov-amt.ingreso { color: var(--income-text); }
+  .fz-mov-amt.gasto { color: var(--expense-text); }
+  .fz-mov-amt.pendiente { color: var(--pending-text); }
+  .fz-invest-ico { color: var(--investment-text); flex-shrink: 0; }
+
+  /* pending commitments header */
+  .fz-pending-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: var(--sp-3) var(--sp-4);
+    background: var(--pending-bg); border: 1px solid var(--pending-border);
+    color: var(--pending-text); border-radius: var(--r-md);
+    font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .fz-pending-head .count {
+    background: var(--pending-border); color: white; font-size: 11px;
+    padding: 2px 8px; border-radius: var(--r-pill); margin-left: 8px;
+  }
+
+  /* entry form */
+  .fz-entry-tabs { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+  .fz-entry-tab {
+    flex: 1; min-height: 44px; padding: 0 var(--sp-3);
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    border-radius: var(--r-md); border: 1px solid var(--brand-border);
+    background: white; color: var(--ink-500); font-size: 14px; font-weight: 500;
+    cursor: pointer;
+  }
+  .fz-entry-tab.is-active { background: var(--brand-chip); color: var(--brand); border-color: var(--brand-light); font-weight: 600; }
+
+  /* progress */
+  .fz-progress { height: 6px; background: var(--brand-chip); border-radius: var(--r-pill); overflow: hidden; }
+  .fz-progress > div { height: 100%; background: var(--brand); border-radius: var(--r-pill); }
+
+  /* insight chip */
+  .fz-insight {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: var(--r-pill);
+    background: white; border: 1px solid var(--brand-border);
+    font-size: 13px; color: var(--ink-700);
+  }
+  .fz-insight::before {
+    content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--brand-light);
+  }
+
+  /* icons */
+  .ico { width: 16px; height: 16px; stroke-width: 2; fill: none; stroke: currentColor; }
+
+  /* ---- wave usage card (system page) ---- */
+  .wave-stack { display: grid; gap: var(--sp-4); }
+  .wave-row {
+    display: grid; grid-template-columns: 200px 1fr 120px;
+    align-items: center; gap: var(--sp-4);
+    padding: var(--sp-4) 0; border-top: 1px solid var(--brand-border);
+  }
+  .wave-row:first-child { border-top: none; }
+  .wave-row .wr-label { font-family: var(--f-mono); font-size: 12px; color: var(--ink-500); letter-spacing: 0.08em; text-transform: uppercase; }
+  .wave-row .wr-meta  { font-family: var(--f-mono); font-size: 11px; color: var(--ink-300); text-align: right; }
+  .wave-row .wr-sample { color: var(--brand); }
+
+  .wave-usage-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4);
+    margin-top: var(--sp-6);
+  }
+  .wave-usage {
+    border: 1px solid var(--brand-border); border-radius: var(--r-lg);
+    padding: var(--sp-5); background: white;
+    display: flex; flex-direction: column; gap: var(--sp-3);
+  }
+  .wave-usage h4 { margin: 0; font-size: 16px; font-weight: 600; }
+  .wave-usage p { margin: 0; color: var(--ink-500); font-size: 13px; line-height: 1.5; }
+  .wave-preview {
+    height: 84px; border-radius: var(--r-md); background: var(--paper-2);
+    border: 1px solid var(--brand-border); padding: var(--sp-4);
+    display: flex; align-items: center;
+    overflow: hidden;
+  }
+  .wave-rules {
+    margin-top: var(--sp-6);
+    display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3);
+  }
+  .wave-rule {
+    padding: var(--sp-4); border-radius: var(--r-md);
+    border: 1px solid;
+    font-size: 13px; line-height: 1.5;
+  }
+  .wave-rule.do   { background: var(--income-bg); color: var(--income-text); border-color: var(--income-border); }
+  .wave-rule.dont { background: var(--expense-bg); color: var(--expense-text); border-color: var(--expense-border); }
+  .wave-rule .tag { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; display: block; margin-bottom: 4px; opacity: 0.75; font-weight: 600; }
+
+  /* voice & tone */
+  .tone-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-5); }
+  .tone-card {
+    border: 1px solid var(--brand-border); border-radius: var(--r-lg);
+    padding: var(--sp-5); background: white;
+  }
+  .tone-card h4 { margin: 0 0 var(--sp-2); font-size: 20px; letter-spacing: -0.01em; }
+  .tone-card p { margin: 0 0 var(--sp-4); color: var(--ink-500); font-size: 14px; line-height: 1.55; }
+  .tone-card .good, .tone-card .bad {
+    font-size: 14px; padding: var(--sp-3); border-radius: var(--r-md);
+    margin-bottom: var(--sp-2);
+  }
+  .tone-card .good { background: var(--income-bg); color: var(--income-text); }
+  .tone-card .bad  { background: var(--expense-bg); color: var(--expense-text); text-decoration: line-through; text-decoration-color: var(--expense-border); }
+  .tone-card .tag { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; display: block; margin-bottom: 4px; opacity: 0.7; text-decoration: none; }
+
+  /* motion */
+  .motion-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-4); }
+  .motion-card {
+    border: 1px solid var(--brand-border); border-radius: var(--r-lg);
+    padding: var(--sp-5); background: white;
+  }
+  .motion-demo {
+    height: 80px; background: var(--brand-chip); border-radius: var(--r-md);
+    margin-bottom: var(--sp-3); position: relative; overflow: hidden;
+  }
+  .motion-demo::after {
+    content: ''; position: absolute; top: 50%; left: 10%;
+    width: 36px; height: 36px; background: var(--brand);
+    border-radius: var(--r-md); transform: translateY(-50%);
+    animation-duration: 1.6s; animation-iteration-count: infinite;
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .motion-card.m-fast .motion-demo::after { animation-name: slide; animation-duration: 0.6s; }
+  .motion-card.m-std .motion-demo::after { animation-name: slide; animation-duration: 1.2s; }
+  .motion-card.m-slow .motion-demo::after { animation-name: slide; animation-duration: 2s; }
+  .motion-card.m-spring .motion-demo::after { animation-name: slide; animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1); }
+  @keyframes slide { 0% { left: 10%; } 50% { left: calc(90% - 36px); } 100% { left: 10%; } }
+
+  /* download */
+  .download-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-4); }
+  .dl-card {
+    padding: var(--sp-5); border: 1px solid var(--brand-border);
+    border-radius: var(--r-lg); background: white;
+    display: flex; align-items: center; gap: var(--sp-4);
+  }
+  .dl-card .dl-ico {
+    width: 44px; height: 44px; border-radius: var(--r-md);
+    background: var(--brand-chip); color: var(--brand);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--f-mono); font-size: 12px; font-weight: 600;
+  }
+  .dl-card .dl-body { flex: 1; }
+  .dl-card h4 { margin: 0 0 2px; font-size: 15px; }
+  .dl-card p { margin: 0; font-size: 12px; color: var(--ink-500); font-family: var(--f-mono); }
+
+  /* footer */
+  footer {
+    padding: var(--sp-12) 0;
+    font-size: 13px; color: var(--ink-500);
+    display: flex; justify-content: space-between; gap: var(--sp-6);
+    flex-wrap: wrap;
+  }
+  footer .f-logo { height: 20px; opacity: 0.6; }
+
+  @media (max-width: 900px) {
+    .sec-head { grid-template-columns: 1fr; }
+    .logo-grid, .misuse, .pairs, .weights, .radii, .shadows, .tone-grid, .motion-row { grid-template-columns: 1fr 1fr; }
+    .swatch-row { grid-template-columns: repeat(3, 1fr); }
+    .comp-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <img src="assets/fiza-logo-grn.png" alt="Fiza"/>
+    <span class="version">Design System · v2.0 · app spec v0.22</span>
+    <nav>
+      <a href="#logo">Logo</a>
+      <a href="#color">Color</a>
+      <a href="#type">Type</a>
+      <a href="#spacing">Spacing</a>
+      <a href="#components">Components</a>
+      <a href="#wave">Wave</a>
+      <a href="#voice">Voice</a>
+      <a href="#motion">Motion</a>
+    </nav>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="eyebrow">Brand & Product Design System · v2</div>
+    <h1>Tus cuentas,<br/><span class="accent">sin cuentos.</span></h1>
+    <div class="hero-underline">
+      <svg viewBox="0 0 520 16" preserveAspectRatio="none"><path d="M 0 8 C 40 2, 80 14, 130 8 S 220 2, 260 8 S 350 14, 400 8 S 490 2, 520 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </div>
+    <p class="lede">
+      Fiza es finanzas para PyMEs mexicanas — sin formularios, sin jerga. Esta es la v2 del design system: incorpora <b>la ola</b> como gesto de marca (sección 07), heredado directo del trazo abierto de la <b>f</b>. El resto de tokens sigue alineado con <span class="mono">app/globals.css</span> v0.22 para que el diseño entre al producto sin ajustes.
+    </p>
+    <div class="meta">
+      <span><b>Producto</b> Fiza — finanzas conversacionales</span>
+      <span><b>Mercado</b> PyMEs en México</span>
+      <span><b>Stack</b> Next.js 16 · Tailwind v4 · Supabase</span>
+    </div>
+  </div>
+
+  <!-- ======================= LOGO ======================= -->
+  <section class="block" id="logo">
+    <div class="sec-head">
+      <div>
+        <div class="sec-num">01 — IDENTIDAD</div>
+        <h2 class="sec-title">Logo</h2>
+      </div>
+      <div class="sec-sub">
+        La marca Fiza vive en una palabra: un logotipo en minúsculas con la <b>f</b> de trazo abierto como firma.
+        Tres versiones oficiales: verde (primaria), negra (alto contraste) y blanca (fondos oscuros o gradiente).
+        El ícono-app es la <b>f</b> aislada sobre el gradiente de marca.
+      </div>
+    </div>
+
+    <h3 class="kicker">Variantes</h3>
+    <div class="logo-grid">
+      <div class="logo-card">
+        <div class="logo-stage stage-paper"><img src="assets/fiza-logo-grn.png" alt=""/></div>
+        <div class="logo-card-foot"><span>Primaria · Verde</span><span>fiza-logo-grn</span></div>
+      </div>
+      <div class="logo-card">
+        <div class="logo-stage stage-paper"><img src="assets/fiza-logo-blk.png" alt=""/></div>
+        <div class="logo-card-foot"><span>Alto contraste · Negro</span><span>fiza-logo-blk</span></div>
+      </div>
+      <div class="logo-card">
+        <div class="logo-stage stage-ink"><img src="assets/fiza-logo-white.png" alt=""/></div>
+        <div class="logo-card-foot"><span>Invertida · Blanco</span><span>fiza-logo-white</span></div>
+      </div>
+      <div class="logo-card">
+        <div class="logo-stage stage-brand"><img src="assets/fiza-logo-white.png" alt=""/></div>
+        <div class="logo-card-foot"><span>Sobre verde marca</span><span>uso preferente</span></div>
+      </div>
+      <div class="logo-card">
+        <div class="logo-stage stage-lime"><img src="assets/fiza-logo-grn.png" alt=""/></div>
+        <div class="logo-card-foot"><span>Sobre lima</span><span>comunicación Free</span></div>
+      </div>
+      <div class="logo-card">
+        <div class="logo-stage stage-grad"><img src="assets/fiza-logo-white.png" alt=""/></div>
+        <div class="logo-card-foot"><span>Sobre gradiente app</span><span>landing / hero</span></div>
+      </div>
+    </div>
+
+    <h3 class="kicker" style="margin-top: var(--sp-10);">Ícono de aplicación</h3>
+    <div class="logo-grid">
+      <div class="logo-card">
+        <div class="logo-stage stage-paper" style="padding: var(--sp-4)"><img src="assets/fiza-icon.png" alt="" style="max-width: 40%; max-height: 120px; border-radius: 22%;"/></div>
+        <div class="logo-card-foot"><span>iOS / Android · 1024×1024</span><span>fiza-icon</span></div>
+      </div>
+      <div class="logo-card">
+        <div class="logo-stage stage-paper" style="padding: var(--sp-4); gap: var(--sp-3); justify-content: space-around;">
+          <img src="assets/fiza-icon.png" alt="" style="max-width: 25%; max-height: 64px; border-radius: 22%;"/>
+          <img src="assets/fiza-icon.png" alt="" style="max-width: 18%; max-height: 44px; border-radius: 22%;"/>
+          <img src="assets/fiza-icon.png" alt="" style="max-width: 12%; max-height: 28px; border-radius: 22%;"/>
+        </div>
+        <div class="logo-card-foot"><span>Escalas · 64/44/28</span><span>Mín: 24px</span></div>
+      </div>
+      <div class="logo-card">
+        <div class="logo-stage stage-paper" style="padding: var(--sp-4)">
+          <img src="assets/fiza-banner.png" alt="" style="max-width: 100%; max-height: 130px; border-radius: var(--r-md);"/>
+        </div>
+        <div class="logo-card-foot"><span>Banner social / OG</span><span>1200×630</span></div>
+      </div>
+    </div>
+
+    <h3 class="kicker" style="margin-top: var(--sp-10);">Clear space &amp; tamaño mínimo</h3>
+    <div class="clearspace">
+      <div class="cs-box">
+        <img src="assets/fiza-logo-grn.png" alt=""/>
+      </div>
+      <div class="cs-note">
+        <p><b>Espacio libre:</b> nunca menos que la altura del ojo de la <b>a</b> en todos los lados.
+        Esa unidad (≈ <span class="mono">x</span>) se mide contra el logotipo a cualquier escala.</p>
+        <p style="margin-top: var(--sp-4);"><b>Tamaño mínimo:</b></p>
+        <ul style="margin: 4px 0; padding-left: 20px; line-height: 1.9;">
+          <li>Digital: <span class="mono">24px</span> de alto (logotipo completo) — <span class="mono">16px</span> el ícono aislado.</li>
+          <li>Impreso: <span class="mono">8mm</span> de alto.</li>
+        </ul>
+        <p style="margin-top: var(--sp-4);"><b>Formatos:</b> PNG para bitmap, SVG preferido para web y UI. Nunca recrear a mano.</p>
+      </div>
+    </div>
+
+    <h3 class="kicker" style="margin-top: var(--sp-10);">Usos incorrectos</h3>
+    <div class="misuse">
+      <div class="mis-card mis-stretch"><img class="mis-img" src="assets/fiza-logo-grn.png" alt=""/><span class="mis-label">No deformar</span></div>
+      <div class="mis-card mis-rotate"><img class="mis-img" src="assets/fiza-logo-grn.png" alt=""/><span class="mis-label">No rotar</span></div>
+      <div class="mis-card mis-color"><img class="mis-img" src="assets/fiza-logo-white.png" alt=""/><span class="mis-label">No recolorar</span></div>
+      <div class="mis-card mis-shadow"><img class="mis-img" src="assets/fiza-logo-grn.png" alt=""/><span class="mis-label">No añadir efectos</span></div>
+    </div>
+  </section>
+
+  <!-- ======================= COLOR ======================= -->
+  <section class="block" id="color">
+    <div class="sec-head">
+      <div>
+        <div class="sec-num">02 — COLOR</div>
+        <h2 class="sec-title">Paleta</h2>
+      </div>
+      <div class="sec-sub">
+        Tres familias funcionales: <b>marca</b> (verdes), <b>semánticos</b> de movimiento (ingreso / gasto / pendiente)
+        y <b>neutrales</b>. Los tokens de marca y semánticos están fijados en el código actual —
+        no se cambian. Neutrales y escalas se añaden aquí como extensión compatible.
+      </div>
+    </div>
+
+    <div class="palette-block">
+      <h3 class="kicker">Marca <span class="tag">globals.css</span></h3>
+      <div class="swatch-row">
+        <div class="swatch"><div class="sw-chip" style="background: #578466"></div><div class="sw-body"><div class="sw-name" style="color:#578466">Brand</div><div class="sw-var">--brand</div><div class="sw-hex">#578466</div></div></div>
+        <div class="swatch"><div class="sw-chip" style="background: #6B8C78"></div><div class="sw-body"><div class="sw-name">Mid</div><div class="sw-var">--brand-mid</div><div class="sw-hex">#6B8C78</div></div></div>
+        <div class="swatch"><div class="sw-chip" style="background: #92C3A5"></div><div class="sw-body"><div class="sw-name">Light</div><div class="sw-var">--brand-light</div><div class="sw-hex">#92C3A5</div></div></div>
+        <div class="swatch"><div class="sw-chip" style="background: #D9E8D0"></div><div class="sw-body"><div class="sw-name">Border</div><div class="sw-var">--brand-border</div><div class="sw-hex">#D9E8D0</div></div></div>
+        <div class="swatch"><div class="sw-chip" style="background: #F4F6EB"></div><div class="sw-body"><div class="sw-name">Chip</div><div class="sw-var">--brand-chip</div><div class="sw-hex">#F4F6EB</div></div></div>
+        <div class="swatch"><div class="sw-chip" style="background: #8AAB94"></div><div class="sw-body"><div class="sw-name">Muted</div><div class="sw-var">--brand-muted</div><div class="sw-hex">#8AAB94</div></div></div>
+        <div class="swatch"><div class="sw-chip" style="background: #DAE68F"></div><div class="sw-body"><div class="sw-name">Lime</div><div class="sw-var">--brand-lime</div><div class="sw-hex">#DAE68F</div></div></div>
+      </div>
+    </div>
+
+    <div class="palette-block">
+      <h3 class="kicker">Neutrales <span class="tag">ampliación</span></h3>
+      <div class="swatch-row">
+        <div class="swatch"><div class="sw-chip" style="background: #FCFDF8"></div><div class="sw-body"><div class="sw-name">Paper</div><div class="sw-var">--paper</div><div class="sw-hex">#FCFDF8</div></div></div>
+        <div class="swatch"><div class="sw-chip" style="background: #F7F9F1"></div><div class="sw-body"><div class="sw-name">Paper-2</div><div class="sw-var">--paper-2</div><div class="sw-hex">#F7F9F1</div></div></div>
+        <div class="swatch"><div class="sw-chip" style="background: #C9D4CC"></div><div class="sw-body"><div class="sw-name">Ink 100</div><div class="sw-var">--ink-100</div><div class="sw-hex">#C9D4CC</div></div></div>
+        <div class="swatch"><div class="sw-chip" style="background: #8C9C92"></div><div class="sw-body"><div class="sw-name">Ink 300</div><div class="sw-var">--ink-300</div><div class="sw-hex">#8C9C92</div></div></div>
+        <div class="swatch"><div class="sw-chip" style="background: #4A5A50"></div><div class="sw-body"><div class="sw-name" style="color:white; background:#4A5A50; padding: 2px 4px; display:inline-block; border-radius: 3px;">Ink 500</div><div class="sw-var">--ink-500</div><div class="sw-hex">#4A5A50</div></div></div>
+        <div class="swatch"><div class="sw-chip" style="background: #243028"></div><div class="sw-body"><div class="sw-name">Ink 700</div><div class="sw-var">--ink-700</div><div class="sw-hex">#243028</div></div></div>
+        <div class="swatch"><div class="sw-chip" style="background: #0E1711"></div><div class="sw-body"><div class="sw-name">Ink 900</div><div class="sw-var">--ink-900</div><div class="sw-hex">#0E1711</div></div></div>
+      </div>
+    </div>
+
+    <div class="palette-block">
+      <h3 class="kicker">Semánticos de movimiento <span class="tag">globals.css</span></h3>
+      <div class="pairs">
+        <div class="pair-card">
+          <div class="pair-head" style="background: var(--income-bg); color: var(--income-text); border-bottom-color: var(--income-border);">Ingreso · +</div>
+          <div class="pair-tokens">
+            <span>--income-bg: #DAE68F</span>
+            <span>--income-border: #92C3A5</span>
+            <span>--income-text: #578466</span>
+          </div>
+        </div>
+        <div class="pair-card">
+          <div class="pair-head" style="background: var(--expense-bg); color: var(--expense-text); border-bottom-color: var(--expense-border);">Gasto · −</div>
+          <div class="pair-tokens">
+            <span>--expense-bg: #FAD5BF</span>
+            <span>--expense-border: #F79366</span>
+            <span>--expense-text: #D0481A</span>
+          </div>
+        </div>
+        <div class="pair-card">
+          <div class="pair-head" style="background: var(--pending-bg); color: var(--pending-text); border-bottom-color: var(--pending-border);">Pendiente · ⏳</div>
+          <div class="pair-tokens">
+            <span>--pending-bg: #FFF5CC</span>
+            <span>--pending-border: #FFCE57</span>
+            <span>--pending-text: #B89010</span>
+          </div>
+        </div>
+        <div class="pair-card">
+          <div class="pair-head" style="background: var(--pro-bg); color: var(--brand); border-bottom-color: var(--brand-border);">Pro · ✓</div>
+          <div class="pair-tokens">
+            <span>--pro-bg: #EEFBE8</span>
+            <span>--investment: #FFCE57</span>
+            <span>--investment-text: #B89010</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="palette-block">
+      <h3 class="kicker">Gradiente de aplicación</h3>
+      <div style="height: 180px; border-radius: var(--r-lg); background: var(--bg-grad); border: 1px solid var(--brand-border); display:flex; align-items: flex-end; padding: var(--sp-5);">
+        <code style="background: rgba(255,255,255,0.7); padding: 6px 10px; border-radius: var(--r-sm); font-size: 12px;">
+          background: linear-gradient(115deg, #BFDACB 25%, #E8F0B9 75%)
+        </code>
+      </div>
+      <p style="color: var(--ink-500); font-size: 14px; margin-top: var(--sp-3);">
+        Aplicar <span class="mono">fixed</span> en todas las rutas protegidas del dashboard. No modificar ángulos ni stops — es la piel del producto.
+      </p>
+    </div>
+  </section>
+
+  <!-- ======================= TYPE ======================= -->
+  <section class="block" id="type">
+    <div class="sec-head">
+      <div>
+        <div class="sec-num">03 — TIPOGRAFÍA</div>
+        <h2 class="sec-title">Outfit</h2>
+      </div>
+      <div class="sec-sub">
+        Una sola familia: <b>Outfit Variable</b> (100–900). Geométrica, abierta y legible a cualquier tamaño.
+        La usamos en UI (cargada vía <span class="mono">next/font/google</span>) y como display tipográfico en landing y comunicación.
+        En PDF se usa <b>Helvetica</b> (built-in de react-pdf) para evitar peticiones de red.
+      </div>
+    </div>
+
+    <div class="type-specimen">
+      <div class="type-giant">fiza</div>
+      <div style="font-size: 16px; color: var(--ink-500); margin-top: var(--sp-4); font-family: var(--f-mono);">Outfit Variable · 100 → 900 · <span style="color: var(--brand)">--font-outfit</span></div>
+    </div>
+
+    <h3 class="kicker" style="margin-top: var(--sp-10);">Pesos</h3>
+    <div class="weights">
+      <div class="weight-card"><div class="w-big" style="font-weight: 400">Aa</div><div class="w-meta">Regular · 400</div><p style="color: var(--ink-500); font-size: 13px; margin-top: 8px;">Body · descripciones · UI</p></div>
+      <div class="weight-card"><div class="w-big" style="font-weight: 500">Aa</div><div class="w-meta">Medium · 500</div><p style="color: var(--ink-500); font-size: 13px; margin-top: 8px;">Labels · chips · botones secundarios</p></div>
+      <div class="weight-card"><div class="w-big" style="font-weight: 600">Aa</div><div class="w-meta">SemiBold · 600</div><p style="color: var(--ink-500); font-size: 13px; margin-top: 8px;">Subtítulos · etiquetas activas</p></div>
+      <div class="weight-card"><div class="w-big" style="font-weight: 700">Aa</div><div class="w-meta">Bold · 700</div><p style="color: var(--ink-500); font-size: 13px; margin-top: 8px;">Títulos · montos · CTA primario</p></div>
+    </div>
+
+    <h3 class="kicker" style="margin-top: var(--sp-10);">Escala</h3>
+    <div style="border: 1px solid var(--brand-border); border-radius: var(--r-lg); padding: var(--sp-5) var(--sp-6); background: white;">
+      <div class="type-scale"><div class="ts-label">Display</div><div class="ts-sample" style="font-size: 56px; font-weight: 700; letter-spacing: -0.02em; line-height: 1;">Registra en segundos</div><div class="ts-meta">56 / 60 · 700</div></div>
+      <div class="type-scale"><div class="ts-label">H1</div><div class="ts-sample" style="font-size: 40px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.05;">Hola, Panadería Lupita</div><div class="ts-meta">40 / 44 · 700</div></div>
+      <div class="type-scale"><div class="ts-label">H2</div><div class="ts-sample" style="font-size: 28px; font-weight: 700; letter-spacing: -0.01em;">Próximos compromisos</div><div class="ts-meta">28 / 34 · 700</div></div>
+      <div class="type-scale"><div class="ts-label">H3</div><div class="ts-sample" style="font-size: 20px; font-weight: 600;">Desglose de gastos</div><div class="ts-meta">20 / 28 · 600</div></div>
+      <div class="type-scale"><div class="ts-label">Body L</div><div class="ts-sample" style="font-size: 17px; font-weight: 400; line-height: 1.5;">Vendí 50 conchas y pagué la luz</div><div class="ts-meta">17 / 26 · 400</div></div>
+      <div class="type-scale"><div class="ts-label">Body</div><div class="ts-sample" style="font-size: 15px; font-weight: 400; line-height: 1.5;">Se agregaron 3 movimientos al historial.</div><div class="ts-meta">15 / 22 · 400</div></div>
+      <div class="type-scale"><div class="ts-label">Caption</div><div class="ts-sample" style="font-size: 12px; font-weight: 500; color: var(--ink-500)">22 de abril de 2026</div><div class="ts-meta">12 / 16 · 500</div></div>
+      <div class="type-scale"><div class="ts-label">Overline</div><div class="ts-sample" style="font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brand)">REGISTROS DEL MES</div><div class="ts-meta">11 / 14 · 600 · tracked</div></div>
+      <div class="type-scale"><div class="ts-label">Mono · monto</div><div class="ts-sample" style="font-size: 22px; font-weight: 700; letter-spacing: -0.01em;">$1,500.50</div><div class="ts-meta">Outfit 700 · tabular</div></div>
+    </div>
+
+    <p style="color: var(--ink-500); font-size: 14px; margin-top: var(--sp-5); max-width: 720px;">
+      <b>Reglas:</b> nunca por debajo de <span class="mono">16px</span> en inputs (iOS zoom). Montos siempre en 600/700, alineados a la derecha, con <span class="mono">font-variant-numeric: tabular-nums</span>. Evitar italics en UI.
+    </p>
+  </section>
+
+  <!-- ======================= SPACING / RADII / SHADOW ======================= -->
+  <section class="block" id="spacing">
+    <div class="sec-head">
+      <div>
+        <div class="sec-num">04 — GEOMETRÍA</div>
+        <h2 class="sec-title">Espaciado, radio y sombra</h2>
+      </div>
+      <div class="sec-sub">
+        Sistema 4/8. Radios suaves — las cards usan <span class="mono">rounded-xl</span> (16px), inputs y
+        botones <span class="mono">rounded-lg</span> (12px/10px). Sombras muy sutiles — Fiza es un documento
+        financiero, no una app de juego.
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6);">
+      <div>
+        <h3 class="kicker">Escala de espaciado</h3>
+        <div style="border: 1px solid var(--brand-border); border-radius: var(--r-lg); padding: var(--sp-5) var(--sp-6); background: white;">
+          <div class="spacing-row"><span class="sp-label">--sp-1</span><div class="sp-bar" style="width: 4px;"></div><span class="sp-label">4 px</span></div>
+          <div class="spacing-row"><span class="sp-label">--sp-2</span><div class="sp-bar" style="width: 8px;"></div><span class="sp-label">8 px</span></div>
+          <div class="spacing-row"><span class="sp-label">--sp-3</span><div class="sp-bar" style="width: 12px;"></div><span class="sp-label">12 px</span></div>
+          <div class="spacing-row"><span class="sp-label">--sp-4</span><div class="sp-bar" style="width: 16px;"></div><span class="sp-label">16 px</span></div>
+          <div class="spacing-row"><span class="sp-label">--sp-5</span><div class="sp-bar" style="width: 20px;"></div><span class="sp-label">20 px</span></div>
+          <div class="spacing-row"><span class="sp-label">--sp-6</span><div class="sp-bar" style="width: 24px;"></div><span class="sp-label">24 px</span></div>
+          <div class="spacing-row"><span class="sp-label">--sp-8</span><div class="sp-bar" style="width: 32px;"></div><span class="sp-label">32 px</span></div>
+          <div class="spacing-row"><span class="sp-label">--sp-10</span><div class="sp-bar" style="width: 40px;"></div><span class="sp-label">40 px</span></div>
+          <div class="spacing-row"><span class="sp-label">--sp-12</span><div class="sp-bar" style="width: 48px;"></div><span class="sp-label">48 px</span></div>
+          <div class="spacing-row"><span class="sp-label">--sp-16</span><div class="sp-bar" style="width: 64px;"></div><span class="sp-label">64 px</span></div>
+        </div>
+      </div>
+      <div>
+        <h3 class="kicker">Radios</h3>
+        <div class="radii" style="grid-template-columns: repeat(2, 1fr);">
+          <div class="radius-card"><div class="r-box" style="border-radius: 6px;"></div><div class="r-name">Sm</div><div class="r-meta">6 px · badges · tags</div></div>
+          <div class="radius-card"><div class="r-box" style="border-radius: 10px;"></div><div class="r-name">Md</div><div class="r-meta">10 px · inputs · pills</div></div>
+          <div class="radius-card"><div class="r-box" style="border-radius: 12px;"></div><div class="r-name">Lg</div><div class="r-meta">12 px · botones · métricas</div></div>
+          <div class="radius-card"><div class="r-box" style="border-radius: 16px;"></div><div class="r-name">Xl</div><div class="r-meta">16 px · cards</div></div>
+          <div class="radius-card"><div class="r-box" style="border-radius: 999px;"></div><div class="r-name">Pill</div><div class="r-meta">999 · chips · progress</div></div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="kicker" style="margin-top: var(--sp-10);">Sombra</h3>
+    <div class="shadows">
+      <div class="shadow-card"><div class="shadow-box s1">sh-1 · shadow-sm</div></div>
+      <div class="shadow-card"><div class="shadow-box s2">sh-2 · modal / dropdown</div></div>
+      <div class="shadow-card"><div class="shadow-box s3">sh-3 · sheet elevado</div></div>
+    </div>
+  </section>
+
+  <!-- ======================= COMPONENTS ======================= -->
+  <section class="block" id="components">
+    <div class="sec-head">
+      <div>
+        <div class="sec-num">05 — COMPONENTES</div>
+        <h2 class="sec-title">Biblioteca</h2>
+      </div>
+      <div class="sec-sub">
+        Piezas que ya existen en el código (<span class="mono">components/dashboard</span>,
+        <span class="mono">components/entries</span>). Se presentan sobre el gradiente de la app
+        para evaluar contraste real. Props y comportamiento coinciden con la spec v0.22.
+      </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns: 1fr; gap: var(--sp-8);">
+
+      <!-- Buttons -->
+      <div class="demo">
+        <div class="demo-head"><span>Botones</span><span>fz-btn</span></div>
+        <div class="demo-body plain">
+          <div style="display: flex; gap: var(--sp-3); flex-wrap: wrap; align-items: center;">
+            <button class="fz-btn fz-btn--primary">Prueba Pro gratis 30 días</button>
+            <button class="fz-btn fz-btn--secondary">Gestionar</button>
+            <button class="fz-btn fz-btn--ghost">Cancelar</button>
+            <button class="fz-btn fz-btn--danger">Eliminar</button>
+            <button class="fz-btn fz-btn--primary" disabled>Cargando…</button>
+          </div>
+          <div style="display: flex; gap: var(--sp-3); flex-wrap: wrap; margin-top: var(--sp-4); align-items: center;">
+            <button class="fz-btn fz-btn--paid">Pagado</button>
+            <button class="fz-btn fz-btn--secondary fz-btn--sm">+ Agregar movimiento</button>
+            <button class="fz-btn fz-btn--secondary fz-btn--sm">Rango <span class="fz-badge fz-badge--pro" style="margin-left: 4px; font-size: 10px;">Pro</span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inputs -->
+      <div class="demo">
+        <div class="demo-head"><span>Inputs &amp; form</span><span>fz-input</span></div>
+        <div class="demo-body plain">
+          <div class="comp-grid">
+            <div>
+              <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--ink-700);">Nombre del negocio</label>
+              <input class="fz-input" value="Panadería Lupita"/>
+            </div>
+            <div>
+              <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--ink-700);">Correo</label>
+              <input class="fz-input" placeholder="tu@correo.com"/>
+            </div>
+            <div style="grid-column: 1 / -1;">
+              <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--ink-700);">Registra un movimiento</label>
+              <textarea class="fz-input fz-textarea" placeholder="Ej: Vendí 50 conchas a $12 cada una y pagué $300 de gas.">Vendí 50 conchas a $12 cada una y pagué $300 de gas.</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chips & pills -->
+      <div class="demo">
+        <div class="demo-head"><span>Filtros — date chips &amp; type pills</span><span>FilterBox</span></div>
+        <div class="demo-body">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: var(--sp-4);">
+            <span class="fz-chip">Hoy</span>
+            <span class="fz-chip">7 días</span>
+            <span class="fz-chip is-active">Este mes</span>
+            <span class="fz-chip">Este año</span>
+            <span class="fz-chip">Histórico</span>
+            <span class="fz-chip">Abril 2026 ▾</span>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <span class="fz-type-pill all is-active">Todos</span>
+            <span class="fz-type-pill ingreso is-idle">Ingresos</span>
+            <span class="fz-type-pill gasto is-idle">Gastos</span>
+            <span class="fz-type-pill pendiente is-idle">Pendientes</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Badges -->
+      <div class="demo">
+        <div class="demo-head"><span>Badges de plan</span><span>fz-badge</span></div>
+        <div class="demo-body plain">
+          <div style="display: flex; gap: var(--sp-3); align-items: center;">
+            <span class="fz-badge fz-badge--pro">Pro</span>
+            <span class="fz-badge fz-badge--free">Free</span>
+            <span class="fz-badge fz-badge--pro-outline">Plan Pro activo ✓</span>
+            <span class="fz-badge" style="background: var(--pending-bg); color: var(--pending-text); border: 1px solid var(--pending-border);">30 días trial</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Metric cards -->
+      <div class="demo">
+        <div class="demo-head"><span>Métricas del período</span><span>MetricCard · grid de 3</span></div>
+        <div class="demo-body">
+          <div class="fz-metrics">
+            <div class="fz-metric income">
+              <div class="m-label">Ingresos</div>
+              <div class="m-value">+$24,800</div>
+            </div>
+            <div class="fz-metric expense">
+              <div class="m-label">Gastos</div>
+              <div class="m-value">−$12,340</div>
+            </div>
+            <div class="fz-metric net-pos">
+              <div class="m-label">Neto</div>
+              <div class="m-value">+$12,460</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Movement cards -->
+      <div class="demo">
+        <div class="demo-head"><span>Movement card</span><span>MovementCard / MovementDayGroup</span></div>
+        <div class="demo-body">
+          <div style="display: grid; gap: 8px;">
+            <div class="fz-movement">
+              <span class="fz-mov-type ingreso">Ingreso</span>
+              <div class="fz-mov-desc">Venta de conchas<span class="sub">Ventas · Lunes 21 abril</span></div>
+              <div class="fz-mov-amt ingreso">+$600.00</div>
+            </div>
+            <div class="fz-movement">
+              <span class="fz-mov-type gasto">Gasto</span>
+              <div class="fz-mov-desc">Pago de gas<span class="sub">Servicios básicos</span></div>
+              <div class="fz-mov-amt gasto">−$300.00</div>
+            </div>
+            <div class="fz-movement">
+              <span class="fz-mov-type gasto">Gasto</span>
+              <div class="fz-mov-desc">Horno nuevo<span class="sub">Inversiones · is_investment</span></div>
+              <svg class="ico fz-invest-ico" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+              <div class="fz-mov-amt gasto">−$8,500.00</div>
+            </div>
+            <div class="fz-movement">
+              <span class="fz-mov-type pendiente">Pendiente</span>
+              <div class="fz-mov-desc">Renta del local<span class="sub">Vence viernes 25 abril</span></div>
+              <button class="fz-btn fz-btn--paid">Pagado</button>
+              <div class="fz-mov-amt pendiente">$6,500.00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pending commitments -->
+      <div class="demo">
+        <div class="demo-head"><span>Próximos compromisos</span><span>PendingCommitments · colores --pending-*</span></div>
+        <div class="demo-body">
+          <div class="fz-pending-head">
+            <span>Próximos compromisos <span class="count">3</span></span>
+            <span>▾</span>
+          </div>
+          <div style="display: grid; gap: 8px; margin-top: 8px;">
+            <div class="fz-movement" style="border-color: var(--pending-border);">
+              <div style="width: 44px; text-align: center; padding: 4px 0; background: var(--pending-bg); color: var(--pending-text); border-radius: var(--r-sm); font-size: 11px; font-weight: 600;">
+                <div style="font-size: 10px; text-transform: uppercase;">ABR</div>
+                <div style="font-size: 16px;">25</div>
+              </div>
+              <div class="fz-mov-desc">Renta del local<span class="sub">En 3 días</span></div>
+              <button class="fz-btn fz-btn--paid">Pagado</button>
+              <div class="fz-mov-amt pendiente">$6,500.00</div>
+            </div>
+            <div class="fz-movement" style="border-color: var(--pending-border);">
+              <div style="width: 44px; text-align: center; padding: 4px 0; background: var(--pending-bg); color: var(--pending-text); border-radius: var(--r-sm); font-size: 11px; font-weight: 600;">
+                <div style="font-size: 10px; text-transform: uppercase;">ABR</div>
+                <div style="font-size: 16px;">28</div>
+              </div>
+              <div class="fz-mov-desc">Luz CFE<span class="sub">En 6 días</span></div>
+              <button class="fz-btn fz-btn--paid">Pagado</button>
+              <div class="fz-mov-amt pendiente">$420.00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Entry form -->
+      <div class="demo">
+        <div class="demo-head"><span>Entry form</span><span>EntryForm · texto / voz / foto</span></div>
+        <div class="demo-body">
+          <div class="fz-card" style="max-width: 640px; margin: 0 auto;">
+            <div class="fz-entry-tabs">
+              <button class="fz-entry-tab is-active">
+                <svg class="ico" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h16"/></svg>
+                Texto
+              </button>
+              <button class="fz-entry-tab">
+                <svg class="ico" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>
+                Voz
+              </button>
+              <button class="fz-entry-tab">
+                <svg class="ico" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="4"/><path d="M8 6l2-3h4l2 3"/></svg>
+                Foto
+              </button>
+            </div>
+            <textarea class="fz-input fz-textarea" placeholder="Vendí 50 conchas a $12, pagué $300 de gas y debo $6,500 de renta el viernes."></textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--sp-3);">
+              <span style="font-size: 12px; color: var(--ink-500);">0 / 1000 · GPT-4.1-mini</span>
+              <button class="fz-btn fz-btn--primary">Registrar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Plan card & insight -->
+      <div class="demo">
+        <div class="demo-head"><span>Plan card &amp; Insight chip</span><span>Free · Pro · /api/insights</span></div>
+        <div class="demo-body">
+          <div class="comp-grid">
+            <div class="fz-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-3);">
+                <div>
+                  <div style="font-size: 13px; color: var(--ink-500); font-weight: 500;">Plan Free</div>
+                  <div style="font-size: 24px; font-weight: 700; letter-spacing: -0.01em;">7 / 10</div>
+                  <div style="font-size: 12px; color: var(--ink-500); margin-top: 2px;">movimientos hoy</div>
+                </div>
+                <span class="fz-badge fz-badge--free">Free</span>
+              </div>
+              <div class="fz-progress" style="margin-bottom: var(--sp-4);"><div style="width: 70%"></div></div>
+              <button class="fz-btn fz-btn--primary" style="width: 100%;">Prueba Pro gratis 30 días</button>
+            </div>
+            <div class="fz-card" style="background: var(--pro-bg); border-color: var(--brand-light);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-3);">
+                <div>
+                  <div style="font-size: 13px; color: var(--brand); font-weight: 600;">Plan Pro activo ✓</div>
+                  <div style="font-size: 24px; font-weight: 700; letter-spacing: -0.01em; color: var(--brand);">$49 / mes</div>
+                  <div style="font-size: 12px; color: var(--ink-500); margin-top: 2px;">Próximo cargo: 22 mayo</div>
+                </div>
+                <span class="fz-badge fz-badge--pro">Pro</span>
+              </div>
+              <button class="fz-btn fz-btn--secondary" style="width: 100%;">Gestionar suscripción</button>
+            </div>
+          </div>
+          <div style="margin-top: var(--sp-4); display: flex; gap: var(--sp-2); flex-wrap: wrap;">
+            <span class="fz-insight">Esta semana vendiste 23% más que la pasada</span>
+            <span class="fz-insight">Tu mejor día en promedio es el sábado</span>
+            <span class="fz-insight">Llevas 14 días seguidos registrando — sigue así</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard composition -->
+      <div class="demo">
+        <div class="demo-head"><span>Composición — dashboard móvil</span><span>360 × 780 · iOS safe</span></div>
+        <div class="demo-body" style="padding: var(--sp-8);">
+          <div style="max-width: 380px; margin: 0 auto; background: var(--bg-grad); border-radius: 28px; border: 1px solid var(--brand-border); padding: var(--sp-5); box-shadow: var(--sh-3);">
+            <!-- header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-5);">
+              <img src="assets/fiza-logo-grn.png" alt="" style="height: 22px;"/>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <span class="fz-badge fz-badge--free">Free</span>
+                <svg class="ico" viewBox="0 0 24 24" style="width: 22px; height: 22px; color: var(--ink-700);"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+              </div>
+            </div>
+            <!-- greet -->
+            <div style="margin-bottom: var(--sp-4);">
+              <div style="font-size: 24px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink-900);">Hola, Lupita</div>
+              <div style="font-size: 12px; color: var(--ink-500); margin-top: 2px;">Miércoles, 22 de abril de 2026</div>
+              <div style="color: var(--brand-light); margin-top: 8px; margin-bottom: 10px;"><svg viewBox="0 0 320 10" preserveAspectRatio="none" style="display: block; width: 100%; height: 10px;"><path d="M 0 5 C 20 1, 40 9, 60 5 S 100 1, 120 5 S 160 9, 180 5 S 220 1, 240 5 S 280 9, 320 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+              <div><span class="fz-insight">Esta semana subieron tus ingresos 23%</span></div>
+            </div>
+            <!-- entry -->
+            <div class="fz-card" style="padding: var(--sp-4); margin-bottom: var(--sp-4);">
+              <div class="fz-entry-tabs" style="margin-bottom: var(--sp-2);">
+                <button class="fz-entry-tab is-active" style="font-size: 13px;">Texto</button>
+                <button class="fz-entry-tab" style="font-size: 13px;">Voz</button>
+                <button class="fz-entry-tab" style="font-size: 13px;">Foto</button>
+              </div>
+              <textarea class="fz-input fz-textarea" style="min-height: 72px; font-size: 14px;" placeholder="Registra en segundos…"></textarea>
+              <button class="fz-btn fz-btn--primary" style="width: 100%; margin-top: 8px;">Registrar</button>
+            </div>
+            <!-- metrics -->
+            <div class="fz-metrics" style="margin-bottom: var(--sp-4);">
+              <div class="fz-metric income" style="padding: 10px;"><div class="m-label" style="font-size: 9px;">Ingresos</div><div class="m-value" style="font-size: 18px;">+$24.8k</div></div>
+              <div class="fz-metric expense" style="padding: 10px;"><div class="m-label" style="font-size: 9px;">Gastos</div><div class="m-value" style="font-size: 18px;">−$12.3k</div></div>
+              <div class="fz-metric net-pos" style="padding: 10px;"><div class="m-label" style="font-size: 9px;">Neto</div><div class="m-value" style="font-size: 18px;">+$12.5k</div></div>
+            </div>
+            <!-- pending -->
+            <div class="fz-pending-head" style="margin-bottom: var(--sp-3);">
+              <span>Compromisos <span class="count">3</span></span>
+              <span>▾</span>
+            </div>
+            <!-- list -->
+            <div style="display: grid; gap: 6px;">
+              <div class="fz-movement" style="padding: 8px 10px;">
+                <span class="fz-mov-type ingreso" style="font-size: 9px; padding: 2px 6px;">+</span>
+                <div class="fz-mov-desc" style="font-size: 13px;">Venta conchas</div>
+                <div class="fz-mov-amt ingreso" style="font-size: 14px;">+$600</div>
+              </div>
+              <div class="fz-movement" style="padding: 8px 10px;">
+                <span class="fz-mov-type gasto" style="font-size: 9px; padding: 2px 6px;">−</span>
+                <div class="fz-mov-desc" style="font-size: 13px;">Gas</div>
+                <div class="fz-mov-amt gasto" style="font-size: 14px;">−$300</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ======================= WAVE ======================= -->
+  <section class="block" id="wave">
+    <div class="sec-head">
+      <div>
+        <div class="sec-num">06 — ELEMENTO GRÁFICO</div>
+        <h2 class="sec-title">La ola</h2>
+      </div>
+      <div class="sec-sub">
+        Fiza no es un banco tradicional — es una marca que te <b>sigue la onda</b>. La ola es nuestra firma gráfica: una línea curva suave heredada del trazo abierto de la <b>f</b>. Se usa a distintas amplitudes y pesos para dar ritmo a documentos, firma a titulares, y pulso a datos financieros. <b>Siempre stroke, nunca fill</b> — no compite con el gradiente de aplicación.
+      </div>
+    </div>
+
+    <h3 class="kicker">El sistema — cinco pesos</h3>
+    <div style="border: 1px solid var(--brand-border); border-radius: var(--r-lg); padding: var(--sp-6) var(--sp-8); background: white;">
+      <div class="wave-stack">
+        <div class="wave-row">
+          <span class="wr-label">Hairline</span>
+          <div class="wr-sample"><svg class="wave" viewBox="0 0 600 14" preserveAspectRatio="none" style="height: 14px;"><path d="M 0 7 C 12 4, 24 10, 38 7 S 60 4, 75 7 S 100 10, 115 7 S 140 4, 155 7 S 180 10, 200 7 S 225 4, 245 7 S 275 10, 295 7 S 325 4, 345 7 S 375 10, 395 7 S 425 4, 445 7 S 475 10, 495 7 S 525 4, 550 7 S 585 10, 600 7" stroke-width="0.8"/></svg></div>
+          <span class="wr-meta">amp 3 · w 0.8</span>
+        </div>
+        <div class="wave-row">
+          <span class="wr-label">Light</span>
+          <div class="wr-sample"><svg class="wave" viewBox="0 0 600 18" preserveAspectRatio="none" style="height: 18px;"><path d="M 0 9 C 25 3, 50 15, 75 9 S 125 3, 150 9 S 200 15, 225 9 S 275 3, 300 9 S 350 15, 375 9 S 425 3, 450 9 S 500 15, 525 9 S 575 3, 600 9" stroke-width="1.5"/></svg></div>
+          <span class="wr-meta">amp 6 · w 1.5</span>
+        </div>
+        <div class="wave-row">
+          <span class="wr-label">Regular</span>
+          <div class="wr-sample"><svg class="wave" viewBox="0 0 600 24" preserveAspectRatio="none" style="height: 24px;"><path d="M 0 12 C 40 4, 80 20, 120 12 S 200 4, 240 12 S 320 20, 360 12 S 440 4, 480 12 S 560 20, 600 12" stroke-width="2"/></svg></div>
+          <span class="wr-meta">amp 8 · w 2</span>
+        </div>
+        <div class="wave-row">
+          <span class="wr-label">Bold</span>
+          <div class="wr-sample"><svg class="wave" viewBox="0 0 600 36" preserveAspectRatio="none" style="height: 36px;"><path d="M 0 18 C 50 4, 100 32, 150 18 S 250 4, 300 18 S 400 32, 450 18 S 550 4, 600 18" stroke-width="2.5"/></svg></div>
+          <span class="wr-meta">amp 14 · w 2.5</span>
+        </div>
+        <div class="wave-row">
+          <span class="wr-label">Display <span style="opacity:0.5;">· outdoor only</span></span>
+          <div class="wr-sample" style="color: var(--brand);"><svg class="wave" viewBox="0 0 600 52" preserveAspectRatio="none" style="height: 52px;"><path d="M 0 26 C 60 4, 120 48, 180 26 S 300 4, 360 26 S 480 48, 540 26 S 600 4, 600 26" stroke-width="3.5"/></svg></div>
+          <span class="wr-meta">amp 22 · w 3.5</span>
+        </div>
+      </div>
+    </div>
+    <p style="color: var(--ink-500); font-size: 14px; margin-top: var(--sp-4); max-width: 720px;">
+      Todos los pesos comparten el mismo path — cambia solo amplitud y grosor de trazo. Color por defecto: <span class="mono" style="color: var(--brand-light)">--brand-light</span>. Sobre fondos oscuros o gradientes, usar <span class="mono" style="color: var(--brand)">--brand</span> o blanco con opacidad 40–60%.
+    </p>
+
+    <h3 class="kicker" style="margin-top: var(--sp-10);">Aplicaciones oficiales — tres lugares</h3>
+    <div class="wave-usage-grid" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="wave-usage">
+        <div class="wave-preview" style="color: var(--brand-light); padding: var(--sp-3);">
+          <div style="width: 100%;">
+            <div style="font-size: 13px; font-weight: 600; color: var(--ink-900); margin-bottom: 4px;">03 — Tipografía</div>
+            <svg class="wave" viewBox="0 0 300 8" preserveAspectRatio="none" style="height: 6px;"><path d="M 0 4 C 10 1, 20 7, 30 4 S 50 1, 60 4 S 80 7, 90 4 S 110 1, 120 4 S 140 7, 150 4 S 170 1, 180 4 S 200 7, 210 4 S 230 1, 240 4 S 260 7, 270 4 S 290 1, 300 4" stroke-width="0.6"/></svg>
+            <div style="font-size: 11px; color: var(--ink-500); margin-top: 6px;">Divisor de sección — ritmo sin ruido.</div>
+          </div>
+        </div>
+        <h4>Dividers de documento</h4>
+        <p>Hairline entre párrafos y secciones. Reemplaza el <span class="mono">border-bottom</span> recto cuando el documento es largo.</p>
+      </div>
+
+      <div class="wave-usage">
+        <div class="wave-preview" style="color: var(--brand-light); padding: var(--sp-3); flex-direction: column; align-items: flex-start;">
+          <div style="font-size: 18px; font-weight: 700; color: var(--brand); letter-spacing: -0.01em;">Sigue tu ritmo.</div>
+          <svg class="wave" viewBox="0 0 180 12" preserveAspectRatio="none" style="height: 10px; width: 180px; margin-top: 4px;"><path d="M 0 6 C 15 2, 30 10, 45 6 S 75 2, 90 6 S 120 10, 135 6 S 165 2, 180 6" stroke-width="1.5"/></svg>
+        </div>
+        <h4>Underline de headlines</h4>
+        <p>Light bajo titulares clave (landing, billboard, onboarding). Amplitud 6, ancho = el del texto o máximo 520px.</p>
+      </div>
+
+      <div class="wave-usage">
+        <div class="wave-preview" style="background: var(--bg-grad); padding: var(--sp-3); flex-direction: column; align-items: flex-start; justify-content: space-between;">
+          <div style="font-size: 16px; font-weight: 700; color: var(--brand); letter-spacing: -0.01em;">Sigue tu ritmo</div>
+          <div style="width: 100%; color: var(--brand);"><svg class="wave" viewBox="0 0 280 14" preserveAspectRatio="none" style="height: 14px;"><path d="M 0 7 C 25 1, 55 13, 85 7 S 140 1, 170 7 S 225 13, 255 7 S 280 3, 280 7" stroke-width="1.5" opacity="0.6"/></svg><svg class="wave" viewBox="0 0 280 14" preserveAspectRatio="none" style="height: 14px; margin-top: 2px; color: white;"><path d="M 0 7 C 30 2, 60 12, 95 7 S 150 2, 180 7 S 230 12, 260 7 S 280 3, 280 7" stroke-width="1" opacity="0.8"/></svg></div>
+        </div>
+        <h4>Horizonte en outdoor</h4>
+        <p>Display — solo para billboard, mural, social. Dos líneas apiladas (brand + blanco) sobre el gradiente, nunca sobre fondos planos.</p>
+      </div>
+    </div>
+
+    <h3 class="kicker" style="margin-top: var(--sp-10);">Reglas de uso</h3>
+    <div class="wave-rules">
+      <div class="wave-rule do">
+        <span class="tag">Sí</span>
+        La ola siempre es <b>stroke</b>, con trazo redondeado (<span class="mono">stroke-linecap: round</span>).
+      </div>
+      <div class="wave-rule dont">
+        <span class="tag">No</span>
+        Nunca rellenar la ola con color sólido — compite con el gradiente y se vuelve tropical.
+      </div>
+      <div class="wave-rule do">
+        <span class="tag">Sí</span>
+        Amplitud constante a lo largo de una misma instancia — la ola es tranquila, no catótica.
+      </div>
+      <div class="wave-rule dont">
+        <span class="tag">No </span>
+        Nunca entrecruzar dos olas ni hacer patrones de interferencia — no es agua, es ritmo.
+      </div>
+      <div class="wave-rule do">
+        <span class="tag">Sí</span>
+        En UI interactiva, opacidad 25–70%. Nunca opaca al 100% detrás de texto.
+      </div>
+      <div class="wave-rule dont">
+        <span class="tag">No</span>
+        Nunca usar como <i>border-radius</i> masivo en cards ni como máscara de imágenes.
+      </div>
+    </div>
+
+    <h3 class="kicker" style="margin-top: var(--sp-10);">Snippet de referencia — SVG portable</h3>
+    <pre style="background: var(--ink-900); color: #cfe3d6; padding: var(--sp-6); border-radius: var(--r-lg); overflow: auto; font-family: var(--f-mono); font-size: 12px; line-height: 1.6; margin: 0;">&lt;!-- wave · regular · amp 8 · stroke 2 --&gt;
+&lt;svg viewBox="0 0 600 24" preserveAspectRatio="none" style="width:100%; height:24px; color:var(--brand-light);"&gt;
+  &lt;path d="M 0 12 C 40 4, 80 20, 120 12 S 200 4, 240 12 S 320 20, 360 12 S 440 4, 480 12 S 560 20, 600 12"
+        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+        vector-effect="non-scaling-stroke"/&gt;
+&lt;/svg&gt;</pre>
+  </section>
+
+  <!-- ======================= VOICE ======================= -->
+  <section class="block" id="voice">
+    <div class="sec-head">
+      <div>
+        <div class="sec-num">07 — VOZ &amp; TONO</div>
+        <h2 class="sec-title">Cómo habla Fiza</h2>
+      </div>
+      <div class="sec-sub">
+        Hablamos como le hablamos a la persona que atiende un negocio chico: con respeto, sin jerga,
+        con claridad sobre números y sin melodrama. Español mexicano, tuteo. Cero emojis en UI (regla v0.21).
+      </div>
+    </div>
+
+    <div class="tone-grid">
+      <div class="tone-card">
+        <h4>Cercano, no informal</h4>
+        <p>Tuteo directo, sin diminutivos ni "tips amigables". Tratamos al usuario como dueño de negocio.</p>
+        <span class="tag">Bien</span><div class="good">"Tus cuentas, sin cuentos."</div>
+        <span class="tag">Mal</span><div class="bad">"¡Hey amigo! Te tenemos unos tips financieros 💸"</div>
+      </div>
+      <div class="tone-card">
+        <h4>Exacto con el dinero</h4>
+        <p>Los números se muestran completos o claramente redondeados. Nunca escondemos cantidades.</p>
+        <span class="tag">Bien</span><div class="good">"Ingresos: +$24,800 · Gastos: −$12,340"</div>
+        <span class="tag">Mal</span><div class="bad">"¡Vas muy bien! Sigue así 🎉"</div>
+      </div>
+      <div class="tone-card">
+        <h4>Útil, no educativo</h4>
+        <p>Los insights responden a lo que pasó, no dan clases de contabilidad.</p>
+        <span class="tag">Bien</span><div class="good">"Esta semana gastaste 40% más en Ingredientes."</div>
+        <span class="tag">Mal</span><div class="bad">"Recuerda: un presupuesto saludable evita deudas innecesarias."</div>
+      </div>
+    </div>
+
+    <div style="margin-top: var(--sp-8); border: 1px solid var(--brand-border); border-radius: var(--r-lg); padding: var(--sp-6); background: var(--paper-2);">
+      <h3 class="kicker">Taglines oficiales</h3>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); margin-top: var(--sp-3);">
+        <div>
+          <div style="font-size: 24px; font-weight: 700; letter-spacing: -0.01em; color: var(--brand);">Registra en segundos,<br/>entiende tu negocio en minutos.</div>
+          <p style="color: var(--ink-500); font-size: 13px; margin-top: 8px;">Uso funcional · landing · onboarding</p>
+        </div>
+        <div>
+          <div style="font-size: 24px; font-weight: 700; letter-spacing: -0.01em; color: var(--brand);">Tus cuentas,<br/>sin cuentos.</div>
+          <p style="color: var(--ink-500); font-size: 13px; margin-top: 8px;">Uso emocional · social · billboard</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= MOTION ======================= -->
+  <section class="block" id="motion">
+    <div class="sec-head">
+      <div>
+        <div class="sec-num">08 — MOVIMIENTO</div>
+        <h2 class="sec-title">Motion</h2>
+      </div>
+      <div class="sec-sub">
+        Animaciones tranquilas y funcionales. Nada rebota sin razón. Todas las curvas comparten el mismo
+        ease base; solo varía la duración según el contexto.
+      </div>
+    </div>
+
+    <div class="motion-row">
+      <div class="motion-card m-fast">
+        <div class="motion-demo"></div>
+        <div style="font-weight: 600; font-size: 14px;">Fast · 150ms</div>
+        <div style="color: var(--ink-500); font-size: 12px; font-family: var(--f-mono); margin-top: 4px;">hover · focus · toggle</div>
+      </div>
+      <div class="motion-card m-std">
+        <div class="motion-demo"></div>
+        <div style="font-weight: 600; font-size: 14px;">Standard · 240ms</div>
+        <div style="color: var(--ink-500); font-size: 12px; font-family: var(--f-mono); margin-top: 4px;">collapse · tab · modal</div>
+      </div>
+      <div class="motion-card m-slow">
+        <div class="motion-demo"></div>
+        <div style="font-weight: 600; font-size: 14px;">Slow · 400ms</div>
+        <div style="color: var(--ink-500); font-size: 12px; font-family: var(--f-mono); margin-top: 4px;">page · sheet · confirm</div>
+      </div>
+      <div class="motion-card m-spring">
+        <div class="motion-demo"></div>
+        <div style="font-weight: 600; font-size: 14px;">Spring</div>
+        <div style="color: var(--ink-500); font-size: 12px; font-family: var(--f-mono); margin-top: 4px;">prepend movement · celebrate</div>
+      </div>
+    </div>
+
+    <div style="margin-top: var(--sp-6); border: 1px solid var(--brand-border); border-radius: var(--r-lg); padding: var(--sp-5) var(--sp-6); background: white; font-family: var(--f-mono); font-size: 13px; color: var(--ink-700); line-height: 1.8;">
+      <div><span style="color: var(--brand)">--ease-standard</span>: cubic-bezier(0.2, 0.7, 0.2, 1)</div>
+      <div><span style="color: var(--brand)">--ease-spring</span>: cubic-bezier(0.34, 1.56, 0.64, 1)</div>
+      <div><span style="color: var(--brand)">--dur-fast</span>: 150ms · <span style="color: var(--brand)">--dur-std</span>: 240ms · <span style="color: var(--brand)">--dur-slow</span>: 400ms</div>
+    </div>
+  </section>
+
+  <!-- ======================= DOWNLOADS / TOKENS ======================= -->
+  <section class="block" id="tokens">
+    <div class="sec-head">
+      <div>
+        <div class="sec-num">09 — HANDOFF</div>
+        <h2 class="sec-title">Tokens y recursos</h2>
+      </div>
+      <div class="sec-sub">
+        Todo lo declarado aquí es espejo directo de <span class="mono">app/globals.css</span> + extensiones marcadas como "ampliación". Copiar el bloque y pegarlo en el proyecto sin miedo.
+      </div>
+    </div>
+
+    <div class="download-grid">
+      <a class="dl-card" href="assets/fiza-logo-grn.png" download>
+        <div class="dl-ico">PNG</div>
+        <div class="dl-body"><h4>Logo verde</h4><p>fiza-logo-grn.png · marca primaria</p></div>
+      </a>
+      <a class="dl-card" href="assets/fiza-logo-blk.png" download>
+        <div class="dl-ico">PNG</div>
+        <div class="dl-body"><h4>Logo negro</h4><p>fiza-logo-blk.png · alto contraste</p></div>
+      </a>
+      <a class="dl-card" href="assets/fiza-logo-white.png" download>
+        <div class="dl-ico">PNG</div>
+        <div class="dl-body"><h4>Logo blanco</h4><p>fiza-logo-white.png · fondos oscuros</p></div>
+      </a>
+      <a class="dl-card" href="assets/fiza-icon.png" download>
+        <div class="dl-ico">PNG</div>
+        <div class="dl-body"><h4>Ícono app</h4><p>fiza-icon.png · 1024×1024</p></div>
+      </a>
+      <a class="dl-card" href="assets/fiza-banner.png" download>
+        <div class="dl-ico">PNG</div>
+        <div class="dl-body"><h4>Banner social</h4><p>fiza-banner.png · 1200×630 OG</p></div>
+      </a>
+      <a class="dl-card" href="assets/Outfit.ttf" download>
+        <div class="dl-ico">TTF</div>
+        <div class="dl-body"><h4>Outfit Variable</h4><p>Outfit.ttf · 100–900 · licencia OFL</p></div>
+      </a>
+    </div>
+
+    <h3 class="kicker" style="margin-top: var(--sp-10);">CSS — tokens listos para pegar</h3>
+    <pre style="background: var(--ink-900); color: #cfe3d6; padding: var(--sp-6); border-radius: var(--r-lg); overflow: auto; font-family: var(--f-mono); font-size: 12px; line-height: 1.6; margin: 0;">
+:root {
+  /* ----- BRAND (spec) ----- */
+  --brand:          #578466;
+  --brand-mid:      #6B8C78;
+  --brand-light:    #92C3A5;
+  --brand-border:   #D9E8D0;
+  --brand-chip:     #F4F6EB;
+  --brand-muted:    #8AAB94;
+  --brand-lime:     #DAE68F;
+
+  /* ----- SEMANTIC · movement types (spec) ----- */
+  --income-bg:      #DAE68F;  --income-border:  #92C3A5;  --income-text:  #578466;
+  --expense-bg:     #FAD5BF;  --expense-border: #F79366;  --expense-text: #D0481A;
+  --pending-bg:     #FFF5CC;  --pending-border: #FFCE57;  --pending-text: #B89010;
+  --danger:         #D0481A;  --danger-bg:      #FFF0EA;  --danger-border:#FAD5BF;
+  --investment:     #FFCE57;  --investment-text:#B89010;
+  --pro-bg:         #EEFBE8;
+
+  /* ----- NEUTRALS (ampliación) ----- */
+  --ink-900: #0E1711;  --ink-700: #243028;  --ink-500: #4A5A50;
+  --ink-300: #8C9C92;  --ink-100: #C9D4CC;
+  --paper:   #FCFDF8;  --paper-2: #F7F9F1;
+
+  /* ----- GEOMETRY ----- */
+  --r-sm: 6px;   --r-md: 10px; --r-lg: 12px; --r-xl: 16px; --r-pill: 999px;
+  --sp-1: 4px;   --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;  --sp-5: 20px;
+  --sp-6: 24px;  --sp-8: 32px; --sp-10: 40px; --sp-12: 48px; --sp-16: 64px;
+
+  /* ----- SHADOW ----- */
+  --sh-1: 0 1px 2px rgba(14,23,17,.04), 0 1px 1px rgba(14,23,17,.03);
+  --sh-2: 0 4px 12px rgba(14,23,17,.06), 0 2px 4px rgba(14,23,17,.04);
+  --sh-3: 0 12px 32px rgba(14,23,17,.10), 0 4px 8px rgba(14,23,17,.05);
+
+  /* ----- MOTION ----- */
+  --ease-standard: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 150ms;  --dur-std: 240ms;  --dur-slow: 400ms;
+
+  /* ----- TYPE ----- */
+  --font-outfit: 'Outfit', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+  /* ----- APP BG ----- */
+  --bg-grad: linear-gradient(115deg, #BFDACB 25%, #E8F0B9 75%);
+}</pre>
+  </section>
+
+  <footer>
+    <div style="display: flex; align-items: center; gap: var(--sp-3);">
+      <img class="f-logo" src="assets/fiza-logo-grn.png" alt=""/>
+      <span>Fiza Design System · v2.0 — Compatible con app spec v0.22 (abril 2026) · ola incluida</span>
+    </div>
+    <div style="font-family: var(--f-mono);">Made in México · <span style="color: var(--brand)">fin.</span></div>
+  </footer>
+</div>
+
+</body>
+</html>
