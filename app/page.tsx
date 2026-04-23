@@ -95,6 +95,18 @@ function IconCheck({ size = 16 }: { size?: number }) {
   )
 }
 
+function IconChevronDown({ open }: { open: boolean }) {
+  return (
+    <svg
+      width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"
+      className="shrink-0"
+      style={{ transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform var(--dur-std) var(--ease-standard)' }}
+    >
+      <path d="M5 7.5l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
 function IconFacebook({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -107,18 +119,6 @@ function IconInstagram({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
-    </svg>
-  )
-}
-
-function IconChevronDown({ open }: { open: boolean }) {
-  return (
-    <svg
-      width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"
-      className="shrink-0 transition-transform duration-200"
-      style={{ transform: open ? 'rotate(180deg)' : 'rotate(0)' }}
-    >
-      <path d="M5 7.5l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   )
 }
@@ -201,40 +201,43 @@ function AppMockup() {
     <div
       className="w-full rounded-2xl overflow-hidden"
       style={{
-        background: '#fff',
+        background: 'var(--paper)',
         border: '1px solid var(--brand-border)',
-        boxShadow: '0 12px 48px rgba(87,132,102,0.22)',
+        boxShadow: 'var(--sh-3)',
         maxWidth: '300px',
       }}
     >
-      {/* Header bar */}
+      {/* App header bar */}
       <div
         className="flex items-center justify-between px-4 py-2.5"
         style={{ background: 'linear-gradient(115deg, #578466 0%, #92C3A5 60%, #DAE68F 100%)' }}
       >
-        <img src="/logo-white.png" alt="fiza" style={{ height: '18px', width: 'auto' }} />
+        <img src="/logo-white.png" alt="fiza" style={{ height: '18px', width: 'auto', display: 'block' }} />
         <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.85)' }}>Hoy, martes</span>
       </div>
 
       <div className="px-3 pt-3 pb-3">
-        {/* Input with natural language */}
+        {/* Natural language input */}
         <div
           className="rounded-xl p-3 mb-2"
           style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}
         >
-          <p className="text-xs leading-relaxed mb-2" style={{ color: 'var(--brand)', fontStyle: 'italic' }}>
+          <p
+            className="text-xs leading-relaxed mb-2"
+            style={{ color: 'var(--ink-700)', fontStyle: 'italic' }}
+          >
             "Vendí $4,200 en el puesto, gasté $800 en ingredientes y debo $1,500 de renta el viernes..."
           </p>
           <div className="flex gap-1.5 justify-end">
             {[
-              { Icon: IconPen, label: 'texto' },
-              { Icon: IconMic, label: 'voz' },
+              { Icon: IconPen,    label: 'texto' },
+              { Icon: IconMic,    label: 'voz' },
               { Icon: IconCamera, label: 'foto' },
             ].map(({ Icon, label }) => (
               <span
                 key={label}
                 className="p-1.5 rounded-lg"
-                style={{ background: '#fff', border: '1px solid var(--brand-border)', color: 'var(--brand-mid)' }}
+                style={{ background: 'var(--paper)', border: '1px solid var(--brand-border)', color: 'var(--ink-500)' }}
                 aria-label={label}
               >
                 <Icon size={13} />
@@ -246,9 +249,9 @@ function AppMockup() {
         {/* Transform indicator */}
         <div className="flex items-center gap-2 py-1 px-1 mb-2">
           <div className="flex-1 h-px" style={{ background: 'var(--brand-border)' }} />
-          <span className="flex items-center gap-1" style={{ color: 'var(--brand-muted)' }}>
+          <span className="flex items-center gap-1" style={{ color: 'var(--ink-300)' }}>
             <IconSparkles size={11} />
-            <span className="text-[10px] font-medium">fiza lo organiza</span>
+            <span className="text-[10px] font-medium" style={{ color: 'var(--ink-300)' }}>fiza lo organiza</span>
           </span>
           <div className="flex-1 h-px" style={{ background: 'var(--brand-border)' }} />
         </div>
@@ -263,34 +266,34 @@ function AppMockup() {
             >
               <span
                 className="text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0"
-                style={{ background: '#fff', color: e.color, border: `1px solid ${e.border}` }}
+                style={{ background: 'var(--paper)', color: e.color, border: `1px solid ${e.border}` }}
               >
                 {e.type}
               </span>
-              <span className="flex-1 text-[11px] truncate" style={{ color: e.color }}>{e.desc}</span>
+              <span className="flex-1 text-[11px] truncate font-medium" style={{ color: e.color }}>{e.desc}</span>
               <span className="text-[11px] font-bold shrink-0" style={{ color: e.color }}>{e.amount}</span>
             </div>
           ))}
         </div>
 
-        {/* Mini metrics bar */}
+        {/* Mini metrics */}
         <div
           className="rounded-xl p-2.5 flex justify-around"
           style={{ background: 'var(--income-bg)', border: '1px solid var(--income-border)' }}
         >
           <div className="text-center">
-            <p className="text-[9px] font-bold" style={{ color: 'var(--brand-mid)' }}>INGRESOS</p>
-            <p className="text-sm font-bold" style={{ color: 'var(--brand)' }}>$4,200</p>
+            <p className="text-[9px] font-bold tracking-wide" style={{ color: 'var(--ink-500)' }}>INGRESOS</p>
+            <p className="text-sm font-bold" style={{ color: 'var(--brand)', letterSpacing: '-0.01em' }}>$4,200</p>
           </div>
           <div className="w-px" style={{ background: 'var(--income-border)' }} />
           <div className="text-center">
-            <p className="text-[9px] font-bold" style={{ color: 'var(--brand-mid)' }}>GASTOS</p>
-            <p className="text-sm font-bold" style={{ color: 'var(--expense-text)' }}>$800</p>
+            <p className="text-[9px] font-bold tracking-wide" style={{ color: 'var(--ink-500)' }}>GASTOS</p>
+            <p className="text-sm font-bold" style={{ color: 'var(--expense-text)', letterSpacing: '-0.01em' }}>$800</p>
           </div>
           <div className="w-px" style={{ background: 'var(--income-border)' }} />
           <div className="text-center">
-            <p className="text-[9px] font-bold" style={{ color: 'var(--brand-mid)' }}>NETO</p>
-            <p className="text-sm font-bold" style={{ color: 'var(--brand)' }}>$3,400</p>
+            <p className="text-[9px] font-bold tracking-wide" style={{ color: 'var(--ink-500)' }}>NETO</p>
+            <p className="text-sm font-bold" style={{ color: 'var(--brand)', letterSpacing: '-0.01em' }}>$3,400</p>
           </div>
         </div>
       </div>
@@ -319,17 +322,15 @@ function StepCard({
       style={{
         background: isPro
           ? 'linear-gradient(145deg, var(--brand) 0%, #3d6050 100%)'
-          : '#fff',
+          : 'var(--paper)',
         border: isPro ? 'none' : '1px solid var(--brand-border)',
-        boxShadow: isPro
-          ? '0 6px 28px rgba(87,132,102,0.3)'
-          : '0 2px 12px rgba(87,132,102,0.07)',
+        boxShadow: isPro ? 'var(--sh-3)' : 'var(--sh-1)',
       }}
     >
       {isPro && (
         <span
           className="absolute top-3 right-3 text-[9px] font-bold px-2 py-0.5 rounded-full"
-          style={{ background: 'rgba(255,255,255,0.18)', color: '#fff' }}
+          style={{ background: 'rgba(255,255,255,0.18)', color: '#fff', letterSpacing: '0.08em' }}
         >
           PRO
         </span>
@@ -358,13 +359,13 @@ function StepCard({
         <div>
           <p
             className="text-sm font-bold mb-1"
-            style={{ color: isPro ? '#fff' : 'var(--brand)' }}
+            style={{ color: isPro ? '#fff' : 'var(--ink-900)', letterSpacing: '-0.01em' }}
           >
             {title}
           </p>
           <p
             className="text-xs leading-relaxed"
-            style={{ color: isPro ? 'rgba(255,255,255,0.78)' : 'var(--brand-mid)' }}
+            style={{ color: isPro ? 'rgba(255,255,255,0.78)' : 'var(--ink-500)' }}
           >
             {body}
           </p>
@@ -387,19 +388,33 @@ function FAQItem({
   return (
     <button
       onClick={onToggle}
-      className="w-full text-left rounded-xl px-4 py-4 flex gap-3 transition-all duration-150"
+      className="w-full text-left rounded-xl px-5 py-4 flex gap-3"
       style={{
-        background: isOpen ? '#fff' : 'transparent',
+        background: isOpen ? 'var(--paper)' : 'transparent',
         border: `1px solid ${isOpen ? 'var(--brand-light)' : 'var(--brand-border)'}`,
+        boxShadow: isOpen ? 'var(--sh-1)' : 'none',
+        transition: `border-color var(--dur-fast) var(--ease-standard),
+                     background var(--dur-fast) var(--ease-standard),
+                     box-shadow var(--dur-fast) var(--ease-standard)`,
       }}
     >
       <div className="flex-1">
-        <p className="text-sm font-semibold" style={{ color: 'var(--brand)' }}>{q}</p>
+        <p
+          className="text-sm font-semibold text-left"
+          style={{ color: 'var(--ink-900)', letterSpacing: '-0.01em' }}
+        >
+          {q}
+        </p>
         {isOpen && (
-          <p className="text-sm leading-relaxed mt-2.5" style={{ color: 'var(--brand-mid)' }}>{a}</p>
+          <p
+            className="text-sm leading-relaxed mt-2.5 text-left"
+            style={{ color: 'var(--ink-500)', lineHeight: 1.55 }}
+          >
+            {a}
+          </p>
         )}
       </div>
-      <span style={{ color: 'var(--brand-mid)' }}>
+      <span style={{ color: 'var(--ink-300)', marginTop: '1px' }}>
         <IconChevronDown open={isOpen} />
       </span>
     </button>
@@ -424,19 +439,19 @@ const STEPS: Array<{
   {
     num: '2',
     title: 'La IA lo clasifica sola',
-    body: 'Fiza entiende tu texto y lo convierte en ingresos, gastos y pendientes en segundos — automáticamente.',
+    body: 'Fiza entiende tu texto y lo convierte en ingresos, gastos y pendientes en segundos — sin que hagas nada más.',
     Icon: IconSparkles,
   },
   {
     num: '3',
     title: 'Ve tus números en tiempo real',
-    body: 'El dashboard se actualiza al instante. Sabes cuánto entraste, cuánto gastaste y cuánto te quedó.',
+    body: 'El dashboard se actualiza al instante. Ingresos, gastos y neto del día — siempre a la vista.',
     Icon: IconChart,
   },
   {
     num: '4',
     title: 'Reportes y pendientes automáticos',
-    body: 'Genera tu estado de resultados en PDF con un tap. Ve de un vistazo los compromisos que se vencen pronto.',
+    body: 'Genera tu estado de resultados en PDF con un tap. Ve de un vistazo los compromisos que se vencen.',
     Icon: IconFileText,
     isPro: true,
   },
@@ -473,7 +488,7 @@ const FEATURE_HIGHLIGHTS: Array<{
   {
     Icon: IconHistory,
     title: 'Historial completo con filtros',
-    body: 'Filtra por hoy, semana, mes, año o fechas exactas. Consulta cómo ibas en cualquier período.',
+    body: 'Filtra por hoy, semana, mes, año o rangos exactos. Consulta cómo ibas en cualquier período.',
   },
 ]
 
@@ -531,11 +546,37 @@ const FAQ = [
   },
 ]
 
+/* ─── Eyebrow label shared style ─────────────────────────────────────────── */
+
+const eyebrowStyle: React.CSSProperties = {
+  fontSize: '12px',
+  fontWeight: 600,
+  letterSpacing: '0.14em',
+  textTransform: 'uppercase',
+  color: 'var(--ink-500)',
+}
+
+/* ─── Section heading shared style ───────────────────────────────────────── */
+
+const secTitleStyle: React.CSSProperties = {
+  fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
+  fontWeight: 700,
+  letterSpacing: '-0.01em',
+  lineHeight: 1.05,
+  color: 'var(--ink-900)',
+}
+
+const secSubStyle: React.CSSProperties = {
+  fontSize: '17px',
+  lineHeight: 1.55,
+  color: 'var(--ink-500)',
+}
+
 /* ─── Page ────────────────────────────────────────────────────────────────── */
 
 export default function HomePage() {
-  const [scrolled, setScrolled]   = useState(false)
-  const [openFAQ, setOpenFAQ]     = useState<number | null>(null)
+  const [scrolled, setScrolled] = useState(false)
+  const [openFAQ, setOpenFAQ]   = useState<number | null>(null)
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20)
@@ -544,24 +585,24 @@ export default function HomePage() {
   }, [])
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#fff' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--paper)' }}>
 
       {/* ── Navbar ──────────────────────────────────────────────────────────── */}
       <header
-        className="sticky top-0 z-20 flex items-center justify-between px-5 shrink-0 transition-all duration-200"
+        className="sticky top-0 z-20 flex items-center justify-between px-5 shrink-0"
         style={{
           height: '60px',
           paddingTop: 'env(safe-area-inset-top, 0px)',
-          background: scrolled ? 'rgba(255,255,255,0.92)' : '#fff',
+          background: scrolled ? 'rgba(252,253,248,0.92)' : 'var(--paper)',
           backdropFilter: scrolled ? 'blur(12px)' : 'none',
           WebkitBackdropFilter: scrolled ? 'blur(12px)' : 'none',
           borderBottom: scrolled ? '1px solid var(--brand-border)' : '1px solid transparent',
+          transition: `background var(--dur-std) var(--ease-standard),
+                       border-color var(--dur-std) var(--ease-standard)`,
         }}
       >
-        {/* Logo */}
-        <img src="/logo-green.png" alt="fiza" style={{ height: '26px', width: 'auto' }} />
+        <img src="/logo-green.png" alt="fiza" style={{ height: '26px', width: 'auto', display: 'block' }} />
 
-        {/* Nav links — desktop only */}
         <nav className="hidden md:flex items-center gap-7" aria-label="Secciones">
           {[
             { href: '#como-funciona', label: 'Cómo funciona' },
@@ -571,27 +612,36 @@ export default function HomePage() {
             <a
               key={link.href}
               href={link.href}
-              className="text-sm font-medium transition-opacity hover:opacity-70"
-              style={{ color: 'var(--brand)' }}
+              className="text-sm font-medium"
+              style={{
+                color: 'var(--ink-500)',
+                transition: `color var(--dur-fast) var(--ease-standard)`,
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--brand)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--ink-500)')}
             >
               {link.label}
             </a>
           ))}
         </nav>
 
-        {/* Auth buttons */}
         <div className="flex items-center gap-2">
           <Link
             href="/login"
-            className="hidden md:flex text-sm font-medium px-4 py-2 rounded-lg min-h-[36px] items-center transition-opacity hover:opacity-70"
-            style={{ color: 'var(--brand)' }}
+            className="hidden md:flex text-sm font-medium px-4 py-2 rounded-lg min-h-[36px] items-center"
+            style={{ color: 'var(--ink-500)', transition: `color var(--dur-fast) var(--ease-standard)` }}
           >
             Iniciar sesión
           </Link>
           <Link
             href="/login?mode=register"
             className="text-sm font-bold px-4 py-2 rounded-lg min-h-[36px] flex items-center text-white"
-            style={{ background: 'var(--brand)' }}
+            style={{
+              background: 'var(--brand)',
+              transition: `background var(--dur-fast) var(--ease-standard)`,
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#4A7359')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'var(--brand)')}
           >
             Empieza gratis
           </Link>
@@ -603,29 +653,61 @@ export default function HomePage() {
         className="relative overflow-hidden"
         style={{ background: 'linear-gradient(135deg, #3d6050 0%, #578466 35%, #92C3A5 70%, #DAE68F 100%)' }}
       >
-        <div className="max-w-5xl mx-auto px-5 pt-16 pb-24 md:py-20 md:pb-28 flex flex-col md:flex-row items-center gap-10 md:gap-14">
+        <div className="max-w-5xl mx-auto px-5 pt-16 pb-28 md:py-20 md:pb-32 flex flex-col md:flex-row items-center gap-10 md:gap-14">
 
           {/* Text */}
           <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left">
             {/* Eyebrow pill */}
             <span
-              className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full mb-5"
-              style={{ background: 'rgba(255,255,255,0.18)', color: '#fff' }}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full mb-5"
+              style={{
+                background: 'rgba(255,255,255,0.16)',
+                color: '#fff',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+              }}
             >
-              <IconSparkles size={12} />
+              <IconSparkles size={11} />
               Contabilidad sin contadores
             </span>
 
+            {/* Main headline */}
             <h1
-              className="font-bold leading-tight mb-4"
-              style={{ color: '#fff', fontSize: 'clamp(2.2rem, 7vw, 3.2rem)', maxWidth: '440px' }}
+              className="font-bold mb-3"
+              style={{
+                color: '#fff',
+                fontSize: 'clamp(3rem, 9vw, 5.5rem)',
+                lineHeight: 0.92,
+                letterSpacing: '-0.03em',
+                maxWidth: '520px',
+              }}
             >
               Tus cuentas,<br />sin cuentos.
             </h1>
 
+            {/* Functional tagline — official brand copy */}
             <p
-              className="text-base leading-relaxed mb-8"
-              style={{ color: 'rgba(255,255,255,0.88)', maxWidth: '390px' }}
+              className="font-medium mb-5"
+              style={{
+                color: 'rgba(255,255,255,0.72)',
+                fontSize: '15px',
+                letterSpacing: '-0.01em',
+                fontStyle: 'italic',
+                maxWidth: '400px',
+              }}
+            >
+              Registra en segundos, entiende tu negocio en minutos.
+            </p>
+
+            {/* Lede */}
+            <p
+              className="leading-relaxed mb-8"
+              style={{
+                color: 'rgba(255,255,255,0.88)',
+                fontSize: '17px',
+                lineHeight: 1.55,
+                maxWidth: '390px',
+              }}
             >
               Dile lo que vendiste y gastaste hoy — en tus propias palabras.
               Fiza lo clasifica, calcula tu neto y te avisa cuando vencen tus pendientes.
@@ -634,8 +716,15 @@ export default function HomePage() {
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <Link
                 href="/login?mode=register"
-                className="px-7 py-3.5 rounded-xl font-bold text-base text-center min-h-[52px] flex items-center justify-center gap-2 transition-transform active:scale-95"
-                style={{ background: '#fff', color: 'var(--brand)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}
+                className="px-7 py-3.5 rounded-xl font-bold text-base text-center min-h-[52px] flex items-center justify-center gap-2"
+                style={{
+                  background: 'var(--paper)',
+                  color: 'var(--brand)',
+                  boxShadow: 'var(--sh-3)',
+                  transition: `transform var(--dur-fast) var(--ease-standard)`,
+                }}
+                onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.02)')}
+                onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
               >
                 Empieza gratis
                 <span aria-hidden="true">→</span>
@@ -644,16 +733,16 @@ export default function HomePage() {
                 href="/login?mode=register"
                 className="px-7 py-3.5 rounded-xl font-semibold text-base text-center min-h-[52px] flex items-center justify-center"
                 style={{
-                  background: 'rgba(255,255,255,0.15)',
+                  background: 'rgba(255,255,255,0.13)',
                   color: '#fff',
-                  border: '1px solid rgba(255,255,255,0.3)',
+                  border: '1px solid rgba(255,255,255,0.28)',
                 }}
               >
                 7 días gratis con Pro
               </Link>
             </div>
 
-            <p className="text-xs mt-3" style={{ color: 'rgba(255,255,255,0.58)' }}>
+            <p className="text-xs mt-3" style={{ color: 'rgba(255,255,255,0.5)' }}>
               Sin tarjeta de crédito · Cancela cuando quieras
             </p>
           </div>
@@ -664,27 +753,19 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Wave transition to white */}
+        {/* Wave */}
         <div className="absolute bottom-0 left-0 right-0" aria-hidden="true">
           <svg viewBox="0 0 1200 52" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: '52px' }}>
-            <path d="M0,32 C200,52 400,12 600,28 C800,44 1000,8 1200,28 L1200,52 L0,52 Z" fill="#fff"/>
+            <path d="M0,32 C200,52 400,12 600,28 C800,44 1000,8 1200,28 L1200,52 L0,52 Z" fill="var(--paper)"/>
           </svg>
         </div>
       </section>
 
       {/* ── Ciudades ────────────────────────────────────────────────────────── */}
-      <section className="pt-12 pb-14 px-4 bg-white">
+      <section className="pt-12 pb-14 px-4" style={{ background: 'var(--paper)' }}>
         <div className="max-w-3xl mx-auto">
-          <p
-            className="text-xs font-bold text-center mb-2"
-            style={{ color: 'var(--brand-muted)', letterSpacing: '0.12em' }}
-          >
-            YA EN TODO MÉXICO
-          </p>
-          <p
-            className="text-sm text-center mb-7"
-            style={{ color: 'var(--brand-mid)' }}
-          >
+          <p className="text-center mb-2" style={eyebrowStyle}>Ya en todo México</p>
+          <p className="text-sm text-center mb-7" style={{ color: 'var(--ink-500)', fontSize: '17px', lineHeight: 1.55 }}>
             {CITIES.reduce((s, c) => s + c.count, 0)} negocios llevando sus cuentas en{' '}
             {CITIES.length} ciudades
           </p>
@@ -693,9 +774,18 @@ export default function HomePage() {
               <div
                 key={c.city}
                 className="flex items-center gap-2 rounded-xl px-4 py-2.5"
-                style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}
+                style={{
+                  background: 'var(--paper-2)',
+                  border: '1px solid var(--brand-border)',
+                  boxShadow: 'var(--sh-1)',
+                }}
               >
-                <span className="text-sm font-semibold" style={{ color: 'var(--brand)' }}>{c.city}</span>
+                <span
+                  className="text-sm font-semibold"
+                  style={{ color: 'var(--ink-700)', letterSpacing: '-0.01em' }}
+                >
+                  {c.city}
+                </span>
                 <span
                   className="text-xs font-bold px-1.5 py-0.5 rounded-full"
                   style={{ background: 'var(--brand)', color: '#fff', minWidth: '20px', textAlign: 'center' }}
@@ -709,20 +799,15 @@ export default function HomePage() {
       </section>
 
       {/* ── Cómo funciona ───────────────────────────────────────────────────── */}
-      <section id="como-funciona" className="py-14 px-4" style={{ background: 'var(--brand-chip)' }}>
+      <section id="como-funciona" className="py-14 px-4" style={{ background: 'var(--paper-2)' }}>
         <div className="max-w-4xl mx-auto">
-          <p
-            className="text-xs font-bold text-center mb-2"
-            style={{ color: 'var(--brand-muted)', letterSpacing: '0.12em' }}
-          >
-            CÓMO FUNCIONA
-          </p>
-          <h2 className="text-2xl font-bold text-center mb-2" style={{ color: 'var(--brand)' }}>
+          <p className="text-center mb-3" style={eyebrowStyle}>Cómo funciona</p>
+          <h2 className="text-center mb-3" style={secTitleStyle}>
             Tan fácil como mandar un mensaje
           </h2>
           <p
-            className="text-sm text-center mb-9"
-            style={{ color: 'var(--brand-mid)', maxWidth: '340px', margin: '0 auto 2.25rem' }}
+            className="text-center mb-9 mx-auto"
+            style={{ ...secSubStyle, maxWidth: '360px' }}
           >
             No necesitas saber de contabilidad. Solo cuéntale lo que pasó.
           </p>
@@ -741,16 +826,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Para negocios como el tuyo ──────────────────────────────────────── */}
-      <section id="para-quien" className="py-14 px-4 bg-white">
+      {/* ── Para negocios ───────────────────────────────────────────────────── */}
+      <section id="para-quien" className="py-14 px-4" style={{ background: 'var(--paper)' }}>
         <div className="max-w-4xl mx-auto">
-          <p
-            className="text-xs font-bold text-center mb-2"
-            style={{ color: 'var(--brand-muted)', letterSpacing: '0.12em' }}
-          >
-            PARA QUIÉN ES
-          </p>
-          <h2 className="text-2xl font-bold text-center mb-9" style={{ color: 'var(--brand)' }}>
+          <p className="text-center mb-3" style={eyebrowStyle}>Para quién es</p>
+          <h2 className="text-center mb-9" style={secTitleStyle}>
             Para negocios como el tuyo
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -759,9 +839,9 @@ export default function HomePage() {
                 key={b.type}
                 className="rounded-2xl p-4 flex flex-col gap-3"
                 style={{
-                  background: '#fff',
+                  background: 'var(--paper)',
                   border: '1px solid var(--brand-border)',
-                  boxShadow: '0 2px 12px rgba(87,132,102,0.06)',
+                  boxShadow: 'var(--sh-1)',
                 }}
               >
                 <div
@@ -771,15 +851,25 @@ export default function HomePage() {
                   <b.Icon size={20} />
                 </div>
                 <div>
-                  <p className="text-xs font-bold mb-1" style={{ color: 'var(--brand)' }}>{b.type}</p>
-                  <p className="text-xs italic leading-snug" style={{ color: 'var(--brand-mid)' }}>{b.quote}</p>
+                  <p
+                    className="text-xs font-bold mb-1"
+                    style={{ color: 'var(--ink-900)', letterSpacing: '-0.01em' }}
+                  >
+                    {b.type}
+                  </p>
+                  <p
+                    className="text-xs italic leading-snug"
+                    style={{ color: 'var(--ink-500)' }}
+                  >
+                    {b.quote}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
           <p
-            className="text-sm italic text-center mt-8 max-w-md mx-auto"
-            style={{ color: 'var(--brand-mid)' }}
+            className="text-center mt-8 mx-auto italic"
+            style={{ ...secSubStyle, fontSize: '15px', maxWidth: '420px' }}
           >
             Si llevas tus cuentas en un cuaderno, en tu cabeza, o en el WhatsApp de tu familia
             — fiza es para ti.
@@ -794,12 +884,15 @@ export default function HomePage() {
       >
         <div className="max-w-4xl mx-auto">
           <p
-            className="text-xs font-bold text-center mb-2"
-            style={{ color: 'rgba(255,255,255,0.55)', letterSpacing: '0.12em' }}
+            className="text-center mb-3"
+            style={{ ...eyebrowStyle, color: 'rgba(255,255,255,0.5)' }}
           >
-            LO QUE HACE POR TI
+            Lo que hace por ti
           </p>
-          <h2 className="text-2xl font-bold text-center mb-9" style={{ color: '#fff' }}>
+          <h2
+            className="text-center mb-9"
+            style={{ ...secTitleStyle, color: '#fff' }}
+          >
             Más que registrar — fiza trabaja para ti
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -819,8 +912,15 @@ export default function HomePage() {
                   <f.Icon size={22} />
                 </div>
                 <div>
-                  <p className="text-base font-bold mb-2" style={{ color: '#fff' }}>{f.title}</p>
-                  <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.76)' }}>{f.body}</p>
+                  <p
+                    className="font-bold mb-2"
+                    style={{ color: '#fff', fontSize: '16px', letterSpacing: '-0.01em' }}
+                  >
+                    {f.title}
+                  </p>
+                  <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '14px', lineHeight: 1.55 }}>
+                    {f.body}
+                  </p>
                 </div>
               </div>
             ))}
@@ -829,18 +929,13 @@ export default function HomePage() {
       </section>
 
       {/* ── Precios ─────────────────────────────────────────────────────────── */}
-      <section id="precios" className="py-14 px-4 bg-white">
+      <section id="precios" className="py-14 px-4" style={{ background: 'var(--paper-2)' }}>
         <div className="max-w-lg mx-auto">
-          <p
-            className="text-xs font-bold text-center mb-2"
-            style={{ color: 'var(--brand-muted)', letterSpacing: '0.12em' }}
-          >
-            PRECIOS
-          </p>
-          <h2 className="text-2xl font-bold text-center mb-2" style={{ color: 'var(--brand)' }}>
+          <p className="text-center mb-3" style={eyebrowStyle}>Precios</p>
+          <h2 className="text-center mb-2" style={secTitleStyle}>
             Simple y sin sorpresas
           </h2>
-          <p className="text-sm text-center mb-10" style={{ color: 'var(--brand-mid)' }}>
+          <p className="text-center mb-10" style={{ ...secSubStyle, fontSize: '15px' }}>
             Empieza gratis, sube cuando lo necesites.
           </p>
 
@@ -849,15 +944,27 @@ export default function HomePage() {
             {/* Free */}
             <div
               className="rounded-2xl p-6 flex flex-col gap-4"
-              style={{ background: '#fff', border: '1px solid var(--brand-border)' }}
+              style={{
+                background: 'var(--paper)',
+                border: '1px solid var(--brand-border)',
+                boxShadow: 'var(--sh-1)',
+              }}
             >
               <div>
-                <p className="text-[11px] font-bold tracking-widest mb-2" style={{ color: 'var(--brand-muted)' }}>
+                <p
+                  className="text-[11px] font-bold tracking-widest mb-2"
+                  style={{ color: 'var(--ink-300)', letterSpacing: '0.14em' }}
+                >
                   GRATIS
                 </p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold" style={{ color: 'var(--brand)' }}>$0</span>
-                  <span className="text-sm" style={{ color: 'var(--brand-mid)' }}>/mes</span>
+                  <span
+                    className="font-bold"
+                    style={{ color: 'var(--brand)', fontSize: '2rem', letterSpacing: '-0.02em' }}
+                  >
+                    $0
+                  </span>
+                  <span style={{ color: 'var(--ink-500)', fontSize: '14px' }}>/mes</span>
                 </div>
               </div>
               <ul className="flex flex-col gap-2.5 flex-1">
@@ -866,14 +973,21 @@ export default function HomePage() {
                     <span style={{ color: 'var(--brand)', marginTop: '2px', flexShrink: 0 }}>
                       <IconCheck size={15} />
                     </span>
-                    <span className="text-sm leading-snug" style={{ color: 'var(--brand)' }}>{f}</span>
+                    <span style={{ color: 'var(--ink-700)', fontSize: '14px', lineHeight: 1.4 }}>{f}</span>
                   </li>
                 ))}
               </ul>
               <Link
                 href="/login?mode=register"
-                className="w-full py-3 rounded-xl text-sm font-semibold text-center border min-h-[44px] flex items-center justify-center transition-opacity hover:opacity-75"
-                style={{ borderColor: 'var(--brand)', color: 'var(--brand)' }}
+                className="w-full py-3 rounded-xl text-sm font-semibold text-center min-h-[44px] flex items-center justify-center"
+                style={{
+                  borderColor: 'var(--brand)',
+                  border: '1px solid var(--brand)',
+                  color: 'var(--brand)',
+                  transition: `background var(--dur-fast) var(--ease-standard)`,
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--pro-bg)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
               >
                 Empieza gratis
               </Link>
@@ -882,21 +996,33 @@ export default function HomePage() {
             {/* Pro */}
             <div
               className="rounded-2xl p-6 flex flex-col gap-4 relative"
-              style={{ background: 'var(--pro-bg)', border: '2px solid var(--brand)' }}
+              style={{
+                background: 'var(--pro-bg)',
+                border: '2px solid var(--brand)',
+                boxShadow: 'var(--sh-2)',
+              }}
             >
               <span
                 className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[10px] font-bold px-3 py-1 rounded-full text-white whitespace-nowrap"
-                style={{ background: 'var(--brand)' }}
+                style={{ background: 'var(--brand)', letterSpacing: '0.06em' }}
               >
                 MÁS POPULAR
               </span>
               <div>
-                <p className="text-[11px] font-bold tracking-widest mb-2" style={{ color: 'var(--brand)' }}>
+                <p
+                  className="text-[11px] font-bold tracking-widest mb-2"
+                  style={{ color: 'var(--brand)', letterSpacing: '0.14em' }}
+                >
                   PRO
                 </p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold" style={{ color: 'var(--brand)' }}>$49</span>
-                  <span className="text-sm" style={{ color: 'var(--brand-mid)' }}>/mes</span>
+                  <span
+                    className="font-bold"
+                    style={{ color: 'var(--brand)', fontSize: '2rem', letterSpacing: '-0.02em' }}
+                  >
+                    $49
+                  </span>
+                  <span style={{ color: 'var(--ink-500)', fontSize: '14px' }}>/mes</span>
                 </div>
               </div>
               <ul className="flex flex-col gap-2.5 flex-1">
@@ -905,50 +1031,54 @@ export default function HomePage() {
                     <span style={{ color: 'var(--brand)', marginTop: '2px', flexShrink: 0 }}>
                       <IconCheck size={15} />
                     </span>
-                    <span className="text-sm leading-snug" style={{ color: 'var(--brand)' }}>{f}</span>
+                    <span style={{ color: 'var(--ink-700)', fontSize: '14px', lineHeight: 1.4 }}>{f}</span>
                   </li>
                 ))}
               </ul>
               <Link
                 href="/login?mode=register"
-                className="w-full py-3 rounded-xl text-sm font-bold text-center text-white min-h-[44px] flex items-center justify-center transition-transform active:scale-95"
-                style={{ background: 'var(--brand)' }}
+                className="w-full py-3 rounded-xl text-sm font-bold text-center text-white min-h-[44px] flex items-center justify-center"
+                style={{
+                  background: 'var(--brand)',
+                  transition: `background var(--dur-fast) var(--ease-standard)`,
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#4A7359' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--brand)' }}
               >
                 Probar Pro 7 días gratis
               </Link>
             </div>
           </div>
 
-          {/* Money-back guarantee */}
+          {/* Guarantee */}
           <div
             className="mt-4 rounded-xl p-4 flex items-center gap-3"
-            style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}
+            style={{
+              background: 'var(--paper)',
+              border: '1px solid var(--brand-border)',
+              boxShadow: 'var(--sh-1)',
+            }}
           >
             <span style={{ color: 'var(--brand)', flexShrink: 0 }}>
               <IconShield size={20} />
             </span>
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--brand)' }}>
-              <span className="font-bold">Garantía de 30 días.</span>{' '}
+            <p style={{ color: 'var(--ink-700)', fontSize: '13px', lineHeight: 1.55 }}>
+              <span style={{ fontWeight: 700, color: 'var(--ink-900)' }}>Garantía de 30 días.</span>{' '}
               Si en el primer mes no le encuentras utilidad, te devolvemos tu dinero — sin preguntas.
             </p>
           </div>
 
-          <p className="text-xs text-center mt-3" style={{ color: 'var(--brand-muted)' }}>
+          <p className="text-xs text-center mt-3" style={{ color: 'var(--ink-300)' }}>
             Cancela cuando quieras · Sin permanencia · Sin letra chica
           </p>
         </div>
       </section>
 
       {/* ── FAQ ─────────────────────────────────────────────────────────────── */}
-      <section id="faq" className="py-14 px-4" style={{ background: 'var(--brand-chip)' }}>
+      <section id="faq" className="py-14 px-4" style={{ background: 'var(--paper)' }}>
         <div className="max-w-xl mx-auto">
-          <p
-            className="text-xs font-bold text-center mb-2"
-            style={{ color: 'var(--brand-muted)', letterSpacing: '0.12em' }}
-          >
-            PREGUNTAS FRECUENTES
-          </p>
-          <h2 className="text-2xl font-bold text-center mb-8" style={{ color: 'var(--brand)' }}>
+          <p className="text-center mb-3" style={eyebrowStyle}>Preguntas frecuentes</p>
+          <h2 className="text-center mb-8" style={secTitleStyle}>
             ¿Tienes dudas?
           </h2>
           <div className="flex flex-col gap-2.5">
@@ -972,8 +1102,12 @@ export default function HomePage() {
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-8">
             {/* Brand */}
             <div className="flex flex-col items-start gap-2">
-              <img src="/logo-white.png" alt="fiza" style={{ height: '28px', width: 'auto', display: 'block' }} />
-              <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.62)', maxWidth: '240px' }}>
+              <img
+                src="/logo-white.png"
+                alt="fiza"
+                style={{ height: '28px', width: 'auto', display: 'block' }}
+              />
+              <p style={{ color: 'rgba(255,255,255,0.62)', fontSize: '14px', lineHeight: 1.5, maxWidth: '240px' }}>
                 La forma más fácil de llevar las cuentas de tu negocio.
               </p>
               {/* Social links */}
@@ -983,8 +1117,14 @@ export default function HomePage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Fiza en Facebook"
-                  className="p-2 rounded-lg transition-opacity hover:opacity-70"
-                  style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }}
+                  className="p-2 rounded-lg"
+                  style={{
+                    background: 'rgba(255,255,255,0.12)',
+                    color: '#fff',
+                    transition: `opacity var(--dur-fast) var(--ease-standard)`,
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.opacity = '0.7' }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
                 >
                   <IconFacebook size={18} />
                 </a>
@@ -993,15 +1133,21 @@ export default function HomePage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Fiza en Instagram"
-                  className="p-2 rounded-lg transition-opacity hover:opacity-70"
-                  style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }}
+                  className="p-2 rounded-lg"
+                  style={{
+                    background: 'rgba(255,255,255,0.12)',
+                    color: '#fff',
+                    transition: `opacity var(--dur-fast) var(--ease-standard)`,
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.opacity = '0.7' }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
                 >
                   <IconInstagram size={18} />
                 </a>
               </div>
             </div>
 
-            {/* Links */}
+            {/* Nav links */}
             <nav className="flex flex-wrap gap-x-6 gap-y-2" aria-label="Footer">
               {[
                 { label: 'Privacidad', href: '/privacidad' },
@@ -1011,8 +1157,13 @@ export default function HomePage() {
                 <Link
                   key={link.label}
                   href={link.href}
-                  className="text-sm transition-opacity hover:opacity-80"
-                  style={{ color: 'rgba(255,255,255,0.72)' }}
+                  className="text-sm"
+                  style={{
+                    color: 'rgba(255,255,255,0.72)',
+                    transition: `opacity var(--dur-fast) var(--ease-standard)`,
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.opacity = '0.5' }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
                 >
                   {link.label}
                 </Link>
@@ -1024,10 +1175,10 @@ export default function HomePage() {
             className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-6"
             style={{ borderTop: '1px solid rgba(255,255,255,0.14)' }}
           >
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>
               © 2026 fiza.mx — Todos los derechos reservados
             </p>
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>
               Hecho en México 🇲🇽
             </p>
           </div>
