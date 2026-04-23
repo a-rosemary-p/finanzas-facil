@@ -247,126 +247,6 @@ function WaveUnderline({ color = 'var(--brand-light)' }: { color?: string }) {
   )
 }
 
-/* ─── App Mockup ──────────────────────────────────────────────────────────── */
-
-function AppMockup() {
-  const entries = [
-    {
-      type: 'Ingreso', amount: '+$4,200', desc: 'Ventas del día',
-      bg: 'var(--income-bg)', border: 'var(--income-border)', color: 'var(--income-text)',
-    },
-    {
-      type: 'Gasto', amount: '-$800', desc: 'Ingredientes',
-      bg: 'var(--expense-bg)', border: 'var(--expense-border)', color: 'var(--expense-text)',
-    },
-    {
-      type: 'Pendiente', amount: '$1,500', desc: 'Renta (viernes)',
-      bg: 'var(--pending-bg)', border: 'var(--pending-border)', color: 'var(--pending-text)',
-    },
-  ]
-  return (
-    <div
-      className="w-full rounded-2xl overflow-hidden"
-      style={{
-        background: 'var(--paper)',
-        border: '1px solid var(--brand-border)',
-        boxShadow: 'var(--sh-3)',
-        maxWidth: '300px',
-      }}
-    >
-      {/* App header bar */}
-      <div
-        className="flex items-center justify-between px-4 py-2.5"
-        style={{ background: 'linear-gradient(115deg, #578466 0%, #92C3A5 60%, #DAE68F 100%)' }}
-      >
-        <img src="/logo-white.png" alt="fiza" style={{ height: '18px', width: 'auto', display: 'block' }} />
-        <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.85)' }}>Hoy, martes</span>
-      </div>
-
-      <div className="px-3 pt-3 pb-3">
-        {/* Natural language input */}
-        <div
-          className="rounded-xl p-3 mb-2"
-          style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}
-        >
-          <p
-            className="text-xs leading-relaxed mb-2"
-            style={{ color: 'var(--ink-700)', fontStyle: 'italic' }}
-          >
-            "Vendí $4,200 en el puesto, gasté $800 en ingredientes y debo $1,500 de renta el viernes..."
-          </p>
-          <div className="flex gap-1.5 justify-end">
-            {[
-              { Icon: IconPen,    label: 'texto' },
-              { Icon: IconMic,    label: 'voz' },
-              { Icon: IconCamera, label: 'foto' },
-            ].map(({ Icon, label }) => (
-              <span
-                key={label}
-                className="p-1.5 rounded-lg"
-                style={{ background: 'var(--paper)', border: '1px solid var(--brand-border)', color: 'var(--ink-500)' }}
-                aria-label={label}
-              >
-                <Icon size={13} />
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Transform indicator */}
-        <div className="flex items-center gap-2 py-1 px-1 mb-2">
-          <div className="flex-1 h-px" style={{ background: 'var(--brand-border)' }} />
-          <span className="flex items-center gap-1" style={{ color: 'var(--ink-300)' }}>
-            <IconSparkles size={11} />
-            <span className="text-[10px] font-medium" style={{ color: 'var(--ink-300)' }}>fiza lo organiza</span>
-          </span>
-          <div className="flex-1 h-px" style={{ background: 'var(--brand-border)' }} />
-        </div>
-
-        {/* Classified entries */}
-        <div className="flex flex-col gap-1.5 mb-2.5">
-          {entries.map(e => (
-            <div
-              key={e.type}
-              className="flex items-center gap-2 rounded-lg px-2.5 py-2"
-              style={{ background: e.bg, border: `1px solid ${e.border}` }}
-            >
-              <span
-                className="text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0"
-                style={{ background: 'var(--paper)', color: e.color, border: `1px solid ${e.border}` }}
-              >
-                {e.type}
-              </span>
-              <span className="flex-1 text-[11px] truncate font-medium" style={{ color: e.color }}>{e.desc}</span>
-              <span className="text-[11px] font-bold shrink-0" style={{ color: e.color }}>{e.amount}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Mini metrics */}
-        <div
-          className="rounded-xl p-2.5 flex justify-around"
-          style={{ background: 'var(--income-bg)', border: '1px solid var(--income-border)' }}
-        >
-          <div className="text-center">
-            <p className="text-[9px] font-bold tracking-wide" style={{ color: 'var(--ink-500)' }}>INGRESOS</p>
-            <p className="text-sm font-bold" style={{ color: 'var(--brand)', letterSpacing: '-0.01em' }}>$4,200</p>
-          </div>
-          <div className="w-px" style={{ background: 'var(--income-border)' }} />
-          <div className="text-center">
-            <p className="text-[9px] font-bold tracking-wide" style={{ color: 'var(--ink-500)' }}>GASTOS</p>
-            <p className="text-sm font-bold" style={{ color: 'var(--expense-text)', letterSpacing: '-0.01em' }}>$800</p>
-          </div>
-          <div className="w-px" style={{ background: 'var(--income-border)' }} />
-          <div className="text-center">
-            <p className="text-[9px] font-bold tracking-wide" style={{ color: 'var(--ink-500)' }}>NETO</p>
-            <p className="text-sm font-bold" style={{ color: 'var(--brand)', letterSpacing: '-0.01em' }}>$3,400</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 /* ─── Step Card ───────────────────────────────────────────────────────────── */
 
@@ -817,9 +697,20 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Mockup */}
+          {/* iPhone mockup */}
           <div className="flex-shrink-0 w-full md:w-auto flex justify-center">
-            <AppMockup />
+            <img
+              src="/iphone-hero.png"
+              alt="App fiza en iPhone"
+              draggable={false}
+              style={{
+                width: '100%',
+                maxWidth: '260px',
+                height: 'auto',
+                display: 'block',
+                filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.35))',
+              }}
+            />
           </div>
         </div>
 
