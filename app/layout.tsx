@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Outfit } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 const outfit = Outfit({
@@ -54,7 +55,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={`h-full ${outfit.variable}`}>
-      <body className="font-[family-name:var(--font-outfit)]">{children}</body>
+      <body className="font-[family-name:var(--font-outfit)]">
+        {children}
+        <Analytics />
+      </body>
     </html>
   )
 }
