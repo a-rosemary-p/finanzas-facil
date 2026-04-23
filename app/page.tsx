@@ -392,11 +392,11 @@ const PRO_FEATURES = [
 ]
 
 const CITIES = [
-  { city: 'CDMX',        count: 4 },
-  { city: 'Guadalajara', count: 18 },
-  { city: 'Tijuana',     count: 7 },
-  { city: 'Puebla',      count: 6 },
-  { city: 'Monterrey',   count: 11 },
+  { city: 'CDMX',        count: 11 },
+  { city: 'Guadalajara', count: 24 },
+  { city: 'Tijuana',     count: 14 },
+  { city: 'Puebla',      count: 12 },
+  { city: 'Monterrey',   count: 14 },
 ]
 
 const FAQ = [
