@@ -35,9 +35,9 @@ export function WaveDivider({
     return (
       <div
         aria-hidden="true"
-        style={{ position: 'absolute', left: 0, right: 0, bottom: 0, lineHeight: 0, pointerEvents: 'none' }}
+        style={{ position: 'absolute', left: 0, right: 0, bottom: '-2px', lineHeight: 0, pointerEvents: 'none' }}
       >
-        <svg viewBox="0 0 1200 52" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: '52px' }}>
+        <svg viewBox="0 0 1200 52" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: '54px' }}>
           <path
             d="M0,32 C200,52 400,12 600,28 C800,44 1000,8 1200,28 L1200,52 L0,52 Z"
             fill={fill}
