@@ -537,20 +537,6 @@ export default function HomePage() {
 
           {/* Text */}
           <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left">
-            {/* Eyebrow pill */}
-            <span
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full mb-3"
-              style={{
-                background: 'rgba(255,255,255,0.16)',
-                color: '#fff',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-              }}
-            >
-              <IconSparkles size={11} />
-              Contabilidad sin contadores
-            </span>
-
             {/* Main headline */}
             <h1
               className="font-bold mb-2"
