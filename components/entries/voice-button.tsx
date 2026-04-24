@@ -47,6 +47,32 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
     setSupported(!!(window.SpeechRecognition || window.webkitSpeechRecognition))
   }, [])
 
+  // Cleanup: si el componente se desmonta (navegación SPA) o la página se oculta/cierra,
+  // detenemos la grabación explícitamente. Sin esto Chrome puede seguir ocupando el micro
+  // con el indicador rojo encendido hasta que el tab realmente muera.
+  useEffect(() => {
+    function stopRec() {
+      const r = recognitionRef.current
+      if (!r) return
+      try { r.stop() } catch { /* ya paró */ }
+      recognitionRef.current = null
+    }
+
+    // pagehide cubre tab close + SPA navigate + bfcache. Más confiable que beforeunload.
+    const onPageHide = () => stopRec()
+    // Si el user cambia de tab o minimiza, también paramos — evita gastar mic en background.
+    const onVisibility = () => { if (document.visibilityState === 'hidden') stopRec() }
+
+    window.addEventListener('pagehide', onPageHide)
+    document.addEventListener('visibilitychange', onVisibility)
+
+    return () => {
+      window.removeEventListener('pagehide', onPageHide)
+      document.removeEventListener('visibilitychange', onVisibility)
+      stopRec()
+    }
+  }, [])
+
   if (supported === null) return null
 
   if (!supported) {
@@ -79,7 +105,10 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
     rec.interimResults = false
 
     rec.onstart = () => setRecording(true)
-    rec.onend   = () => setRecording(false)
+    rec.onend   = () => {
+      setRecording(false)
+      recognitionRef.current = null
+    }
 
     rec.onerror = (e) => {
       setRecording(false)
