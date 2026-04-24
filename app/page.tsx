@@ -531,7 +531,7 @@ export default function HomePage() {
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
       <section
         className="relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #3d6050 0%, #578466 35%, #92C3A5 70%, #DAE68F 100%)' }}
+        style={{ background: '#578466' }}
       >
         <div className="max-w-5xl mx-auto px-5 pt-16 pb-28 md:py-20 md:pb-32 flex flex-col md:flex-row items-center gap-10 md:gap-14">
 
@@ -586,18 +586,18 @@ export default function HomePage() {
               href="/login?mode=register"
               className="px-7 py-3.5 rounded-xl font-bold text-base text-center min-h-[52px] inline-flex items-center justify-center gap-2 w-full sm:w-auto"
               style={{
-                background: 'var(--brand)',
-                color: '#fff',
+                background: 'var(--brand-lime)',
+                color: '#3d6050',
                 boxShadow: 'var(--sh-3)',
                 transition: `transform var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard)`,
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.transform = 'scale(1.02)'
-                e.currentTarget.style.background = '#4A7359'
+                e.currentTarget.style.background = '#C8D672'
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.transform = 'scale(1)'
-                e.currentTarget.style.background = 'var(--brand)'
+                e.currentTarget.style.background = 'var(--brand-lime)'
               }}
             >
               Probar gratis
@@ -655,30 +655,21 @@ export default function HomePage() {
           </div>
 
           {/* iPhone mockup — video */}
-          <div
-            className="flex-shrink-0 w-full md:w-auto flex justify-center"
-            style={{
-              background: '#578466',
-              borderRadius: '24px',
-              padding: '0',
-              overflow: 'hidden',
-              maxWidth: '340px',
-              margin: '0 auto',
-              boxShadow: '0 24px 48px rgba(0,0,0,0.35)',
-            }}
-          >
+          <div className="flex-shrink-0 w-full md:w-auto flex justify-center">
             <video
               src="/iphone-hero.mp4"
               autoPlay
               muted
               loop
               playsInline
+              preload="auto"
               aria-label="App fiza en iPhone"
               style={{
                 width: '100%',
+                maxWidth: '340px',
                 height: 'auto',
                 display: 'block',
-                background: '#578466',
+                filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.35))',
               }}
             />
           </div>
