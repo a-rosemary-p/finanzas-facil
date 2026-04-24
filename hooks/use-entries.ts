@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { calcMetrics } from '@/lib/utils'
+import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import type { Entry, Movement, DateFilter, TypeFilter, DashboardMetrics, Plan } from '@/types'
 
 const PAGE_SIZE = 10
@@ -92,7 +93,7 @@ export function useEntries() {
     const baseParams = buildParams(f, tf, showInv, showPend, selMonth, customRangeRef.current)
     baseParamsRef.current = baseParams.toString()
 
-    const res = await fetch(
+    const res = await fetchWithAuthRetry(
       `/api/movements?${baseParams}&offset=0&pageSize=${PAGE_SIZE}`
     )
 
@@ -122,7 +123,7 @@ export function useEntries() {
     setLoadingMore(true)
 
     const offset = movementsLenRef.current
-    const res = await fetch(
+    const res = await fetchWithAuthRetry(
       `/api/movements?${baseParamsRef.current}&offset=${offset}&pageSize=${PAGE_SIZE}`
     )
 
@@ -194,7 +195,7 @@ export function useEntries() {
 
   async function markAsPaid(id: string): Promise<Movement | null> {
     const today = new Date().toISOString().slice(0, 10)
-    const res = await fetch(`/api/movements/${id}`, {
+    const res = await fetchWithAuthRetry(`/api/movements/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'gasto', movementDate: today }),

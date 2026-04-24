@@ -3,6 +3,7 @@
 import { useRef } from 'react'
 import { PHOTO_LIMITS } from '@/lib/constants'
 import { processImage } from '@/lib/image-utils'
+import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import type { PendingMovement } from '@/types'
 import { getTodayString } from '@/lib/utils'
 
@@ -51,7 +52,7 @@ export function PhotoButton({
     try {
       const { base64, mimeType } = await processImage(file)
 
-      const res = await fetch('/api/entry/photo', {
+      const res = await fetchWithAuthRetry('/api/entry/photo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ base64, mimeType, fechaMovimiento: fecha || getTodayString() }),

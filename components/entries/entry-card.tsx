@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { formatCurrency, formatEntryDate, getTodayString } from '@/lib/utils'
 import { MOVEMENT_TYPES, MOVEMENT_TYPE_CONFIG } from '@/lib/constants'
+import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import type { Movement } from '@/types'
 
 interface MovementCardProps {
@@ -48,7 +49,7 @@ export function MovementCard({ movement, onUpdated, onDeleted, onMarkAsPaid, hid
     if (isNaN(amountNum) || amountNum <= 0) { setError('El monto debe ser mayor a 0'); return }
     setSaving(true); setError('')
     try {
-      const res = await fetch(`/api/movements/${movement.id}`, {
+      const res = await fetchWithAuthRetry(`/api/movements/${movement.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: editType, amount: amountNum, description: editDescription.trim(), movementDate: editDate, isInvestment: editIsInvestment }),
@@ -63,7 +64,7 @@ export function MovementCard({ movement, onUpdated, onDeleted, onMarkAsPaid, hid
   async function handleDelete() {
     setDeleting(true); setError('')
     try {
-      const res = await fetch(`/api/movements/${movement.id}`, { method: 'DELETE' })
+      const res = await fetchWithAuthRetry(`/api/movements/${movement.id}`, { method: 'DELETE' })
       if (!res.ok) { const data = await res.json() as { error?: string }; setError(data.error ?? 'Error al borrar'); return }
       onDeleted(movement.id)
     } catch { setError('No se pudo conectar. Intenta de nuevo.') }

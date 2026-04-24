@@ -29,9 +29,29 @@ export async function updateSession(request: NextRequest) {
   // IMPORTANTE: no agregar lógica entre createServerClient y getUser().
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser()
 
   const { pathname } = request.nextUrl
+
+  // Distinguir "sesión genuinamente inválida" de "error transitorio de Supabase".
+  // Un 401/403 del endpoint /auth/v1/user significa que el JWT no vale (faltante,
+  // expirado, firmado con otra key). Cualquier otra cosa (503, timeout, DNS, etc.)
+  // es ruido operacional — NO debemos tratar al usuario como logged-out por eso,
+  // porque provoca 401s falsos justo cuando Supabase tiene un hipo. El handler
+  // de la ruta hará su propio getUser() y rechazará limpio si hace falta.
+  const isGenuineAuthError =
+    !!authError && (authError.status === 401 || authError.status === 403)
+  const transientAuthError = !user && !!authError && !isGenuineAuthError
+
+  if (transientAuthError) {
+    console.error('[middleware] transient auth error — passing through', {
+      path: pathname,
+      status: authError?.status,
+      message: authError?.message,
+    })
+    return supabaseResponse
+  }
 
   // Rutas públicas que no requieren sesión.
   // Exact match para páginas fijas; los prefixes son segment-anchored

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '@/hooks/use-auth'
+import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import type { SettingsUpdate } from '@/types'
 import { WaveRule } from '@/components/ui/wave'
 
@@ -257,7 +258,7 @@ export default function AjustesPage() {
   const handleUpgrade = useCallback(async () => {
     setCheckoutLoading(true)
     try {
-      const res = await fetch('/api/checkout', { method: 'POST' })
+      const res = await fetchWithAuthRetry('/api/checkout', { method: 'POST' })
       const data = await res.json() as { url?: string; error?: string }
       if (data.url) window.location.href = data.url
       else if (data.error) window.alert(data.error)
@@ -268,7 +269,7 @@ export default function AjustesPage() {
   const handlePortal = useCallback(async () => {
     setPortalLoading(true)
     try {
-      const res = await fetch('/api/portal', { method: 'POST' })
+      const res = await fetchWithAuthRetry('/api/portal', { method: 'POST' })
       const data = await res.json() as { url?: string; error?: string }
       if (data.url) window.location.href = data.url
       else if (data.error) window.alert(data.error)

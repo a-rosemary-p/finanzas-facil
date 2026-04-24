@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { formatCurrency, getTodayString } from '@/lib/utils'
 import { CATEGORIES, MOVEMENT_TYPES, MOVEMENT_TYPE_CONFIG } from '@/lib/constants'
+import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import type { PendingMovement, Entry } from '@/types'
 
 interface ConfirmationScreenProps {
@@ -69,7 +70,7 @@ export function ConfirmationScreen({
     setError('')
 
     try {
-      const res = await fetch('/api/entry/confirm', {
+      const res = await fetchWithAuthRetry('/api/entry/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rawText, entryDate, movements: valid }),

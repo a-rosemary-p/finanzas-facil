@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { getTodayString } from '@/lib/utils'
 import { processImage } from '@/lib/image-utils'
+import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import { VoiceButton } from './voice-button'
 import { PhotoButton } from './photo-button'
 import type { PendingMovement } from '@/types'
@@ -30,7 +31,7 @@ export function EntryForm({ onMovementsExtracted }: EntryFormProps) {
     setError('')
 
     try {
-      const res = await fetch('/api/entry', {
+      const res = await fetchWithAuthRetry('/api/entry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ texto: texto.trim(), fechaMovimiento: fecha }),
@@ -79,7 +80,7 @@ export function EntryForm({ onMovementsExtracted }: EntryFormProps) {
     setError('')
     try {
       const { base64, mimeType } = await processImage(file)
-      const res = await fetch('/api/entry/photo', {
+      const res = await fetchWithAuthRetry('/api/entry/photo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ base64, mimeType, fechaMovimiento: fecha || getTodayString() }),

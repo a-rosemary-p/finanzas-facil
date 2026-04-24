@@ -12,6 +12,7 @@ import { MetricCard } from '@/components/dashboard/metric-card'
 import { PendingCommitments } from '@/components/dashboard/pending-commitments'
 import { getPeriodLabel, groupMovementsByDate } from '@/lib/utils'
 import { TYPE_FILTER_CONFIG } from '@/lib/constants'
+import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import type { DateFilter, TypeFilter, Entry, PendingMovement } from '@/types'
 import { WaveRule } from '@/components/ui/wave'
 
@@ -93,7 +94,7 @@ function DashboardInner() {
   const handleUpgrade = useCallback(async () => {
     setCheckoutLoading(true)
     try {
-      const res = await fetch('/api/checkout', { method: 'POST' })
+      const res = await fetchWithAuthRetry('/api/checkout', { method: 'POST' })
       const data = await res.json() as { url?: string; error?: string }
       if (data.url) window.location.href = data.url
       else if (data.error) window.alert(data.error)
@@ -104,7 +105,7 @@ function DashboardInner() {
   const handlePortal = useCallback(async () => {
     setPortalLoading(true)
     try {
-      const res = await fetch('/api/portal', { method: 'POST' })
+      const res = await fetchWithAuthRetry('/api/portal', { method: 'POST' })
       const data = await res.json() as { url?: string; error?: string }
       if (data.url) window.location.href = data.url
       else if (data.error) window.alert(data.error)
