@@ -14,6 +14,10 @@ const csp = [
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
   "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.stripe.com https://m.stripe.com https://r.stripe.com",
   "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com",
+  // worker-src + child-src incluyen blob: porque @react-pdf/renderer puede crear
+  // workers/iframes con URLs blob: durante la generación del PDF.
+  "worker-src 'self' blob:",
+  "child-src 'self' blob:",
   "form-action 'self' https://checkout.stripe.com",
   "frame-ancestors 'none'",
   "object-src 'none'",

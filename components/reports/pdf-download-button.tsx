@@ -1,6 +1,18 @@
 'use client'
-// Loaded with dynamic({ ssr: false }) — do not import directly in server code.
-import { useState } from 'react'
+// Loaded with dynamic({ ssr: false }) — react-pdf no corre server-side.
+//
+// Botón único que sirve a desktop y mobile sin user-agent sniffing:
+//   1. Genera el PDF como Blob (con timeout duro)
+//   2. Pregunta al browser si soporta "compartir archivos" (canShare)
+//      - SÍ → abre el share sheet nativo (iOS, Android, etc.)
+//      - NO → descarga directa via <a download> (laptops/desktops)
+//   3. Si share falla por cualquier razón, cae automático a download
+//   4. Estado siempre se libera — ningún path deja el botón "Generando..." atorado
+//
+// Cada click inicia un nuevo "request id"; clicks repetidos cancelan
+// silenciosamente el resultado anterior (defensa contra share() colgado).
+
+import { useRef, useState } from 'react'
 import { pdf } from '@react-pdf/renderer'
 import { MonthlyReportDoc } from './monthly-report'
 import type { Movement } from '@/types'
@@ -12,53 +24,59 @@ interface Props {
   giro?: string
 }
 
+type State =
+  | { kind: 'idle' }
+  | { kind: 'busy' }
+  | { kind: 'error'; msg: string }
+
+const PDF_TIMEOUT_MS = 20_000
+
 function monthLabel(month: string): string {
   const [y, m] = month.split('-').map(Number)
   const raw = new Date(y, m - 1, 1).toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })
   return raw.charAt(0).toUpperCase() + raw.slice(1)
 }
 
-const PDF_GEN_TIMEOUT_MS = 15_000   // generación del blob
-const SHARE_TIMEOUT_MS    = 8_000   // intento de share — si Safari se cuelga, caemos a download
-
-function withTimeout<T>(promise: Promise<T>, ms: number, tag: string): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) => setTimeout(() => reject(new Error(tag)), ms)),
-  ])
+function withTimeout<T>(p: Promise<T>, ms: number, tag: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(tag)), ms)
+    p.then(
+      v => { clearTimeout(t); resolve(v) },
+      e => { clearTimeout(t); reject(e) },
+    )
+  })
 }
 
-// Descarga el blob como archivo. Funciona en cualquier browser moderno
-// (Chrome desktop/Android, Safari iOS 13+, Firefox, Edge).
 function triggerDownload(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
   a.download = fileName
   a.rel = 'noopener'
+  a.style.display = 'none'
   document.body.appendChild(a)
   a.click()
-  // Cleanup en otro tick — algunos browsers necesitan que el <a> exista
-  // un microtick después del click.
+  // Cleanup en otro tick — algunos browsers necesitan el <a> en el DOM un microtick más
   setTimeout(() => {
-    document.body.removeChild(a)
+    a.remove()
     URL.revokeObjectURL(url)
-  }, 100)
+  }, 200)
 }
 
 export default function PdfDownloadButton({ month, movements, displayName, giro }: Props) {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [state, setState] = useState<State>({ kind: 'idle' })
+  // Cada click obtiene un id; resultados de clicks viejos se descartan
+  const reqIdRef = useRef(0)
 
   async function handleClick() {
-    setLoading(true)
-    setError('')
+    const myId = ++reqIdRef.current
+    setState({ kind: 'busy' })
 
     try {
       const logoUrl = window.location.origin + '/logo-green.png'
       const fileName = `fiza-reporte-${month}.pdf`
 
-      // 1. Generar el PDF como blob (con timeout — fonts/imágenes pueden lentificar)
+      // ── 1. Generar el PDF blob ─────────────────────────────────────────
       const blob = await withTimeout(
         pdf(
           <MonthlyReportDoc
@@ -67,64 +85,79 @@ export default function PdfDownloadButton({ month, movements, displayName, giro 
             displayName={displayName}
             giro={giro}
             logoUrl={logoUrl}
-          />
+          />,
         ).toBlob(),
-        PDF_GEN_TIMEOUT_MS,
-        'pdf-timeout'
+        PDF_TIMEOUT_MS,
+        'pdf-timeout',
       )
 
-      // 2. Decidir share vs download.
-      // En iOS Safari, navigator.share({files}) a veces se cuelga y nunca resuelve
-      // ni rechaza. Para no dejar al user con el botón "Generando..." infinitamente,
-      // le ponemos un hard-timeout y, si truena por cualquier razón, caemos a download.
+      if (myId !== reqIdRef.current) return // user clickeó otra vez
+
+      // ── 2. Decidir share vs download por feature detection ─────────────
       const file = new File([blob], fileName, { type: 'application/pdf' })
-      const canTryShare =
+      const canShareFiles =
+        typeof navigator !== 'undefined' &&
         typeof navigator.share === 'function' &&
         typeof navigator.canShare === 'function' &&
         navigator.canShare({ files: [file] })
 
-      if (canTryShare) {
+      if (canShareFiles) {
+        // Mobile path — abrir share nativo. NO le ponemos timeout: el user
+        // puede tardarse eligiendo destino (whatsapp, mail, etc.) y eso es
+        // normal. Si Safari decide colgar share() (bug histórico), el user
+        // simplemente clickea el botón otra vez — el reqId nuevo descarta
+        // este branch.
         try {
-          await withTimeout(
-            navigator.share({ files: [file], title: `Reporte ${monthLabel(month)} · Fiza` }),
-            SHARE_TIMEOUT_MS,
-            'share-timeout'
-          )
-          // Share completado (o el user lo dismiss → AbortError, abajo)
+          await navigator.share({
+            files: [file],
+            title: `Reporte ${monthLabel(month)} · Fiza`,
+          })
+          if (myId !== reqIdRef.current) return
+          // Share OK
+          setState({ kind: 'idle' })
           return
         } catch (err) {
-          // AbortError = el user cerró el sheet sin compartir; respetamos esa decisión.
-          if (err instanceof Error && err.name === 'AbortError') return
-          // Otro error o timeout: caemos a download silenciosamente.
+          if (myId !== reqIdRef.current) return
+          if (err instanceof Error && err.name === 'AbortError') {
+            // User cerró el sheet sin compartir — respetar y volver a idle
+            setState({ kind: 'idle' })
+            return
+          }
+          // Cualquier otro error → cae a download como red de seguridad
           console.warn('[PDF] share falló, descargando:', err)
         }
       }
 
-      // 3. Download path — siempre funciona, sin colgarse.
+      if (myId !== reqIdRef.current) return
+
+      // ── 3. Download path — desktop + fallback de mobile ─────────────────
       triggerDownload(blob, fileName)
+      setState({ kind: 'idle' })
     } catch (err) {
+      if (myId !== reqIdRef.current) return
       const msg =
         err instanceof Error && err.message === 'pdf-timeout'
           ? 'Tardó demasiado generar el PDF. Intenta de nuevo.'
           : 'No se pudo generar el PDF. Intenta de nuevo.'
-      setError(msg)
       console.error('[PDF]', err)
-    } finally {
-      // SIEMPRE libera el loading — ningún path debe dejar el botón atorado.
-      setLoading(false)
+      setState({ kind: 'error', msg })
     }
   }
+
+  const busy = state.kind === 'busy'
+  const errorMsg = state.kind === 'error' ? state.msg : ''
 
   return (
     <div className="flex flex-col gap-2">
       <button
         type="button"
         onClick={handleClick}
-        disabled={loading}
-        className="w-full py-3.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition-opacity disabled:opacity-60 min-h-[48px]"
+        // Permitimos re-click incluso en busy: si share() del intento anterior
+        // se colgó, este click reinicia. El reqId descarta el anterior.
+        className="w-full py-3.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition-opacity min-h-[48px]"
         style={{ background: 'var(--brand)' }}
       >
-        {loading ? (
+        {busy ? (
           <>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
               strokeWidth="2.5" strokeLinecap="round"
@@ -137,16 +170,21 @@ export default function PdfDownloadButton({ month, movements, displayName, giro 
           <>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
               strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
             {`Descargar PDF · ${monthLabel(month)}`}
           </>
         )}
       </button>
-      {error && (
-        <p className="text-xs text-center" style={{ color: 'var(--danger)' }}>{error}</p>
+      {busy && (
+        <p className="text-[11px] text-center" style={{ color: 'var(--brand-mid)' }}>
+          Si tarda más de 20 segundos, toca el botón otra vez.
+        </p>
+      )}
+      {errorMsg && (
+        <p className="text-xs text-center" style={{ color: 'var(--danger)' }}>{errorMsg}</p>
       )}
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
