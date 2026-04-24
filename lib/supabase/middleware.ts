@@ -34,20 +34,28 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Distinguir "sesión genuinamente inválida" de "error transitorio de Supabase".
-  // Un 401/403 del endpoint /auth/v1/user significa que el JWT no vale (faltante,
-  // expirado, firmado con otra key). Cualquier otra cosa (503, timeout, DNS, etc.)
-  // es ruido operacional — NO debemos tratar al usuario como logged-out por eso,
-  // porque provoca 401s falsos justo cuando Supabase tiene un hipo. El handler
-  // de la ruta hará su propio getUser() y rechazará limpio si hace falta.
-  const isGenuineAuthError =
-    !!authError && (authError.status === 401 || authError.status === 403)
-  const transientAuthError = !user && !!authError && !isGenuineAuthError
+  // Distinguir "no hay sesión" (estado normal de logged-out) de "Supabase tiene un hipo".
+  //
+  // supabase-js devuelve distintos errores:
+  //   - Sin cookie: AuthSessionMissingError, status 400
+  //   - JWT inválido/expirado: 401/403
+  //   - Otros 4xx: tratar igual que logged-out (defense-in-depth)
+  //   - 5xx o sin status (network/fetch error): transient — pasar sin bloquear
+  //
+  // Solo pasamos sin bloquear en el último caso, para no dejar pasar un user
+  // genuinamente deslogueado a una ruta protegida cuando supabase-js devuelve
+  // 400 porque no hay cookie.
+  const authStatus = authError?.status
+  const isTransientServerError =
+    !!authError &&
+    (typeof authStatus !== 'number' || authStatus >= 500)
 
-  if (transientAuthError) {
-    console.error('[middleware] transient auth error — passing through', {
+  if (!user && isTransientServerError) {
+    // Supabase momentáneamente no respondió bien — no bloqueamos al usuario.
+    // El handler hará su propio getUser() y fallará limpio si de verdad no hay sesión.
+    console.error('[middleware] transient Supabase error — passing through', {
       path: pathname,
-      status: authError?.status,
+      status: authStatus,
       message: authError?.message,
     })
     return supabaseResponse
