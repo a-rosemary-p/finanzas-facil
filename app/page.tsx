@@ -889,15 +889,13 @@ export default function HomePage() {
               </ul>
               <Link
                 href="/login?mode=register"
-                className="w-full py-3 rounded-xl text-sm font-semibold text-center min-h-[44px] flex items-center justify-center"
+                className="w-full py-3 rounded-xl text-sm font-bold text-center text-white min-h-[44px] flex items-center justify-center"
                 style={{
-                  borderColor: 'var(--brand)',
-                  border: '1px solid var(--brand)',
-                  color: 'var(--brand)',
+                  background: 'var(--brand)',
                   transition: `background var(--dur-fast) var(--ease-standard)`,
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'var(--pro-bg)' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#4A7359' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--brand)' }}
               >
                 Empieza gratis
               </Link>
