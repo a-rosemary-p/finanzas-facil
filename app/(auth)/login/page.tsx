@@ -6,22 +6,39 @@ import { createClient } from '@/lib/supabase/client'
 
 type Mode = 'login' | 'register' | 'forgot'
 
-function traducirError(msg: string): string {
+// Colapsamos los mensajes de error para evitar enumeración de correos.
+// Las tres respuestas de Supabase — "invalid credentials", "email not confirmed"
+// y "already registered" — respondían de forma distinta, permitiendo a un
+// atacante saber si un correo existe. Ahora usamos un solo mensaje genérico.
+function traducirError(msg: string, mode: 'login' | 'register' | 'forgot'): string {
   const m = msg.toLowerCase()
-  if (m.includes('invalid login credentials') || m.includes('invalid credentials')) return 'Correo o contraseña incorrectos'
-  if (m.includes('already registered') || m.includes('already exists') || m.includes('email already') || m.includes('already been registered')) return 'Este correo ya está registrado. ¿Quieres entrar?'
-  if (m.includes('password should be at least') || m.includes('password must be')) return 'La contraseña debe tener al menos 6 caracteres'
-  if (m.includes('email not confirmed')) return 'Confirma tu correo antes de entrar. Revisa tu bandeja de entrada.'
-  if (m.includes('error sending') || m.includes('sending confirmation') || m.includes('unable to send')) return 'No se pudo enviar el correo de confirmación. Intenta de nuevo en unos minutos.'
-  if (m.includes('security purposes') || m.includes('over_email_send_rate_limit') || m.includes('email rate limit')) return 'Demasiados intentos. Espera 60 segundos e intenta de nuevo.'
-  if (m.includes('rate limit') || m.includes('too many requests') || m.includes('too many')) return 'Demasiados intentos. Espera un momento.'
-  if (m.includes('unable to validate email') || m.includes('valid email') || m.includes('invalid email')) return 'El formato del correo no es válido'
-  if (m.includes('signup') && m.includes('disabled')) return 'El registro no está habilitado en este momento.'
-  if (m.includes('database error') || m.includes('unexpected error')) return 'Error en el servidor. Intenta de nuevo en un momento.'
-  if (m.includes('network') || m.includes('failed to fetch')) return 'Sin conexión. Revisa tu internet e intenta de nuevo.'
-  if (msg.length > 0 && msg.length < 120 && !msg.includes('{') && !msg.includes('undefined')) {
-    return `Error: ${msg}`
+
+  // Errores "neutrales" que no filtran información — los dejamos hablar
+  if (m.includes('password should be at least') || m.includes('password must be')) {
+    return 'La contraseña debe tener al menos 6 caracteres'
   }
+  if (m.includes('security purposes') || m.includes('over_email_send_rate_limit') || m.includes('email rate limit')) {
+    return 'Demasiados intentos. Espera 60 segundos e intenta de nuevo.'
+  }
+  if (m.includes('rate limit') || m.includes('too many requests') || m.includes('too many')) {
+    return 'Demasiados intentos. Espera un momento.'
+  }
+  if (m.includes('unable to validate email') || m.includes('valid email') || m.includes('invalid email')) {
+    return 'El formato del correo no es válido'
+  }
+  if (m.includes('network') || m.includes('failed to fetch')) {
+    return 'Sin conexión. Revisa tu internet e intenta de nuevo.'
+  }
+  if (m.includes('signup') && m.includes('disabled')) {
+    return 'El registro no está habilitado en este momento.'
+  }
+
+  // Genéricos que colapsan los mensajes sensibles
+  if (mode === 'login') {
+    // invalid credentials | email not confirmed | user not found → mismo mensaje
+    return 'Correo o contraseña incorrectos. Si apenas creaste tu cuenta, revisa tu bandeja para confirmarla.'
+  }
+
   return 'Ocurrió un error. Intenta de nuevo.'
 }
 
@@ -73,7 +90,7 @@ function LoginInner() {
 
     if (mode === 'login') {
       const { error: authError } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
-      if (authError) { setError(traducirError(authError.message)); setLoading(false); return }
+      if (authError) { setError(traducirError(authError.message, mode)); setLoading(false); return }
       router.push('/dashboard'); router.refresh()
     } else {
       const { error: authError } = await supabase.auth.signUp({
@@ -83,7 +100,7 @@ function LoginInner() {
           data: { display_name: nombre.trim() },
         },
       })
-      if (authError) { setError(traducirError(authError.message)); setLoading(false); return }
+      if (authError) { setError(traducirError(authError.message, mode)); setLoading(false); return }
       setRegistered(true); setLoading(false)
     }
   }

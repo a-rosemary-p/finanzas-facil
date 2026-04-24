@@ -127,6 +127,18 @@ export async function POST(request: Request) {
       .select('id, type, amount, description, category, movement_date, is_investment')
 
     if (movError || !savedMovements) {
+      // El trigger BEFORE INSERT puede lanzar free_plan_limit_exceeded (P0001)
+      // si una carrera concurrente pasó nuestro check anterior y la DB ya está
+      // en el límite. Devolvemos el mismo 429 para que el cliente reaccione igual.
+      if (movError?.message?.includes('free_plan_limit_exceeded')) {
+        return Response.json(
+          {
+            error: 'LIMIT_EXCEEDED',
+            message: 'Alcanzaste el límite diario de 10 movimientos del plan Free.',
+          },
+          { status: 429 }
+        )
+      }
       console.error('[confirm] movements insert error', movError)
       return Response.json({ error: 'Error al guardar los movimientos' }, { status: 500 })
     }

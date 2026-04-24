@@ -10,17 +10,16 @@ function normalizeUrl(raw: string): string | null {
   try { return new URL(withProtocol).origin } catch { return null }
 }
 
-function getBaseUrl(req: NextRequest): string {
-  // 1. Env var explícita
+// Nunca usamos `req.url` ni el header Host para construir la URL base.
+// Un atacante podría enviar un Host spoofeado para que Stripe redirija
+// a un dominio controlado por él tras checkout.
+function getBaseUrl(): string | null {
   const fromEnv = process.env.NEXT_PUBLIC_APP_URL ? normalizeUrl(process.env.NEXT_PUBLIC_APP_URL) : null
   if (fromEnv) return fromEnv
-  // 2. Vercel inyecta VERCEL_PROJECT_PRODUCTION_URL = dominio de producción (sin https://)
+  // Vercel inyecta estas dos variables; son de confianza (no vienen del request).
   if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-  // 3. VERCEL_URL = URL del deploy específico (útil en preview)
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
-  // 4. Fallback local
-  const { origin } = new URL(req.url)
-  return origin
+  return null
 }
 
 export async function POST(req: NextRequest) {
@@ -44,7 +43,11 @@ export async function POST(req: NextRequest) {
 
   const stripe = getStripe()
   const email = user.email ?? profile?.email ?? undefined
-  const base = getBaseUrl(req)
+  const base = getBaseUrl()
+  if (!base) {
+    console.error('[POST /api/checkout] No trusted base URL configured (NEXT_PUBLIC_APP_URL / VERCEL_*)')
+    return NextResponse.json({ error: 'Configuración del sitio incompleta. Contacta soporte.' }, { status: 500 })
+  }
 
   // Reutilizar customer existente o crear uno nuevo
   let customerId = profile?.stripe_customer_id as string | undefined

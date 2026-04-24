@@ -9,13 +9,14 @@ function normalizeUrl(raw: string): string | null {
   try { return new URL(withProtocol).origin } catch { return null }
 }
 
-function getBaseUrl(req: NextRequest): string {
+// Nunca confiar en req.url / Host: un Host spoofeado podría redirigir
+// el portal de Stripe a un dominio atacante tras cambios de suscripción.
+function getBaseUrl(): string | null {
   const fromEnv = process.env.NEXT_PUBLIC_APP_URL ? normalizeUrl(process.env.NEXT_PUBLIC_APP_URL) : null
   if (fromEnv) return fromEnv
   if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
-  const { origin } = new URL(req.url)
-  return origin
+  return null
 }
 
 export async function POST(req: NextRequest) {
@@ -39,7 +40,11 @@ export async function POST(req: NextRequest) {
   }
 
   const stripe = getStripe()
-  const base = getBaseUrl(req)
+  const base = getBaseUrl()
+  if (!base) {
+    console.error('[POST /api/portal] No trusted base URL configured')
+    return NextResponse.json({ error: 'Configuración del sitio incompleta. Contacta soporte.' }, { status: 500 })
+  }
 
   try {
     const portalSession = await stripe.billingPortal.sessions.create({

@@ -18,6 +18,14 @@ export async function POST(request: Request) {
       return Response.json({ error: 'No autorizado' }, { status: 401 })
     }
 
+    // 1.5. Early Content-Length guard — rechazamos payloads enormes ANTES de
+    // bufferear el body completo. Límite: 5 MB de imagen ≈ ~6.85 MB en base64;
+    // dejamos 7 MB de holgura para JSON overhead.
+    const contentLength = Number(request.headers.get('content-length') ?? 0)
+    if (contentLength > 7 * 1024 * 1024) {
+      return Response.json({ error: 'La imagen es demasiado grande (máx. 5 MB)' }, { status: 413 })
+    }
+
     // 2. Validar input
     const body: unknown = await request.json()
     if (typeof body !== 'object' || body === null) {

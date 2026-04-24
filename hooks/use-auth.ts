@@ -178,11 +178,18 @@ export function useAuth() {
     // Cambiar a la nueva contraseña
     const { error } = await supabase.auth.updateUser({ password: newPassword })
     if (error) throw error
+
+    // Tras cambiar contraseña, invalidar cualquier otra sesión activa
+    // (otro browser, otro dispositivo). La sesión actual sigue viva.
+    await supabase.auth.signOut({ scope: 'others' })
   }
 
   async function logout() {
     const supabase = createClient()
-    await supabase.auth.signOut()
+    // scope: 'global' invalida todas las sesiones del usuario en todos los
+    // dispositivos, no solo la cookie local. Si un token fue robado, cerrar
+    // sesión aquí también lo revoca en el atacante.
+    await supabase.auth.signOut({ scope: 'global' })
     router.replace('/login')
   }
 

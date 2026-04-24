@@ -12,15 +12,30 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [ready, setReady] = useState(false)
 
+  // Solo permitimos renderizar el form cuando el usuario llegó desde el link
+  // de recuperación (evento PASSWORD_RECOVERY). Una sesión normal no debería
+  // poder cambiar contraseña sin pasar por /ajustes (que pide contraseña actual).
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        setReady(true)
-      } else {
-        router.replace('/login')
-      }
+
+    // Listener PRIMERO — así capturamos el PASSWORD_RECOVERY aunque la
+    // sesión se hidrate en el mismo tick del mount.
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setReady(true)
     })
+
+    // Fallback: si Supabase ya procesó el link antes de registrar el listener,
+    // solo confiamos en una sesión fresca (creada hace <5 min vía recovery).
+    // Sin fresh-grace, damos 1.5s al listener y si no disparó, redirigimos.
+    const timeout = setTimeout(() => {
+      if (!ready) router.replace('/login')
+    }, 1500)
+
+    return () => {
+      sub.subscription.unsubscribe()
+      clearTimeout(timeout)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -40,7 +55,11 @@ export default function ResetPasswordPage() {
       return
     }
 
-    router.push('/dashboard')
+    // Tras cambio por recovery: invalidar TODAS las sesiones (incluyendo esta)
+    // y regresar a login. Un token robado que llegó por esta ruta también se
+    // revoca así.
+    await supabase.auth.signOut({ scope: 'global' })
+    router.replace('/login')
   }
 
   if (!ready) {
