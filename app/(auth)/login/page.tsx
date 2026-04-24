@@ -15,7 +15,7 @@ function traducirError(msg: string, mode: 'login' | 'register' | 'forgot'): stri
 
   // Errores "neutrales" que no filtran información — los dejamos hablar
   if (m.includes('password should be at least') || m.includes('password must be')) {
-    return 'La contraseña debe tener al menos 6 caracteres'
+    return 'La contraseña debe tener al menos 10 caracteres'
   }
   if (m.includes('security purposes') || m.includes('over_email_send_rate_limit') || m.includes('email rate limit')) {
     return 'Demasiados intentos. Espera 60 segundos e intenta de nuevo.'
@@ -82,7 +82,7 @@ function LoginInner() {
 
     if (!email.trim() || !password.trim()) { setError('Por favor ingresa tu correo y contraseña'); return }
     if (mode === 'register' && !nombre.trim()) { setError('Por favor ingresa tu nombre o el nombre de tu negocio'); return }
-    if (mode === 'register' && password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres'); return }
+    if (mode === 'register' && password.length < 10) { setError('La contraseña debe tener al menos 10 caracteres'); return }
     if (mode === 'register' && password !== confirmPassword) { setError('Las contraseñas no coinciden'); return }
 
     setLoading(true); setError('')
@@ -202,7 +202,7 @@ function LoginInner() {
                   style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
                 />
                 {mode === 'register' && (
-                  <p className="text-xs" style={{ color: 'var(--brand-mid)' }}>Mínimo 6 caracteres</p>
+                  <p className="text-xs" style={{ color: 'var(--brand-mid)' }}>Mínimo 10 caracteres</p>
                 )}
               </div>
             )}

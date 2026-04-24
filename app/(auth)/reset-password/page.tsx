@@ -40,7 +40,7 @@ export default function ResetPasswordPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres'); return }
+    if (password.length < 10) { setError('La contraseña debe tener al menos 10 caracteres'); return }
     if (password !== confirm) { setError('Las contraseñas no coinciden'); return }
 
     setLoading(true)
@@ -101,7 +101,7 @@ export default function ResetPasswordPage() {
                 className="border rounded-lg px-3 py-3 min-h-[44px] focus:outline-none focus:ring-2"
                 style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
               />
-              <p className="text-xs" style={{ color: 'var(--brand-mid)' }}>Mínimo 6 caracteres</p>
+              <p className="text-xs" style={{ color: 'var(--brand-mid)' }}>Mínimo 10 caracteres</p>
             </div>
 
             <div className="flex flex-col gap-1.5">

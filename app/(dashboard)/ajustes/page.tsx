@@ -229,8 +229,8 @@ export default function AjustesPage() {
   // ── Guardar contraseña ──
   const savePassword = useCallback(async () => {
     setPwError('')
-    if (pwDraft.new.length < 6) {
-      setPwError('La nueva contraseña debe tener al menos 6 caracteres.')
+    if (pwDraft.new.length < 10) {
+      setPwError('La nueva contraseña debe tener al menos 10 caracteres.')
       return
     }
     if (pwDraft.new !== pwDraft.confirm) {
@@ -539,7 +539,7 @@ export default function AjustesPage() {
                 type="password"
                 value={pwDraft.new}
                 onChange={v => setPwDraft(d => ({ ...d, new: v }))}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 10 caracteres"
               />
               <EditInput
                 label="Confirmar nueva contraseña"
