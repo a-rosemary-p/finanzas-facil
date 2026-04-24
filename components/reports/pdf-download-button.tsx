@@ -18,6 +18,34 @@ function monthLabel(month: string): string {
   return raw.charAt(0).toUpperCase() + raw.slice(1)
 }
 
+const PDF_GEN_TIMEOUT_MS = 15_000   // generación del blob
+const SHARE_TIMEOUT_MS    = 8_000   // intento de share — si Safari se cuelga, caemos a download
+
+function withTimeout<T>(promise: Promise<T>, ms: number, tag: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error(tag)), ms)),
+  ])
+}
+
+// Descarga el blob como archivo. Funciona en cualquier browser moderno
+// (Chrome desktop/Android, Safari iOS 13+, Firefox, Edge).
+function triggerDownload(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = fileName
+  a.rel = 'noopener'
+  document.body.appendChild(a)
+  a.click()
+  // Cleanup en otro tick — algunos browsers necesitan que el <a> exista
+  // un microtick después del click.
+  setTimeout(() => {
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }, 100)
+}
+
 export default function PdfDownloadButton({ month, movements, displayName, giro }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -25,59 +53,64 @@ export default function PdfDownloadButton({ month, movements, displayName, giro 
   async function handleClick() {
     setLoading(true)
     setError('')
+
     try {
       const logoUrl = window.location.origin + '/logo-green.png'
       const fileName = `fiza-reporte-${month}.pdf`
 
-      // Render PDF with a 20-second timeout (font/image fetches can be slow)
-      const blobPromise = pdf(
-        <MonthlyReportDoc
-          month={month}
-          movements={movements}
-          displayName={displayName}
-          giro={giro}
-          logoUrl={logoUrl}
-        />
-      ).toBlob()
-
-      const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('timeout')), 20_000)
+      // 1. Generar el PDF como blob (con timeout — fonts/imágenes pueden lentificar)
+      const blob = await withTimeout(
+        pdf(
+          <MonthlyReportDoc
+            month={month}
+            movements={movements}
+            displayName={displayName}
+            giro={giro}
+            logoUrl={logoUrl}
+          />
+        ).toBlob(),
+        PDF_GEN_TIMEOUT_MS,
+        'pdf-timeout'
       )
 
-      const blob = await Promise.race([blobPromise, timeout])
-
+      // 2. Decidir share vs download.
+      // En iOS Safari, navigator.share({files}) a veces se cuelga y nunca resuelve
+      // ni rechaza. Para no dejar al user con el botón "Generando..." infinitamente,
+      // le ponemos un hard-timeout y, si truena por cualquier razón, caemos a download.
       const file = new File([blob], fileName, { type: 'application/pdf' })
-
-      // Mobile / tablet: native share sheet (attach to email, save to Files, etc.)
-      if (
+      const canTryShare =
         typeof navigator.share === 'function' &&
         typeof navigator.canShare === 'function' &&
         navigator.canShare({ files: [file] })
-      ) {
-        await navigator.share({
-          files: [file],
-          title: `Reporte ${monthLabel(month)} · Fiza`,
-        })
-        return
+
+      if (canTryShare) {
+        try {
+          await withTimeout(
+            navigator.share({ files: [file], title: `Reporte ${monthLabel(month)} · Fiza` }),
+            SHARE_TIMEOUT_MS,
+            'share-timeout'
+          )
+          // Share completado (o el user lo dismiss → AbortError, abajo)
+          return
+        } catch (err) {
+          // AbortError = el user cerró el sheet sin compartir; respetamos esa decisión.
+          if (err instanceof Error && err.name === 'AbortError') return
+          // Otro error o timeout: caemos a download silenciosamente.
+          console.warn('[PDF] share falló, descargando:', err)
+        }
       }
 
-      // Desktop: trigger normal file download
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = fileName
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      // 3. Download path — siempre funciona, sin colgarse.
+      triggerDownload(blob, fileName)
     } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') return // user dismissed share sheet
-      const msg = err instanceof Error && err.message === 'timeout'
-        ? 'Tardó demasiado. Intenta de nuevo.'
-        : 'No se pudo generar el PDF. Intenta de nuevo.'
+      const msg =
+        err instanceof Error && err.message === 'pdf-timeout'
+          ? 'Tardó demasiado generar el PDF. Intenta de nuevo.'
+          : 'No se pudo generar el PDF. Intenta de nuevo.'
       setError(msg)
       console.error('[PDF]', err)
     } finally {
+      // SIEMPRE libera el loading — ningún path debe dejar el botón atorado.
       setLoading(false)
     }
   }
