@@ -41,30 +41,29 @@ export async function GET(request: Request) {
   const monthStart = `${y}-${String(m).padStart(2, '0')}-01`
   const monthEnd   = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
 
-  // Aplica el cap del plan Free: recorta el inicio del rango al máximo
-  // (hoy - historyDays) si el mes pedido está parcial/completamente fuera.
-  let effectiveStart = monthStart
-  let truncated = false
+  // Cap Free: meses calendario completos. El usuario puede ver mes actual + 2
+  // anteriores. Cualquier mes más antiguo está bloqueado por completo (no se
+  // recorta a fracción — la spec habla en términos de meses, no días).
+  let blocked = false
   if (plan === 'free') {
     const today = new Date()
-    const capDate = new Date(today)
-    capDate.setDate(capDate.getDate() - PLANS.FREE.historyDays)
-    const capStr = capDate.toISOString().slice(0, 10)
+    // Primer día del "mes más viejo permitido" (mes actual menos 2)
+    const earliest = new Date(today.getFullYear(), today.getMonth() - (PLANS.FREE.historyMonths - 1), 1)
+    const earliestKey = earliest.getFullYear() * 12 + earliest.getMonth()
+    const requestedKey = y * 12 + (m - 1)
 
-    if (capStr > monthEnd) {
-      // El mes completo está antes del cap → vacío y flag "truncated"
+    if (requestedKey < earliestKey) {
+      blocked = true
       return Response.json({
         movements: [],
         enforcedRange: { start: monthStart, end: monthEnd },
-        truncated: true,
+        truncated: true,   // mantenemos el flag para compat de UI ya existente
+        blocked,           // distinguible: "todo el mes está bloqueado" vs "recorte parcial"
       })
     }
-
-    if (capStr > monthStart) {
-      effectiveStart = capStr
-      truncated = true
-    }
   }
+  const effectiveStart = monthStart
+  const truncated = false
 
   const { data, error } = await supabase
     .from('movements')
@@ -94,5 +93,6 @@ export async function GET(request: Request) {
     movements,
     enforcedRange: { start: effectiveStart, end: monthEnd },
     truncated,
+    blocked: false,
   })
 }

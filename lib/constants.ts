@@ -13,11 +13,13 @@ export const EXCHANGE_RATES = {
 export const PLANS = {
   FREE: {
     maxMovementsPerDay: 10,
-    historyDays: 30,
+    historyDays: 30,        // ventana rolling para el historial del dashboard
+    historyMonths: 3,       // ventana en meses calendario para /reportes (mes actual + 2 anteriores)
   },
   PRO: {
     maxMovementsPerDay: Infinity,
     historyDays: Infinity,
+    historyMonths: Infinity,
     priceMonthlyMXN: 49,
   },
 } as const
