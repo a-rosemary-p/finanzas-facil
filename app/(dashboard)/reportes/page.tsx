@@ -25,6 +25,17 @@ const PdfDownloadButton = dynamic(
   )}
 )
 
+// recharts (~100KB) cargado solo cuando el user abre Vista 3
+const TrendView = dynamic(
+  () => import('@/components/reports/trend-view'),
+  { ssr: false, loading: () => (
+    <div className="bg-white rounded-2xl shadow-sm p-8 text-center"
+      style={{ border: '1px solid var(--brand-border)' }}>
+      <p className="text-sm" style={{ color: 'var(--brand-mid)' }}>Cargando gráfica...</p>
+    </div>
+  )}
+)
+
 type Tab = 'periodo' | 'comparar' | 'tendencia'
 
 const PERIOD_MODE_LABELS: Record<PeriodMode, string> = {
@@ -235,9 +246,10 @@ export default function ReportesPage() {
           })}
         </div>
 
-        {/* ── Selector de período (compartido por Vista 1 y 3; Vista 2 tiene su propio
-              selector interno porque comparа "ahora" contra el período anterior) ── */}
-        {tab !== 'comparar' && (
+        {/* ── Selector de período (solo Vista 1 — "Este período").
+              Vista 2 tiene su propio selector interno; Vista 3 (Tendencia) siempre
+              muestra los últimos N meses/semanas, no respeta el mes seleccionado ── */}
+        {tab === 'periodo' && (
         <div className="flex flex-col gap-2">
           {/* Selector adaptado al modo activo */}
           <div
@@ -489,25 +501,8 @@ export default function ReportesPage() {
         {/* ── Vista 2 — ¿Cómo voy? ── */}
         {tab === 'comparar' && <CompareView plan={plan} />}
 
-        {/* ── Vista 3 — Tendencia (placeholder Fase 4) ── */}
-        {tab === 'tendencia' && (
-          <div className="bg-white rounded-2xl shadow-sm p-6 text-center flex flex-col gap-3 items-center"
-            style={{ border: '1px solid var(--brand-border)' }}>
-            <div className="w-12 h-12 rounded-full flex items-center justify-center"
-              style={{ background: 'var(--brand-chip)', color: 'var(--brand)' }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 17 9 11 13 15 21 7" />
-                <polyline points="14 7 21 7 21 14" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-bold text-sm" style={{ color: 'var(--brand)' }}>Próximamente</p>
-              <p className="text-xs mt-1" style={{ color: 'var(--brand-mid)' }}>
-                Visualiza la evolución de tu negocio en el tiempo.
-              </p>
-            </div>
-          </div>
-        )}
+        {/* ── Vista 3 — Tendencia ── */}
+        {tab === 'tendencia' && <TrendView plan={plan} />}
       </main>
     </div>
   )
