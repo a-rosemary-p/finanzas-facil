@@ -401,28 +401,28 @@ const CITIES = [
 
 const FAQ = [
   {
-    q: '¿Es seguro guardar mis finanzas aquí?',
-    a: 'Sí. Tus datos se guardan con cifrado en reposo y en tránsito. Nunca compartimos ni vendemos tu información. Puedes exportar o eliminar tu cuenta cuando quieras.',
-  },
-  {
     q: '¿Necesito saber de contabilidad?',
     a: 'Para nada. Fiza está diseñada para dueños de negocio, no para contadores. Solo dile lo que pasó en tu día en tus propias palabras — la IA se encarga de clasificar todo.',
-  },
-  {
-    q: '¿Para qué tipos de negocio funciona?',
-    a: 'Para cualquier negocio pequeño: taquerías, estéticas, talleres, tiendas, food trucks, freelancers, y cualquier actividad con ingresos y gastos — en efectivo o transferencia.',
-  },
-  {
-    q: '¿Qué pasa con mis datos si cancelo?',
-    a: 'Tu cuenta continúa en el plan gratuito con acceso a los últimos 30 días. Puedes descargar tus reportes antes de cancelar. No borramos tus datos.',
   },
   {
     q: '¿Funciona en celular?',
     a: 'Sí, está optimizada para móvil desde el primer día. Funciona en cualquier navegador moderno — sin descargar nada de la App Store ni Google Play.',
   },
   {
+    q: '¿Es seguro guardar mis finanzas aquí?',
+    a: 'Sí. Tus datos se guardan con cifrado en reposo y en tránsito. Nunca compartimos ni vendemos tu información. Puedes exportar o eliminar tu cuenta cuando quieras.',
+  },
+  {
+    q: '¿Para qué tipos de negocio funciona?',
+    a: 'Para cualquier negocio pequeño: taquerías, estéticas, talleres, tiendas, food trucks, freelancers, y cualquier actividad con ingresos y gastos — en efectivo o transferencia.',
+  },
+  {
     q: '¿En qué se diferencia de una libreta o de Excel?',
     a: 'Una libreta no clasifica ni calcula sola. Excel requiere formatos y conocimientos técnicos. Fiza entiende lenguaje natural — escribe como le hablarías a alguien, y ella organiza todo.',
+  },
+  {
+    q: '¿Qué pasa con mis datos si cancelo?',
+    a: 'Tu cuenta continúa en el plan gratuito con acceso a los últimos 30 días. Puedes descargar tus reportes antes de cancelar. No borramos tus datos.',
   },
 ]
 
@@ -456,7 +456,7 @@ const secSubStyle: React.CSSProperties = {
 
 export default function HomePage() {
   const [scrolled, setScrolled] = useState(false)
-  const [openFAQ, setOpenFAQ]   = useState<number | null>(null)
+  const [openFAQ, setOpenFAQ]   = useState<number | null>(0)
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20)
@@ -554,80 +554,131 @@ export default function HomePage() {
             {/* Wave underline — Light weight (v2 design system) */}
             <WaveUnderline color="rgba(255,255,255,0.42)" />
 
-            {/* Functional tagline — official brand copy */}
+            {/* Subtitle */}
             <p
-              className="font-medium mb-3"
-              style={{
-                color: 'rgba(255,255,255,0.72)',
-                fontSize: '15px',
-                letterSpacing: '-0.01em',
-                fontStyle: 'italic',
-                maxWidth: '400px',
-              }}
-            >
-              Registra en segundos, entiende tu negocio en minutos.
-            </p>
-
-            {/* Lede */}
-            <p
-              className="leading-relaxed mb-5"
+              className="leading-relaxed mb-4"
               style={{
                 color: 'rgba(255,255,255,0.88)',
                 fontSize: '17px',
                 lineHeight: 1.55,
-                maxWidth: '390px',
+                maxWidth: '420px',
               }}
             >
-              Dile lo que vendiste y gastaste hoy — en tus propias palabras.
-              Fiza lo clasifica, calcula tu neto y te avisa cuando vencen tus pendientes.
+              Solo cuéntale lo que pasó en tu negocio.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-              <Link
-                href="/login?mode=register"
-                className="px-7 py-3.5 rounded-xl font-bold text-base text-center min-h-[52px] flex items-center justify-center gap-2"
+            {/* Example */}
+            <p
+              className="mb-6"
+              style={{
+                color: 'rgba(255,255,255,0.72)',
+                fontSize: '15px',
+                lineHeight: 1.55,
+                letterSpacing: '-0.01em',
+                fontStyle: 'italic',
+                maxWidth: '420px',
+              }}
+            >
+              “Vendí $2,000, salió $600 en materiales” — y listo, Fiza lo organiza.
+            </p>
+
+            <Link
+              href="/login?mode=register"
+              className="px-7 py-3.5 rounded-xl font-bold text-base text-center min-h-[52px] inline-flex items-center justify-center gap-2 w-full sm:w-auto"
+              style={{
+                background: 'var(--brand)',
+                color: '#fff',
+                boxShadow: 'var(--sh-3)',
+                transition: `transform var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard)`,
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'scale(1.02)'
+                e.currentTarget.style.background = '#4A7359'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = 'scale(1)'
+                e.currentTarget.style.background = 'var(--brand)'
+              }}
+            >
+              Probar gratis
+              <span aria-hidden="true">→</span>
+            </Link>
+
+            {/* Social proof — negocios y ciudades */}
+            <div className="mt-5 w-full sm:w-auto">
+              <p
+                className="mb-2.5 text-center md:text-left"
                 style={{
-                  background: 'var(--paper)',
-                  color: 'var(--brand)',
-                  boxShadow: 'var(--sh-3)',
-                  transition: `transform var(--dur-fast) var(--ease-standard)`,
-                }}
-                onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.02)')}
-                onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
-              >
-                Empieza gratis
-                <span aria-hidden="true">→</span>
-              </Link>
-              <Link
-                href="/login?mode=register"
-                className="px-7 py-3.5 rounded-xl font-semibold text-base text-center min-h-[52px] flex items-center justify-center"
-                style={{
-                  background: 'rgba(255,255,255,0.13)',
-                  color: '#fff',
-                  border: '1px solid rgba(255,255,255,0.28)',
+                  color: 'rgba(255,255,255,0.82)',
+                  fontSize: '14px',
+                  lineHeight: 1.5,
                 }}
               >
-                30 días gratis con Pro
-              </Link>
+                {CITIES.reduce((s, c) => s + c.count, 0)} negocios llevando sus cuentas en{' '}
+                {CITIES.length} ciudades
+              </p>
+              <div className="flex flex-wrap justify-center md:justify-start gap-1.5">
+                {CITIES.map(c => (
+                  <div
+                    key={c.city}
+                    className="flex items-center gap-1.5 rounded-lg px-2.5 py-1"
+                    style={{
+                      background: 'rgba(255,255,255,0.14)',
+                      border: '1px solid rgba(255,255,255,0.22)',
+                    }}
+                  >
+                    <span
+                      className="text-xs font-semibold"
+                      style={{ color: '#fff', letterSpacing: '-0.01em' }}
+                    >
+                      {c.city}
+                    </span>
+                    <span
+                      className="text-[11px] font-bold px-1.5 py-0.5 rounded-full"
+                      style={{
+                        background: 'rgba(255,255,255,0.9)',
+                        color: 'var(--brand)',
+                        minWidth: '18px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {c.count}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <p className="text-xs mt-3" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            <p className="text-xs mt-4" style={{ color: 'rgba(255,255,255,0.5)' }}>
               Sin tarjeta de crédito · Cancela cuando quieras
             </p>
           </div>
 
-          {/* iPhone mockup */}
-          <div className="flex-shrink-0 w-full md:w-auto flex justify-center">
-            <img
-              src="/iphone-hero.png"
-              alt="App fiza en iPhone"
-              draggable={false}
+          {/* iPhone mockup — video */}
+          <div
+            className="flex-shrink-0 w-full md:w-auto flex justify-center"
+            style={{
+              background: '#578466',
+              borderRadius: '24px',
+              padding: '0',
+              overflow: 'hidden',
+              maxWidth: '340px',
+              margin: '0 auto',
+              boxShadow: '0 24px 48px rgba(0,0,0,0.35)',
+            }}
+          >
+            <video
+              src="/iphone-hero.mp4"
+              autoPlay
+              muted
+              loop
+              playsInline
+              aria-label="App fiza en iPhone"
               style={{
                 width: '100%',
-                maxWidth: '340px',
                 height: 'auto',
                 display: 'block',
-                filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.35))',
+                background: '#578466',
               }}
             />
           </div>
@@ -638,47 +689,9 @@ export default function HomePage() {
             creates a smooth gradient→paper flow that the hairline can't achieve. */}
         <div className="absolute bottom-0 left-0 right-0" aria-hidden="true">
           <svg viewBox="0 0 1200 52" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: '52px' }}>
-            <path d="M0,32 C200,52 400,12 600,28 C800,44 1000,8 1200,28 L1200,52 L0,52 Z" fill="var(--paper)"/>
+            <path d="M0,32 C200,52 400,12 600,28 C800,44 1000,8 1200,28 L1200,52 L0,52 Z" fill="var(--paper-2)"/>
           </svg>
         </div>
-      </section>
-
-      {/* ── Ciudades ────────────────────────────────────────────────────────── */}
-      <section className="pt-12 pb-14 px-4" style={{ background: 'var(--paper)', position: 'relative', overflow: 'hidden' }}>
-        <div className="max-w-3xl mx-auto">
-          <p className="text-center mb-2" style={eyebrowStyle}>Ya en todo México</p>
-          <p className="text-sm text-center mb-7" style={{ color: 'var(--ink-500)', fontSize: '17px', lineHeight: 1.55 }}>
-            {CITIES.reduce((s, c) => s + c.count, 0)} negocios llevando sus cuentas en{' '}
-            {CITIES.length} ciudades
-          </p>
-          <div className="flex flex-wrap justify-center gap-2.5">
-            {CITIES.map(c => (
-              <div
-                key={c.city}
-                className="flex items-center gap-2 rounded-xl px-4 py-2.5"
-                style={{
-                  background: 'var(--paper-2)',
-                  border: '1px solid var(--brand-border)',
-                  boxShadow: 'var(--sh-1)',
-                }}
-              >
-                <span
-                  className="text-sm font-semibold"
-                  style={{ color: 'var(--ink-700)', letterSpacing: '-0.01em' }}
-                >
-                  {c.city}
-                </span>
-                <span
-                  className="text-xs font-bold px-1.5 py-0.5 rounded-full"
-                  style={{ background: 'var(--brand)', color: '#fff', minWidth: '20px', textAlign: 'center' }}
-                >
-                  {c.count}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <WaveDivider fill="var(--paper-2)" />
       </section>
 
       {/* ── Cómo funciona ───────────────────────────────────────────────────── */}
@@ -881,23 +894,17 @@ export default function HomePage() {
 
             {/* Pro */}
             <div
-              className="rounded-2xl p-6 flex flex-col gap-4 relative"
+              className="rounded-2xl p-6 flex flex-col gap-4"
               style={{
-                background: 'var(--pro-bg)',
-                border: '2px solid var(--brand)',
-                boxShadow: 'var(--sh-2)',
+                background: 'var(--paper)',
+                border: '1px solid var(--brand-border)',
+                boxShadow: 'var(--sh-1)',
               }}
             >
-              <span
-                className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[10px] font-bold px-3 py-1 rounded-full text-white whitespace-nowrap"
-                style={{ background: 'var(--brand)', letterSpacing: '0.06em' }}
-              >
-                MÁS POPULAR
-              </span>
               <div>
                 <p
                   className="text-[11px] font-bold tracking-widest mb-2"
-                  style={{ color: 'var(--brand)', letterSpacing: '0.14em' }}
+                  style={{ color: 'var(--ink-300)', letterSpacing: '0.14em' }}
                 >
                   PRO
                 </p>
