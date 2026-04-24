@@ -3,6 +3,7 @@ import { extractFromText } from '@/lib/openai/client'
 import { EXTRACTION_SYSTEM_PROMPT } from '@/lib/ai/prompts'
 import { parseGeminiResponse } from '@/lib/ai/parser'
 import { PLANS } from '@/lib/constants'
+import { consumeRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: Request) {
   try {
@@ -14,6 +15,16 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser()
     if (!user) {
       return Response.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
+    // 1.5. Rate limit (bucket "entry", 100/hr). Se consume ANTES de leer el
+    // body o hablar con OpenAI — protege contra abuso automatizado.
+    const rl = await consumeRateLimit(supabase, user.id, 'entry')
+    if (!rl.ok) {
+      return Response.json(
+        { error: rl.message, retryAfterSeconds: rl.retryAfterSeconds },
+        { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } }
+      )
     }
 
     // 2. Validar input
@@ -86,28 +97,35 @@ export async function POST(request: Request) {
     const msg = error instanceof Error ? error.message : String(error)
     console.error('[POST /api/entry]', msg)
 
-    if (msg.includes('429') || msg.includes('rate_limit') || msg.includes('quota')) {
-      return Response.json(
-        { error: 'La IA está saturada. Espera unos segundos e intenta de nuevo.' },
-        { status: 429 }
-      )
+    // Usar las clases tipadas del SDK de OpenAI en lugar de string matching
+    // sobre err.message — más robusto ante cambios en el wording de OpenAI.
+    const { default: OpenAI } = await import('openai')
+    if (error instanceof OpenAI.APIError) {
+      if (error instanceof OpenAI.RateLimitError) {
+        return Response.json(
+          { error: 'La IA está saturada. Espera unos segundos e intenta de nuevo.' },
+          { status: 429 }
+        )
+      }
+      if (error instanceof OpenAI.AuthenticationError) {
+        console.error('[POST /api/entry] OpenAI auth error — API key inválida o caducada')
+        return Response.json(
+          { error: 'Error de configuración del servicio. Contacta al soporte.' },
+          { status: 500 }
+        )
+      }
+      if (error instanceof OpenAI.APIConnectionTimeoutError || error.status === 504) {
+        return Response.json(
+          { error: 'La IA tardó demasiado. Intenta con un texto más corto.' },
+          { status: 504 }
+        )
+      }
     }
-    if (msg.includes('timeout') || msg.includes('timed out') || msg.includes('ETIMEDOUT')) {
-      return Response.json(
-        { error: 'La IA tardó demasiado. Intenta con un texto más corto.' },
-        { status: 504 }
-      )
-    }
+
+    // Errores nuestros de parseo (no de OpenAI) vienen como mensajes genéricos
     if (msg.includes('JSON') || msg.includes('Formato') || msg.includes('No se encontró JSON')) {
       return Response.json(
         { error: 'La IA respondió de forma inesperada. Intenta de nuevo.' },
-        { status: 500 }
-      )
-    }
-    if (msg.includes('OPENAI_API_KEY') || msg.includes('authentication') || msg.includes('api_key')) {
-      console.error('[POST /api/entry] Error de configuración de API key')
-      return Response.json(
-        { error: 'Error de configuración del servicio. Contacta al soporte.' },
         { status: 500 }
       )
     }

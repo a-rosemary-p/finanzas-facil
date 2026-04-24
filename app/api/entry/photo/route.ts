@@ -3,6 +3,7 @@ import { extractTextFromImage, extractFromText, extractFromImage } from '@/lib/o
 import { OCR_TRANSCRIPTION_PROMPT, PHOTO_EXTRACTION_PROMPT, EXTRACTION_SYSTEM_PROMPT } from '@/lib/ai/prompts'
 import { parseGeminiResponse } from '@/lib/ai/parser'
 import { PLANS, PHOTO_LIMITS, OCR_MIN_TEXT_LENGTH } from '@/lib/constants'
+import { consumeRateLimit } from '@/lib/rate-limit'
 import type { PendingMovement } from '@/types'
 
 // Vercel Pro permite hasta 60s — el pipeline OCR+parse puede tardar ~25s en imágenes complejas
@@ -16,6 +17,16 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return Response.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
+    // 1.25. Rate limit (bucket "entry_photo", 30/hr). Foto es más cara que
+    // texto (GPT-4o vision) — límite más estricto.
+    const rl = await consumeRateLimit(supabase, user.id, 'entry_photo')
+    if (!rl.ok) {
+      return Response.json(
+        { error: rl.message, retryAfterSeconds: rl.retryAfterSeconds },
+        { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } }
+      )
     }
 
     // 1.5. Early Content-Length guard — rechazamos payloads enormes ANTES de

@@ -33,27 +33,34 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Rutas públicas que no requieren sesión
-  const isPublicRoute =
-    pathname === '/' ||
-    pathname.startsWith('/login') ||
-    pathname.startsWith('/reset-password') ||
-    pathname.startsWith('/auth/') ||
-    pathname.startsWith('/api/webhooks') ||
-    pathname === '/og' ||
-    pathname === '/og.png' ||
-    pathname === '/robots.txt' ||
-    pathname === '/sitemap.xml'
+  // Rutas públicas que no requieren sesión.
+  // Exact match para páginas fijas; los prefixes son segment-anchored
+  // (terminan en `/`) para que `/login-admin` o `/logins` no cuenten como públicas.
+  const PUBLIC_EXACT = new Set(['/', '/login', '/reset-password', '/og', '/og.png', '/robots.txt', '/sitemap.xml'])
+  const PUBLIC_PREFIXES = ['/login/', '/reset-password/', '/auth/', '/api/webhooks/']
 
-  // Usuario no autenticado en ruta protegida → redirige a /login
+  const isPublicRoute =
+    PUBLIC_EXACT.has(pathname) ||
+    PUBLIC_PREFIXES.some(prefix => pathname.startsWith(prefix))
+
+  // Usuario no autenticado
   if (!user && !isPublicRoute) {
+    // /api/* recibe 401 JSON en lugar de redirect a /login — un API client
+    // no espera HTML de una página de login. Además evita filtración del
+    // "chain de redirect" a endpoints que existen pero están protegidos.
+    if (pathname.startsWith('/api/')) {
+      return new NextResponse(
+        JSON.stringify({ error: 'No autenticado' }),
+        { status: 401, headers: { 'content-type': 'application/json' } }
+      )
+    }
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  // Usuario autenticado en página de login → redirige a /dashboard
-  if (user && (pathname === '/' || pathname.startsWith('/login'))) {
+  // Usuario autenticado en página de landing/login → redirige a /dashboard
+  if (user && (pathname === '/' || pathname === '/login' || pathname.startsWith('/login/'))) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)

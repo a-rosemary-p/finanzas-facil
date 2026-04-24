@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
-import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { formatCurrency } from '@/lib/utils'
 import { MOVEMENT_TYPE_CONFIG } from '@/lib/constants'
@@ -44,33 +43,31 @@ export default function ReportesPage() {
   const [month, setMonth] = useState(getMonthStr(new Date()))
   const [movements, setMovements] = useState<Movement[]>([])
   const [loading, setLoading] = useState(false)
+  // `truncated` = el server recortó el rango por el cap de 30 días del plan Free
+  const [truncated, setTruncated] = useState(false)
 
+  // Ahora vamos por una ruta server-side que aplica el cap de 30 días del
+  // plan Free. Antes el query iba directo a Supabase desde el browser y
+  // permitía ver historial completo aunque el dashboard limitaba a 30 días.
   const fetchMovements = useCallback(async (m: string) => {
     setLoading(true)
-    const [y, mo] = m.split('-').map(Number)
-    const start = `${y}-${String(mo).padStart(2, '0')}-01`
-    const lastDay = new Date(y, mo, 0).getDate()
-    const end = `${y}-${String(mo).padStart(2, '0')}-${lastDay}`
-
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('movements')
-      .select('id, type, amount, description, category, movement_date, is_investment')
-      .gte('movement_date', start)
-      .lte('movement_date', end)
-      .order('movement_date', { ascending: false })
-      .order('id', { ascending: false })
-
-    setMovements((data ?? []).map(r => ({
-      id: r['id'] as string,
-      type: r['type'] as Movement['type'],
-      amount: Number(r['amount']),
-      description: r['description'] as string,
-      category: r['category'] as Movement['category'],
-      movementDate: r['movement_date'] as string,
-      isInvestment: (r['is_investment'] as boolean) ?? false,
-    })))
-    setLoading(false)
+    try {
+      const res = await fetch(`/api/reports/movements?month=${encodeURIComponent(m)}`)
+      if (!res.ok) {
+        setMovements([])
+        setTruncated(false)
+        return
+      }
+      const json = await res.json() as { movements: Movement[]; truncated: boolean }
+      setMovements(json.movements ?? [])
+      setTruncated(Boolean(json.truncated))
+    } catch (err) {
+      console.error('[reportes] fetch error', err)
+      setMovements([])
+      setTruncated(false)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => {
@@ -206,6 +203,23 @@ export default function ReportesPage() {
           <p className="text-sm text-center py-8" style={{ color: 'var(--brand-mid)' }}>Cargando movimientos...</p>
         ) : (
           <>
+            {/* Banner cuando Free tiene el rango recortado por el cap de 30 días */}
+            {truncated && (
+              <div
+                className="rounded-xl px-4 py-3 flex items-start gap-3"
+                style={{ background: 'var(--pending-bg)', border: '1px solid var(--pending-border)' }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--pending-text)', flexShrink: 0, marginTop: '2px' }}>
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <div className="text-xs leading-relaxed" style={{ color: 'var(--pending-text)' }}>
+                  <strong>Plan Free:</strong> el reporte de este mes está recortado a los últimos 30 días. Actualiza a Pro para ver el mes completo.
+                </div>
+              </div>
+            )}
+
             {/* Summary */}
             <div className="grid grid-cols-3 gap-3">
               {[
