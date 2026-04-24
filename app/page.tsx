@@ -684,6 +684,9 @@ export default function HomePage() {
                   maxWidth: '391px',
                   height: 'auto',
                   display: 'block',
+                  // Pinta el fondo del <video> con el verde del hero para tapar
+                  // cualquier sub-pixel gap que se asome al hacer scroll.
+                  backgroundColor: '#5F8A6C',
                 }}
               >
                 <source src="/iphone-hero.mp4" type="video/mp4" />
