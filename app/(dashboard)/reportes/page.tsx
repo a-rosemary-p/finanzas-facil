@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import { useAuth } from '@/hooks/use-auth'
 import { formatCurrency } from '@/lib/utils'
 import { MOVEMENT_TYPE_CONFIG } from '@/lib/constants'
+import { CompareView } from '@/components/reports/compare-view'
 import {
   type PeriodMode, type PeriodSelection,
   todayPeriod, prevPeriod, nextPeriod, periodRange,
@@ -234,7 +235,9 @@ export default function ReportesPage() {
           })}
         </div>
 
-        {/* ── Selector de período (compartido) ── */}
+        {/* ── Selector de período (compartido por Vista 1 y 3; Vista 2 tiene su propio
+              selector interno porque comparа "ahora" contra el período anterior) ── */}
+        {tab !== 'comparar' && (
         <div className="flex flex-col gap-2">
           {/* Selector adaptado al modo activo */}
           <div
@@ -322,6 +325,7 @@ export default function ReportesPage() {
             </div>
           )}
         </div>
+        )}
 
         {/* ── Banner para mes bloqueado por cap (defense in depth) ── */}
         {blocked && plan === 'free' && (
@@ -482,24 +486,8 @@ export default function ReportesPage() {
           </>
         )}
 
-        {/* ── Vista 2 — ¿Cómo voy? (placeholder Fase 3) ── */}
-        {tab === 'comparar' && (
-          <div className="bg-white rounded-2xl shadow-sm p-6 text-center flex flex-col gap-3 items-center"
-            style={{ border: '1px solid var(--brand-border)' }}>
-            <div className="w-12 h-12 rounded-full flex items-center justify-center"
-              style={{ background: 'var(--brand-chip)', color: 'var(--brand)' }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-bold text-sm" style={{ color: 'var(--brand)' }}>Próximamente</p>
-              <p className="text-xs mt-1" style={{ color: 'var(--brand-mid)' }}>
-                Compara tu desempeño contra períodos anteriores.
-              </p>
-            </div>
-          </div>
-        )}
+        {/* ── Vista 2 — ¿Cómo voy? ── */}
+        {tab === 'comparar' && <CompareView plan={plan} />}
 
         {/* ── Vista 3 — Tendencia (placeholder Fase 4) ── */}
         {tab === 'tendencia' && (
