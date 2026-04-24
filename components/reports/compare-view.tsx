@@ -135,35 +135,29 @@ interface CategoryDeltaRowProps {
   currentAmount: number
   previousAmount: number
   kind: 'ingreso' | 'gasto'
+  isLast?: boolean
 }
 
-function CategoryDeltaRow({ category, currentAmount, previousAmount, kind }: CategoryDeltaRowProps) {
+function CategoryDeltaRow({ category, currentAmount, previousAmount, kind, isLast }: CategoryDeltaRowProps) {
   const delta = currentAmount - previousAmount
   const isUp = delta > 0
-  const isDown = delta < 0
   const higherIsBetter = kind === 'ingreso'
-  const isImproved = higherIsBetter ? isUp : isDown
+  const isImproved = higherIsBetter ? isUp : !isUp && delta !== 0
   const isSame = delta === 0
   const color = isSame ? 'var(--brand-mid)' : isImproved ? 'var(--income-text)' : 'var(--expense-text)'
 
   return (
-    <div className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid var(--brand-border)' }}>
-      <div className="flex items-center gap-2 min-w-0">
-        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
-          style={{
-            background: kind === 'ingreso' ? 'var(--income-bg)' : 'var(--expense-bg)',
-            color: kind === 'ingreso' ? 'var(--income-text)' : 'var(--expense-text)',
-          }}>
-          {kind === 'ingreso' ? 'Ing' : 'Gas'}
-        </span>
-        <span className="text-sm truncate" style={{ color: 'var(--brand)' }}>{category}</span>
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <span className="text-xs" style={{ color: 'var(--brand-mid)' }}>
+    <div className="flex items-center justify-between py-2.5"
+      style={{ borderBottom: isLast ? 'none' : '1px solid var(--brand-border)' }}>
+      <span className="text-sm truncate min-w-0 flex-1 pr-2" style={{ color: 'var(--brand)' }}>
+        {category}
+      </span>
+      <div className="flex items-center gap-2.5 shrink-0">
+        <span className="text-xs tabular-nums" style={{ color: 'var(--brand-mid)' }}>
           {formatCurrency(currentAmount)}
         </span>
         {!isSame && (
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold" style={{ color }}>
+          <span className="inline-flex items-center gap-0.5 text-[11px] font-bold tabular-nums" style={{ color }}>
             {isUp ? '▲' : '▼'} {formatCurrency(Math.abs(delta))}
           </span>
         )}
@@ -243,53 +237,104 @@ export function CompareView({ plan }: CompareViewProps) {
   )
 }
 
-// ── Desglose por categoría ────────────────────────────────────────────────
+// ── Desglose por categoría — agrupado en sección Ingresos / Gastos ────────
 function CategoryBreakdown({
   current, previous,
 }: {
   current: Record<string, { income: number; expenses: number }>
   previous: Record<string, { income: number; expenses: number }>
 }) {
-  // Combina todas las categorías de ambos períodos
-  const all = new Set([...Object.keys(current), ...Object.keys(previous)])
-  const rows: Array<{ category: string; kind: 'ingreso' | 'gasto'; cur: number; prev: number; delta: number }> = []
+  type Row = { category: string; cur: number; prev: number; delta: number }
+  const allCats = new Set([...Object.keys(current), ...Object.keys(previous)])
+  const incomeRows: Row[] = []
+  const expenseRows: Row[] = []
 
-  for (const cat of all) {
+  for (const cat of allCats) {
     const c = current[cat] ?? { income: 0, expenses: 0 }
     const p = previous[cat] ?? { income: 0, expenses: 0 }
     if (c.income > 0 || p.income > 0) {
-      rows.push({ category: cat, kind: 'ingreso', cur: c.income, prev: p.income, delta: c.income - p.income })
+      incomeRows.push({ category: cat, cur: c.income, prev: p.income, delta: c.income - p.income })
     }
     if (c.expenses > 0 || p.expenses > 0) {
-      rows.push({ category: cat, kind: 'gasto', cur: c.expenses, prev: p.expenses, delta: c.expenses - p.expenses })
+      expenseRows.push({ category: cat, cur: c.expenses, prev: p.expenses, delta: c.expenses - p.expenses })
     }
   }
 
-  // Sort por mayor variación absoluta (más relevante primero)
-  rows.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+  // Dentro de cada sección, ordena por mayor variación absoluta
+  incomeRows.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+  expenseRows.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
 
-  if (rows.length === 0) {
+  if (incomeRows.length === 0 && expenseRows.length === 0) {
     return (
       <div className="bg-white rounded-xl p-4 text-center" style={{ border: '1px solid var(--brand-border)' }}>
-        <p className="text-xs" style={{ color: 'var(--brand-mid)' }}>Sin movimientos en ninguno de los dos períodos.</p>
+        <p className="text-xs" style={{ color: 'var(--brand-mid)' }}>
+          Sin movimientos en ninguno de los dos períodos.
+        </p>
       </div>
     )
   }
 
   return (
-    <div className="bg-white rounded-xl px-4 py-2 shadow-sm" style={{ border: '1px solid var(--brand-border)' }}>
-      <h3 className="text-[10px] font-bold uppercase tracking-wider py-2" style={{ color: 'var(--brand-mid)' }}>
+    <div className="bg-white rounded-xl shadow-sm" style={{ border: '1px solid var(--brand-border)' }}>
+      <h3 className="text-[10px] font-bold uppercase tracking-wider px-4 pt-3 pb-2"
+        style={{ color: 'var(--brand-mid)' }}>
         Desglose por categoría
       </h3>
-      {rows.map((r, i) => (
-        <CategoryDeltaRow
-          key={`${r.kind}-${r.category}-${i}`}
-          category={r.category}
-          currentAmount={r.cur}
-          previousAmount={r.prev}
-          kind={r.kind}
+
+      {incomeRows.length > 0 && (
+        <CategorySection
+          label="Ingresos"
+          color="var(--income-text)"
+          bg="var(--income-bg)"
+          rows={incomeRows}
+          kind="ingreso"
         />
-      ))}
+      )}
+
+      {expenseRows.length > 0 && (
+        <CategorySection
+          label="Gastos"
+          color="var(--expense-text)"
+          bg="var(--expense-bg)"
+          rows={expenseRows}
+          kind="gasto"
+          showDivider={incomeRows.length > 0}
+        />
+      )}
+    </div>
+  )
+}
+
+function CategorySection({
+  label, color, bg, rows, kind, showDivider,
+}: {
+  label: string
+  color: string
+  bg: string
+  rows: Array<{ category: string; cur: number; prev: number; delta: number }>
+  kind: 'ingreso' | 'gasto'
+  showDivider?: boolean
+}) {
+  return (
+    <div style={{ borderTop: showDivider ? '1px solid var(--brand-border)' : 'none' }}>
+      <div className="flex items-center gap-2 px-4 py-2"
+        style={{ background: bg }}>
+        <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color }}>
+          {label}
+        </span>
+      </div>
+      <div className="px-4">
+        {rows.map((r, i) => (
+          <CategoryDeltaRow
+            key={`${kind}-${r.category}`}
+            category={r.category}
+            currentAmount={r.cur}
+            previousAmount={r.prev}
+            kind={kind}
+            isLast={i === rows.length - 1}
+          />
+        ))}
+      </div>
     </div>
   )
 }
