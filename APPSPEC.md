@@ -2,19 +2,23 @@
 
 > **La spec viva está fuera del repo**, en la carpeta del proyecto.
 >
-> Versión actual: **v0.22** (abril 22, 2026)
-> Archivo: `C:\Users\arome\Documents - Local\App Finanzas Pymes\Fiza_APP_SPEC v0.22. 260422.md`
+> Versión actual: **v0.24** (abril 24, 2026)
+> Archivo: `C:\Users\arome\Documents - Local\App Finanzas Pymes\Fiza_APP_SPEC v0.24. 260424.md`
 >
-> Contiene: rutas, API routes, schema de DB, hooks, componentes, tipos, constantes,
-> flujos, enforcement Free vs Pro, y changelog vs v0.21.
+> Contiene: rutas, API routes, schema de DB (incluye migration 007 security hardening), hooks,
+> componentes, tipos, constantes, flujos, enforcement Free vs Pro, headers de seguridad,
+> y changelog v0.23 → v0.24.
 
 ---
 
 ## Reglas operativas (copia rápida para agentes)
 
-- **Next.js 16.2.4** tiene breaking changes. Ver `AGENTS.md` — leer `node_modules/next/dist/docs/` antes de escribir código.
+- **Next.js 16.2.4** tiene breaking changes. Ver `AGENTS.md` — leer `node_modules/next/dist/docs/` antes de escribir código. El archivo raíz es `proxy.ts`, no `middleware.ts`.
 - **Sin emojis en la UI** — usar íconos SVG inline.
 - **Tipos** centralizados en `types/index.ts`. **Constantes** en `lib/constants.ts`. No hard-codear inline.
-- **Enforcement Free vs Pro va server-side.** Si una restricción depende del plan, NO usar el Supabase client directo desde el browser — usar una API route.
+- **Enforcement Free vs Pro va server-side.** Si una restricción depende del plan, NO usar el Supabase client directo desde el browser — usar una API route. La DB también tiene un trigger `BEFORE INSERT` en `movements` que enforza el límite Free de último recurso.
+- **`profiles` tiene column-level GRANT UPDATE.** Si agregas un campo nuevo editable por el usuario, actualiza la GRANT de migration 007 (o una nueva migration) — de lo contrario los UPDATE del cliente fallan silenciosamente en ese campo.
 - **`@react-pdf/renderer` solo client-side**: cualquier import debe ir detrás de `dynamic({ ssr: false })`.
-- **Webhook de Stripe** usa `SUPABASE_SERVICE_ROLE_KEY` (admin client) — no usar ese cliente en otra parte.
+- **Webhook de Stripe** usa `SUPABASE_SERVICE_ROLE_KEY` (admin client) — no usar ese cliente en otra parte, salvo `/api/city-stats`. Cada evento entra a la tabla `stripe_events` para idempotencia; si haces otro webhook nuevo, replicar ese patrón.
+- **Nunca construir URLs desde `req.url` / `Host`** para redirects cross-origin. Usar `NEXT_PUBLIC_APP_URL` u otra env confiable.
+- **CSP activo**: agregar un host nuevo al `next.config.ts` si integras algo externo (analytics, captcha, etc.). Sin eso, el browser bloqueará las requests.
