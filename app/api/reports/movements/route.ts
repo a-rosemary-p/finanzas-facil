@@ -1,21 +1,23 @@
 /**
  * app/api/reports/movements/route.ts
  *
- * Devuelve los movimientos de un mes específico para la pantalla /reportes.
+ * Devuelve los movimientos en un rango de fechas para la pantalla /reportes.
+ * Soporta dos formas de pedir:
  *
- * Antes, /reportes hacía el query directo al Supabase client desde el browser —
- * lo cual permitía a un usuario Free bajar reportes de meses de hace años,
- * saltándose el cap de 30 días del plan Free que sí se enforça en /dashboard
- * vía /api/movements.
+ *   GET ?month=YYYY-MM            → devuelve el mes calendario (back-compat)
+ *   GET ?from=YYYY-MM-DD&to=...   → devuelve cualquier rango (Pro)
  *
- * Esta ruta aplica el mismo cap server-side: para plan Free, el rango efectivo
- * es la intersección del mes pedido con los últimos 30 días. Pro ve el mes
- * completo siempre.
+ * Para Free, el rango efectivo está capped a "mes actual + 2 anteriores"
+ * (PLANS.FREE.historyMonths = 3). Si Free pide algo fuera de ese cap o usa
+ * from+to → 403 PRO_REQUIRED. Pro puede pedir cualquier rango razonable.
  */
 
 import { createClient } from '@/lib/supabase/server'
 import { PLANS } from '@/lib/constants'
 import type { Movement } from '@/types'
+
+const YMD = /^\d{4}-\d{2}-\d{2}$/
+const YM = /^\d{4}-\d{2}$/
 
 export async function GET(request: Request) {
   const supabase = await createClient()
@@ -30,46 +32,73 @@ export async function GET(request: Request) {
   const plan = (profile?.plan ?? 'free') as 'free' | 'pro'
 
   const { searchParams } = new URL(request.url)
-  const month = searchParams.get('month') // 'YYYY-MM'
-  if (!month || !/^\d{4}-\d{2}$/.test(month)) {
-    return Response.json({ error: 'Mes inválido (usa YYYY-MM)' }, { status: 400 })
-  }
+  const month = searchParams.get('month')
+  const from  = searchParams.get('from')
+  const to    = searchParams.get('to')
 
-  // Rango del mes solicitado
-  const [y, m] = month.split('-').map(Number)
-  const lastDay = new Date(y, m, 0).getDate()
-  const monthStart = `${y}-${String(m).padStart(2, '0')}-01`
-  const monthEnd   = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+  let rangeStart: string
+  let rangeEnd: string
 
-  // Cap Free: meses calendario completos. El usuario puede ver mes actual + 2
-  // anteriores. Cualquier mes más antiguo está bloqueado por completo (no se
-  // recorta a fracción — la spec habla en términos de meses, no días).
-  let blocked = false
-  if (plan === 'free') {
-    const today = new Date()
-    // Primer día del "mes más viejo permitido" (mes actual menos 2)
-    const earliest = new Date(today.getFullYear(), today.getMonth() - (PLANS.FREE.historyMonths - 1), 1)
-    const earliestKey = earliest.getFullYear() * 12 + earliest.getMonth()
-    const requestedKey = y * 12 + (m - 1)
-
-    if (requestedKey < earliestKey) {
-      blocked = true
-      return Response.json({
-        movements: [],
-        enforcedRange: { start: monthStart, end: monthEnd },
-        truncated: true,   // mantenemos el flag para compat de UI ya existente
-        blocked,           // distinguible: "todo el mes está bloqueado" vs "recorte parcial"
-      })
+  // ── Path A: from + to (Pro) ─────────────────────────────────────────────
+  if (from && to) {
+    if (plan === 'free') {
+      return Response.json(
+        { error: 'Rangos personalizados son una función Pro', code: 'PRO_REQUIRED' },
+        { status: 403 }
+      )
     }
+    if (!YMD.test(from) || !YMD.test(to)) {
+      return Response.json({ error: 'from/to inválidos (YYYY-MM-DD)' }, { status: 400 })
+    }
+    if (from > to) {
+      return Response.json({ error: 'from debe ser ≤ to' }, { status: 400 })
+    }
+    // Sanity cap: máximo 13 meses para evitar queries gigantes accidentales
+    const span = Date.parse(to + 'T12:00:00') - Date.parse(from + 'T12:00:00')
+    if (span > 1000 * 60 * 60 * 24 * 400) {
+      return Response.json({ error: 'Rango demasiado amplio (máx ~13 meses)' }, { status: 400 })
+    }
+    rangeStart = from
+    rangeEnd = to
   }
-  const effectiveStart = monthStart
-  const truncated = false
+  // ── Path B: month (back-compat, Free + Pro) ──────────────────────────────
+  else if (month) {
+    if (!YM.test(month)) {
+      return Response.json({ error: 'Mes inválido (YYYY-MM)' }, { status: 400 })
+    }
+    const [y, m] = month.split('-').map(Number)
+    const lastDay = new Date(y, m, 0).getDate()
+    const monthStart = `${y}-${String(m).padStart(2, '0')}-01`
+    const monthEnd   = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+    // Cap Free: mes actual + 2 anteriores
+    if (plan === 'free') {
+      const today = new Date()
+      const earliest = new Date(today.getFullYear(), today.getMonth() - (PLANS.FREE.historyMonths - 1), 1)
+      const earliestKey  = earliest.getFullYear() * 12 + earliest.getMonth()
+      const requestedKey = y * 12 + (m - 1)
+      if (requestedKey < earliestKey) {
+        return Response.json({
+          movements: [],
+          enforcedRange: { start: monthStart, end: monthEnd },
+          truncated: true,
+          blocked: true,
+        })
+      }
+    }
+
+    rangeStart = monthStart
+    rangeEnd = monthEnd
+  }
+  else {
+    return Response.json({ error: 'Falta month o from+to' }, { status: 400 })
+  }
 
   const { data, error } = await supabase
     .from('movements')
     .select('id, type, amount, description, category, movement_date, is_investment')
-    .gte('movement_date', effectiveStart)
-    .lte('movement_date', monthEnd)
+    .gte('movement_date', rangeStart)
+    .lte('movement_date', rangeEnd)
     .eq('user_id', user.id)  // defense-in-depth sobre RLS
     .order('movement_date', { ascending: false })
     .order('id', { ascending: false })
@@ -91,8 +120,8 @@ export async function GET(request: Request) {
 
   return Response.json({
     movements,
-    enforcedRange: { start: effectiveStart, end: monthEnd },
-    truncated,
+    enforcedRange: { start: rangeStart, end: rangeEnd },
+    truncated: false,
     blocked: false,
   })
 }

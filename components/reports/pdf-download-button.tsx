@@ -18,7 +18,10 @@ import { MonthlyReportDoc } from './monthly-report'
 import type { Movement } from '@/types'
 
 interface Props {
-  month: string
+  /** Slug seguro para nombre de archivo (ej: "2026-04", "2026-Q2", "2026") */
+  periodSlug: string
+  /** Etiqueta legible para mostrar en el botón y como título del PDF */
+  periodLabel: string
   movements: Movement[]
   displayName: string
   giro?: string
@@ -30,12 +33,6 @@ type State =
   | { kind: 'error'; msg: string }
 
 const PDF_TIMEOUT_MS = 20_000
-
-function monthLabel(month: string): string {
-  const [y, m] = month.split('-').map(Number)
-  const raw = new Date(y, m - 1, 1).toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })
-  return raw.charAt(0).toUpperCase() + raw.slice(1)
-}
 
 function withTimeout<T>(p: Promise<T>, ms: number, tag: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -63,7 +60,7 @@ function triggerDownload(blob: Blob, fileName: string) {
   }, 200)
 }
 
-export default function PdfDownloadButton({ month, movements, displayName, giro }: Props) {
+export default function PdfDownloadButton({ periodSlug, periodLabel, movements, displayName, giro }: Props) {
   const [state, setState] = useState<State>({ kind: 'idle' })
   // Cada click obtiene un id; resultados de clicks viejos se descartan
   const reqIdRef = useRef(0)
@@ -74,13 +71,13 @@ export default function PdfDownloadButton({ month, movements, displayName, giro 
 
     try {
       const logoUrl = window.location.origin + '/logo-green.png'
-      const fileName = `fiza-reporte-${month}.pdf`
+      const fileName = `fiza-reporte-${periodSlug}.pdf`
 
       // ── 1. Generar el PDF blob ─────────────────────────────────────────
       const blob = await withTimeout(
         pdf(
           <MonthlyReportDoc
-            month={month}
+            periodLabel={periodLabel}
             movements={movements}
             displayName={displayName}
             giro={giro}
@@ -119,7 +116,7 @@ export default function PdfDownloadButton({ month, movements, displayName, giro 
         try {
           await navigator.share({
             files: [file],
-            title: `Reporte ${monthLabel(month)} · Fiza`,
+            title: `Reporte ${periodLabel} · Fiza`,
           })
           if (myId !== reqIdRef.current) return
           // Share OK
@@ -183,7 +180,7 @@ export default function PdfDownloadButton({ month, movements, displayName, giro 
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            {`Descargar PDF · ${monthLabel(month)}`}
+            {`Descargar PDF · ${periodLabel}`}
           </>
         )}
       </button>

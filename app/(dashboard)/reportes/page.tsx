@@ -4,7 +4,13 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import { useAuth } from '@/hooks/use-auth'
 import { formatCurrency } from '@/lib/utils'
-import { MOVEMENT_TYPE_CONFIG, PLANS } from '@/lib/constants'
+import { MOVEMENT_TYPE_CONFIG } from '@/lib/constants'
+import {
+  type PeriodMode, type PeriodSelection,
+  todayPeriod, prevPeriod, nextPeriod, periodRange,
+  periodLabel, periodSlug,
+  isAccessibleForFree, isFuturePeriod,
+} from '@/lib/periods'
 import type { Movement } from '@/types'
 
 // react-pdf solo client-side
@@ -20,55 +26,54 @@ const PdfDownloadButton = dynamic(
 
 type Tab = 'periodo' | 'comparar' | 'tendencia'
 
-function getMonthStr(d: Date): string { return d.toISOString().slice(0, 7) }
-
-function monthLabel(month: string): string {
-  const [y, m] = month.split('-').map(Number)
-  const raw = new Date(y, m - 1, 1).toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })
-  return raw.charAt(0).toUpperCase() + raw.slice(1)
-}
-
-function prevMonth(month: string): string {
-  const [y, m] = month.split('-').map(Number)
-  return getMonthStr(new Date(y, m - 2, 1))
-}
-function nextMonth(month: string): string {
-  const [y, m] = month.split('-').map(Number)
-  return getMonthStr(new Date(y, m, 1))
-}
-
-// Mes más viejo permitido para Free: mes actual menos (historyMonths - 1).
-function earliestAllowedMonth(plan: 'free' | 'pro'): string | null {
-  if (plan === 'pro') return null
-  const today = new Date()
-  const earliest = new Date(today.getFullYear(), today.getMonth() - (PLANS.FREE.historyMonths - 1), 1)
-  return getMonthStr(earliest)
+const PERIOD_MODE_LABELS: Record<PeriodMode, string> = {
+  week: 'Semana',
+  month: 'Mes',
+  quarter: 'Trimestre',
+  year: 'Año',
 }
 
 export default function ReportesPage() {
   const { profile, loading: authLoading } = useAuth()
+  const plan = profile?.plan ?? 'free'
+
   const [tab, setTab] = useState<Tab>('periodo')
-  const [month, setMonth] = useState(getMonthStr(new Date()))
+  // Free siempre arranca en mode='month'; Pro también default mes (más útil).
+  const [period, setPeriod] = useState<PeriodSelection>(() => todayPeriod('month'))
   const [movements, setMovements] = useState<Movement[]>([])
   const [loading, setLoading] = useState(false)
   const [blocked, setBlocked] = useState(false)
 
-  const plan = profile?.plan ?? 'free'
-  const earliestMonth = useMemo(() => earliestAllowedMonth(plan), [plan])
-  const currentMonthStr = getMonthStr(new Date())
-  const atEarliest = earliestMonth !== null && month <= earliestMonth
-  const atCurrent = month >= currentMonthStr
+  // ── Datos derivados del período ─────────────────────────────────────────
+  const range = useMemo(() => periodRange(period), [period])
+  const label = useMemo(() => periodLabel(period), [period])
+  const slug  = useMemo(() => periodSlug(period), [period])
 
-  const fetchMovements = useCallback(async (m: string) => {
+  // Desactivar arrows
+  const atFuture = useMemo(() => isFuturePeriod(nextPeriod(period)), [period])
+  const atFreeEarliest = useMemo(
+    () => plan === 'free' && period.mode === 'month' && !isAccessibleForFree(prevPeriod(period)),
+    [plan, period]
+  )
+
+  // ── Fetch ───────────────────────────────────────────────────────────────
+  const fetchPeriod = useCallback(async (p: PeriodSelection) => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/reports/movements?month=${encodeURIComponent(m)}`)
+      const r = periodRange(p)
+      // Free + month: usar ?month= (back-compat). Pro o non-month: ?from=&to=.
+      const query = (plan === 'free' && p.mode === 'month')
+        ? `month=${r.start.slice(0, 7)}`
+        : `from=${r.start}&to=${r.end}`
+      const res = await fetch(`/api/reports/movements?${query}`)
       if (!res.ok) {
         setMovements([])
         setBlocked(false)
         return
       }
-      const json = await res.json() as { movements: Movement[]; truncated?: boolean; blocked?: boolean }
+      const json = await res.json() as {
+        movements: Movement[]; truncated?: boolean; blocked?: boolean
+      }
       setMovements(json.movements ?? [])
       setBlocked(Boolean(json.blocked ?? json.truncated))
     } catch (err) {
@@ -78,19 +83,33 @@ export default function ReportesPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [plan])
 
   useEffect(() => {
-    if (profile) fetchMovements(month)
+    if (profile) fetchPeriod(period)
   }, [profile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function changeMonth(target: string) {
-    // Free: no permitir ir antes del cap; el server también lo enforça pero
-    // el cliente da feedback inmediato.
-    if (earliestMonth && target < earliestMonth) return
-    if (target > currentMonthStr) return
-    setMonth(target)
-    fetchMovements(target)
+  function changePeriod(target: PeriodSelection) {
+    // Guards client-side (defense in depth; el server también valida)
+    if (isFuturePeriod(target)) return
+    if (plan === 'free' && !isAccessibleForFree(target)) return
+    setPeriod(target)
+    fetchPeriod(target)
+  }
+
+  function changeMode(mode: PeriodMode) {
+    if (plan === 'free' && mode !== 'month') return
+    // Conservar el anchor actual; periodRange recalcula con el modo nuevo.
+    const next: PeriodSelection = { mode, anchor: period.anchor }
+    // Si el mode nuevo cae en futuro (ej: el "trimestre" del anchor está en futuro),
+    // ajustamos a today.
+    if (isFuturePeriod(next)) {
+      setPeriod(todayPeriod(mode))
+      fetchPeriod(todayPeriod(mode))
+    } else {
+      setPeriod(next)
+      fetchPeriod(next)
+    }
   }
 
   // ── Métricas (calculadas client-side, excluyen inversiones) ─────────────
@@ -184,7 +203,6 @@ export default function ReportesPage() {
           className="flex gap-1 p-1 rounded-xl"
           style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}
           role="tablist"
-          aria-label="Vistas de reportes"
         >
           {([
             { id: 'periodo',   label: 'Este período' },
@@ -194,9 +212,7 @@ export default function ReportesPage() {
             const active = tab === t.id
             return (
               <button
-                key={t.id}
-                role="tab"
-                aria-selected={active}
+                key={t.id} role="tab" aria-selected={active}
                 onClick={() => setTab(t.id)}
                 className="flex-1 text-xs font-bold rounded-lg min-h-[36px] px-2 transition-colors"
                 style={{
@@ -210,36 +226,37 @@ export default function ReportesPage() {
           })}
         </div>
 
-        {/* ── Selector de período (compartido entre vistas) ── */}
-        <div className="flex flex-col gap-1.5">
+        {/* ── Selector de período (compartido) ── */}
+        <div className="flex flex-col gap-2">
+          {/* Selector adaptado al modo activo */}
           <div
             className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center justify-between"
             style={{ border: '1px solid var(--brand-border)' }}
           >
             <button
               type="button"
-              onClick={() => changeMonth(prevMonth(month))}
-              disabled={atEarliest}
+              onClick={() => changePeriod(prevPeriod(period))}
+              disabled={atFreeEarliest}
               className="p-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center disabled:opacity-30"
               style={{ color: 'var(--brand-mid)', background: 'var(--brand-chip)' }}
-              aria-label="Mes anterior"
+              aria-label="Período anterior"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="15 18 9 12 15 6" />
               </svg>
             </button>
 
-            <span className="font-bold text-base" style={{ color: 'var(--brand)' }}>
-              {monthLabel(month)}
+            <span className="font-bold text-sm sm:text-base text-center px-2" style={{ color: 'var(--brand)' }}>
+              {label}
             </span>
 
             <button
               type="button"
-              onClick={() => changeMonth(nextMonth(month))}
-              disabled={atCurrent}
+              onClick={() => changePeriod(nextPeriod(period))}
+              disabled={atFuture}
               className="p-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center disabled:opacity-30"
               style={{ color: 'var(--brand-mid)', background: 'var(--brand-chip)' }}
-              aria-label="Mes siguiente"
+              aria-label="Período siguiente"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="9 18 15 12 9 6" />
@@ -247,9 +264,32 @@ export default function ReportesPage() {
             </button>
           </div>
 
-          {/* Hint visible (no tooltip — los tooltips no se ven en mobile/touch).
-              Aparece solo cuando un Free está parado en el mes más viejo permitido. */}
-          {atEarliest && plan === 'free' && (
+          {/* Pills de modo de período (solo Pro) */}
+          {plan === 'pro' && (
+            <div className="flex gap-1 p-1 rounded-xl"
+              style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}
+            >
+              {(Object.keys(PERIOD_MODE_LABELS) as PeriodMode[]).map(mode => {
+                const active = period.mode === mode
+                return (
+                  <button
+                    key={mode}
+                    onClick={() => changeMode(mode)}
+                    className="flex-1 text-[11px] font-semibold rounded-lg min-h-[32px] px-1.5 transition-colors"
+                    style={{
+                      background: active ? 'var(--brand)' : 'transparent',
+                      color: active ? '#fff' : 'var(--brand-mid)',
+                    }}
+                  >
+                    {PERIOD_MODE_LABELS[mode]}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Hint visible para Free en el mes más viejo */}
+          {atFreeEarliest && plan === 'free' && (
             <div className="flex items-center justify-center gap-1.5 text-[11px] px-2"
               style={{ color: 'var(--brand-mid)' }}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -264,13 +304,10 @@ export default function ReportesPage() {
           )}
         </div>
 
-        {/* ── Banner cuando un Free pidió un mes fuera del cap (defense-in-depth;
-              el botón ya está disabled, pero por si llega via deeplink/etc) ── */}
+        {/* ── Banner para mes bloqueado por cap (defense in depth) ── */}
         {blocked && plan === 'free' && (
-          <div
-            className="rounded-xl px-4 py-3 flex items-start gap-3"
-            style={{ background: 'var(--pending-bg)', border: '1px solid var(--pending-border)' }}
-          >
+          <div className="rounded-xl px-4 py-3 flex items-start gap-3"
+            style={{ background: 'var(--pending-bg)', border: '1px solid var(--pending-border)' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--pending-text)', flexShrink: 0, marginTop: '2px' }}>
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
@@ -310,21 +347,20 @@ export default function ReportesPage() {
                 {movements.length === 0 ? (
                   <div className="bg-white rounded-xl shadow-sm p-6 text-center" style={{ border: '1px solid var(--brand-border)' }}>
                     <p className="text-sm" style={{ color: 'var(--brand-mid)' }}>
-                      {blocked ? 'Este mes no está disponible en tu plan.' : 'Sin movimientos en este mes.'}
+                      {blocked ? 'Este período no está disponible en tu plan.' : 'Sin movimientos en este período.'}
                     </p>
                   </div>
                 ) : profile ? (
                   <div className="flex flex-col gap-2">
                     <PdfDownloadButton
-                      month={month}
+                      periodSlug={slug}
+                      periodLabel={label}
                       movements={movements}
                       displayName={profile.displayName}
                       giro={profile.giro}
                     />
-                    {/* Excel: visible siempre, deshabilitado para Free con tooltip */}
                     <button
-                      type="button"
-                      disabled
+                      type="button" disabled
                       title={plan === 'pro' ? 'Disponible en Fase 5' : 'Disponible en Pro'}
                       className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 min-h-[48px] cursor-not-allowed"
                       style={{
@@ -353,7 +389,7 @@ export default function ReportesPage() {
                 {movements.length > 0 && (
                   <section className="flex flex-col gap-2">
                     <h3 className="text-xs font-semibold uppercase tracking-wide px-1" style={{ color: 'var(--brand-muted)' }}>
-                      Movimientos del mes ({movements.length})
+                      Movimientos del período ({movements.length})
                     </h3>
                     <div className="flex flex-col gap-1.5">
                       {movements.map(m => {

@@ -27,7 +27,8 @@ const s = StyleSheet.create({
   // NO el layout. Ahora podemos tener el logo en el header sin riesgo.
   // Logo va en una row arriba (alignItems flex-start), título centrado abajo.
   headerLogoRow:  { width: '100%', flexDirection: 'row', marginBottom: 10 },
-  headerLogo:     { height: 22, width: 60 },   // proporción del logo verde
+  // PNG real: 3356×1462 → aspect 2.296. Mantenemos esa proporción para no apachurrarlo.
+  headerLogo:     { width: 60, height: 26 },
   header:         { alignItems: 'center', paddingBottom: 16, borderBottom: `1.5pt solid ${BRAND}`, marginBottom: 20, gap: 5 },
   headerMonth:    { fontFamily: 'Helvetica', fontSize: 10, color: MUTED, letterSpacing: 1 },
   headerBusiness: { fontFamily: 'Helvetica-Bold', fontSize: 22, color: BRAND, textAlign: 'center' },
@@ -91,19 +92,16 @@ function cap(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1) 
 type CatMap = Record<string, number>
 
 export interface MonthlyReportDocProps {
-  month: string
+  /** Etiqueta del período en formato display (ej: "Abril 2026", "T2 2026", "14–20 abr 2026") */
+  periodLabel: string
   movements: Movement[]
   displayName: string
   giro?: string
   logoUrl: string
 }
 
-export function MonthlyReportDoc({ month, movements, displayName, giro, logoUrl }: MonthlyReportDocProps) {
-  const [year, mon] = month.split('-').map(Number)
-  const monthTitle = (() => {
-    const raw = new Date(year, mon - 1, 1).toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })
-    return raw.charAt(0).toUpperCase() + raw.slice(1)
-  })()
+export function MonthlyReportDoc({ periodLabel, movements, displayName, giro, logoUrl }: MonthlyReportDocProps) {
+  const monthTitle = periodLabel
 
   // P&L breakdown by category (investments excluded)
   const incByCat: CatMap = {}
