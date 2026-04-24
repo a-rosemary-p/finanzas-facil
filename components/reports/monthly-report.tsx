@@ -22,12 +22,12 @@ const s = StyleSheet.create({
   page: { fontFamily: 'Helvetica', fontSize: 9, color: TEXT, padding: '32pt 40pt', backgroundColor: '#FFFFFF' },
 
   /* ── Header ── */
-  // Restaurado al layout pre-v0.26. El intento de mover el logo al header
-  // (con position:absolute o flex-column con Image+Text) le rompía la generación
-  // a react-pdf v4.5.1 — colgaba pdf().toBlob() forever en Safari iOS y Chrome
-  // desktop. Volvemos al logo en el footer mientras encuentro un layout que
-  // react-pdf digiera bien (probable: pre-cargar el logo como data URL o
-  // ponerlo en un Page header fijo de tamaño explícito).
+  // El bug que rompía pdf().toBlob() era el CSP estricto bloqueando workers
+  // con blob: URLs (resuelto agregando worker-src/child-src 'self' blob:),
+  // NO el layout. Ahora podemos tener el logo en el header sin riesgo.
+  // Logo va en una row arriba (alignItems flex-start), título centrado abajo.
+  headerLogoRow:  { width: '100%', flexDirection: 'row', marginBottom: 10 },
+  headerLogo:     { height: 22, width: 60 },   // proporción del logo verde
   header:         { alignItems: 'center', paddingBottom: 16, borderBottom: `1.5pt solid ${BRAND}`, marginBottom: 20, gap: 5 },
   headerMonth:    { fontFamily: 'Helvetica', fontSize: 10, color: MUTED, letterSpacing: 1 },
   headerBusiness: { fontFamily: 'Helvetica-Bold', fontSize: 22, color: BRAND, textAlign: 'center' },
@@ -74,9 +74,9 @@ const s = StyleSheet.create({
   cellMuted:  { fontFamily: 'Helvetica',      fontSize: 8, color: MUTED },
 
   /* ── Footer ── */
-  footer:     { position: 'absolute', bottom: 20, left: 40, right: 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTop: `0.5pt solid ${BRAND_BORDER}`, paddingTop: 6 },
+  // Logo se mudó al header (sup-izq), footer ya solo tiene la fecha alineada a la derecha.
+  footer:     { position: 'absolute', bottom: 20, left: 40, right: 40, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', borderTop: `0.5pt solid ${BRAND_BORDER}`, paddingTop: 6 },
   footerText: { fontFamily: 'Helvetica', fontSize: 7, color: MUTED },
-  footerLogo: { height: 14 },
 })
 
 /* ── Helpers ── */
@@ -129,7 +129,6 @@ export function MonthlyReportDoc({ month, movements, displayName, giro, logoUrl 
   const Footer = () => (
     <View style={s.footer} fixed>
       <Text style={s.footerText}>Generado el {today}</Text>
-      <Image src={logoUrl} style={s.footerLogo} />
     </View>
   )
 
@@ -137,7 +136,10 @@ export function MonthlyReportDoc({ month, movements, displayName, giro, logoUrl 
     <Document>
       {/* ── PAGE 1: Estado de Resultados ── */}
       <Page size="A4" style={s.page}>
-        {/* Header (logo va en el footer mientras se resuelve el bug del header logo) */}
+        {/* Logo arriba a la izquierda, separado del header centrado */}
+        <View style={s.headerLogoRow}>
+          <Image src={logoUrl} style={s.headerLogo} />
+        </View>
         <View style={s.header}>
           <Text style={s.headerMonth}>{monthTitle.toUpperCase()}</Text>
           <Text style={s.headerBusiness}>{displayName}</Text>
