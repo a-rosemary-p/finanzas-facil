@@ -1,81 +1,105 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 
 interface VoiceButtonProps {
   onTranscript: (text: string) => void
   disabled?: boolean
 }
 
-// Tipos para Web Speech API (no incluidos en lib dom por defecto)
-interface ISpeechRecognition extends EventTarget {
-  lang: string
-  continuous: boolean
-  interimResults: boolean
-  start(): void
-  stop(): void
-  // abort() libera el mic inmediatamente sin esperar el último resultado.
-  // En iOS Safari es la única forma confiable de soltar el micrófono rápido.
-  abort(): void
-  onstart: (() => void) | null
-  onend: (() => void) | null
-  onerror: ((event: { error?: string }) => void) | null
-  onresult: ((event: ISpeechRecognitionEvent) => void) | null
-}
+// Usamos MediaRecorder + OpenAI Whisper (via /api/transcribe) en vez de
+// webkitSpeechRecognition. Razón: en iOS Safari webkitSpeechRecognition
+// no libera el micrófono de forma confiable aun con abort() + cleanup —
+// el Control Center sigue marcando "Safari is using microphone" aún con
+// el tab cerrado. MediaRecorder nos da el MediaStream directo, y
+// `stream.getTracks().forEach(t => t.stop())` libera el mic YA, garantizado.
+//
+// Compatibilidad: MediaRecorder funciona en Chrome (desktop + Android),
+// Safari (iOS 14.3+, macOS 14.1+), Edge, Firefox (✅, antes no soportaba
+// webkitSpeechRecognition). Si no está disponible, el botón sale disabled.
 
-interface ISpeechRecognitionEvent {
-  results: { [index: number]: { [index: number]: { transcript: string } } }
-}
+// Duración máxima de grabación; evita que un usuario que olvida parar
+// genere un audio de varios MB. 60s es suficiente para describir movimientos.
+const MAX_RECORDING_MS = 60_000
 
-declare global {
-  interface Window {
-    SpeechRecognition?: new () => ISpeechRecognition
-    webkitSpeechRecognition?: new () => ISpeechRecognition
+function pickMimeType(): string {
+  const candidates = ['audio/webm', 'audio/mp4', 'audio/ogg', 'audio/mpeg']
+  for (const m of candidates) {
+    if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m)) return m
   }
+  return '' // dejar que el browser escoja
 }
 
-// Compatibilidad real de Web Speech API:
-// ✅ Chrome (desktop + Android)   ✅ Safari (iOS 14.5+, macOS 14.1+)
-// ✅ Edge / Samsung Internet       ❌ Firefox — no soportado
-// ⚠️  Requiere HTTPS y permiso de micrófono
+function extensionFor(mime: string): string {
+  if (mime.includes('mp4') || mime.includes('aac')) return 'm4a'
+  if (mime.includes('webm')) return 'webm'
+  if (mime.includes('ogg')) return 'ogg'
+  if (mime.includes('mpeg') || mime.includes('mp3')) return 'mp3'
+  return 'webm'
+}
 
 export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
-  // null = aún no hidratado (SSR), evita flash de contenido incorrecto
+  // null = aún no hidratado (SSR)
   const [supported, setSupported] = useState<boolean | null>(null)
   const [recording, setRecording] = useState(false)
+  const [processing, setProcessing] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
-  const recognitionRef = useRef<ISpeechRecognition | null>(null)
+
+  const recorderRef = useRef<MediaRecorder | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const chunksRef = useRef<Blob[]>([])
+  const mimeRef = useRef<string>('')
+  const maxTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
-    setSupported(!!(window.SpeechRecognition || window.webkitSpeechRecognition))
+    const ok =
+      typeof window !== 'undefined' &&
+      typeof navigator !== 'undefined' &&
+      !!navigator.mediaDevices &&
+      !!navigator.mediaDevices.getUserMedia &&
+      typeof MediaRecorder !== 'undefined'
+    setSupported(ok)
   }, [])
 
-  // Cleanup: soltar el micrófono en todos los "el user se fue" posibles.
-  // En iOS Safari webkitSpeechRecognition es especialmente pegajosa; stop() espera
-  // procesar el último resultado, mientras que abort() libera el mic YA. Usamos abort()
-  // + nullear handlers para evitar que callbacks tardíos re-disparen estado.
-  useEffect(() => {
-    function hardStop() {
-      const r = recognitionRef.current
-      if (!r) return
-      // Orden importa: primero nulear los handlers para que eventos tardíos no corran,
-      // luego abort() para soltar el mic inmediatamente.
-      r.onstart = null
-      r.onend = null
-      r.onerror = null
-      r.onresult = null
-      try { r.abort() } catch { /* ya estaba muerta */ }
-      recognitionRef.current = null
-    }
+  function showError(msg: string) {
+    setErrorMsg(msg)
+    setTimeout(() => setErrorMsg(''), 4000)
+  }
 
-    // pagehide: cubre tab close, SPA navigate, bfcache entry. Más confiable que beforeunload.
+  // Libera el MediaStream explícitamente — el paso crítico. Detiene cada
+  // track, lo cual le dice al SO "ya no necesito el mic".
+  function releaseStream() {
+    const s = streamRef.current
+    if (s) {
+      s.getTracks().forEach(t => {
+        try { t.stop() } catch { /* already stopped */ }
+      })
+    }
+    streamRef.current = null
+  }
+
+  // Detiene todo: recorder, stream, timer. Idempotente.
+  const hardStop = useCallback(() => {
+    if (maxTimerRef.current) {
+      window.clearTimeout(maxTimerRef.current)
+      maxTimerRef.current = null
+    }
+    const rec = recorderRef.current
+    if (rec && rec.state !== 'inactive') {
+      try { rec.stop() } catch { /* ignore */ }
+    }
+    recorderRef.current = null
+    releaseStream()
+    setRecording(false)
+  }, [])
+
+  // Cleanup en unmount + en cualquier "el user se fue": mismos listeners que
+  // la versión anterior, ahora aplicados al stream directo que SÍ se libera.
+  useEffect(() => {
     const onPageHide = () => hardStop()
-    // visibilitychange: el user cambió de tab, minimizó, o en iOS backgroundeó Safari.
     const onVisibility = () => { if (document.visibilityState === 'hidden') hardStop() }
-    // freeze: iOS Safari fires this when suspending the tab antes de `pagehide` en algunos flows.
     const onFreeze = () => hardStop()
-    // blur del window: user dejó de interactuar con la ventana (backup para casos donde
-    // visibility no dispare en iOS al cerrar la app del browser sin matarla del todo).
     const onBlur = () => hardStop()
 
     window.addEventListener('pagehide', onPageHide)
@@ -90,7 +114,119 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
       window.removeEventListener('blur', onBlur)
       hardStop()
     }
-  }, [])
+  }, [hardStop])
+
+  async function start() {
+    setErrorMsg('')
+    setRecording(false)
+    chunksRef.current = []
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      streamRef.current = stream
+
+      const mime = pickMimeType()
+      mimeRef.current = mime
+      const rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream)
+      recorderRef.current = rec
+
+      rec.ondataavailable = (e: BlobEvent) => {
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data)
+      }
+
+      rec.onstop = async () => {
+        // Liberar el mic INMEDIATAMENTE, antes de mandar a la red.
+        releaseStream()
+        if (maxTimerRef.current) {
+          window.clearTimeout(maxTimerRef.current)
+          maxTimerRef.current = null
+        }
+        setRecording(false)
+
+        if (chunksRef.current.length === 0) return
+
+        const type = mimeRef.current || 'audio/webm'
+        const blob = new Blob(chunksRef.current, { type })
+        chunksRef.current = []
+
+        // Si el audio quedó muy chico (<1KB), probablemente el user tap-stop
+        // demasiado rápido. Mejor no mandarlo y dar feedback suave.
+        if (blob.size < 1024) {
+          showError('Muy corto, intenta de nuevo')
+          return
+        }
+
+        setProcessing(true)
+        try {
+          const ext = extensionFor(type)
+          const file = new File([blob], `voice.${ext}`, { type })
+          const form = new FormData()
+          form.append('audio', file)
+
+          const res = await fetchWithAuthRetry('/api/transcribe', {
+            method: 'POST',
+            body: form,
+          })
+          const data = await res.json().catch(() => null) as { text?: string; error?: string } | null
+
+          if (!res.ok) {
+            showError(data?.error || 'No pudimos transcribir')
+            return
+          }
+          const text = data?.text?.trim() ?? ''
+          if (text) {
+            onTranscript(text)
+          } else {
+            showError('No detecté palabras. Intenta de nuevo.')
+          }
+        } catch {
+          showError('Sin conexión. Intenta de nuevo.')
+        } finally {
+          setProcessing(false)
+        }
+      }
+
+      rec.onerror = () => {
+        showError('Error al grabar. Intenta de nuevo.')
+        hardStop()
+      }
+
+      rec.start()
+      setRecording(true)
+
+      // Cap de duración — si el user olvida parar, cerramos solos.
+      maxTimerRef.current = window.setTimeout(() => {
+        // Chequeo defensivo por si rec ya paró.
+        if (recorderRef.current?.state === 'recording') {
+          try { recorderRef.current.stop() } catch { /* ignore */ }
+        }
+      }, MAX_RECORDING_MS)
+    } catch (err) {
+      // getUserMedia rechazado o dispositivo no disponible
+      releaseStream()
+      const name = (err as { name?: string } | null)?.name
+      if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+        showError('Permiso denegado — habilita el micrófono en tu navegador')
+      } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+        showError('No se encontró micrófono en este dispositivo')
+      } else if (name === 'NotReadableError') {
+        showError('Micrófono en uso por otra app. Ciérrala e intenta.')
+      } else {
+        showError('No se pudo activar el micrófono. Intenta de nuevo.')
+      }
+    }
+  }
+
+  function stop() {
+    const rec = recorderRef.current
+    if (rec && rec.state !== 'inactive') {
+      // rec.stop() dispara onstop, que libera el stream y manda a transcribir
+      try { rec.stop() } catch { /* already stopped */ }
+    } else {
+      // Edge case: recorder ya paró pero quedamos en estado recording — limpia.
+      hardStop()
+    }
+  }
 
   if (supported === null) return null
 
@@ -99,7 +235,7 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
       <button
         type="button"
         disabled
-        title="Dictado no disponible en este navegador. Usa Chrome o Safari."
+        title="Dictado no disponible en este navegador."
         className="flex items-center justify-center rounded-xl min-h-[44px] min-w-[44px] opacity-40 cursor-not-allowed"
         style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)', color: 'var(--brand-mid)' }}
       >
@@ -108,89 +244,35 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
     )
   }
 
-  function showError(msg: string) {
-    setErrorMsg(msg)
-    setTimeout(() => setErrorMsg(''), 4000)
-  }
-
-  function start() {
-    const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition
-    if (!SR) return
-    setErrorMsg('')
-
-    const rec = new SR()
-    rec.lang = 'es-MX'
-    rec.continuous = false
-    rec.interimResults = false
-
-    rec.onstart = () => setRecording(true)
-    rec.onend   = () => {
-      setRecording(false)
-      recognitionRef.current = null
-    }
-
-    rec.onerror = (e) => {
-      setRecording(false)
-      const code = e?.error
-      if (code === 'not-allowed' || code === 'permission-denied') {
-        showError('Permiso denegado — habilita el micrófono en tu navegador')
-      } else if (code === 'network') {
-        showError('Sin conexión para voz')
-      } else if (code === 'no-speech') {
-        showError('No se detectó audio. Habla más cerca del micrófono.')
-      } else if (code === 'audio-capture') {
-        showError('No se encontró micrófono en este dispositivo')
-      } else if (code === 'service-not-allowed') {
-        showError('Dictado no disponible. Usa Chrome o Safari.')
-      } else if (code === 'aborted') {
-        // detuvo manualmente — silencioso
-      } else {
-        showError('Micrófono no disponible. Intenta de nuevo.')
-      }
-    }
-
-    rec.onresult = (e) => {
-      const transcript = e.results[0]?.[0]?.transcript ?? ''
-      if (transcript) onTranscript(transcript)
-    }
-
-    recognitionRef.current = rec
-    try {
-      rec.start()
-    } catch {
-      setRecording(false)
-      showError('No se pudo activar el micrófono. Recarga la página.')
-    }
-  }
-
-  function stop() {
-    const r = recognitionRef.current
-    if (!r) return
-    // abort() libera el mic YA; stop() puede tardar procesando el último chunk.
-    // En iOS Safari eso se traduce en indicador persistente.
-    try { r.abort() } catch { /* ya estaba muerto */ }
-    recognitionRef.current = null
-    setRecording(false)
-  }
+  const busy = disabled || processing
 
   return (
     <div className="flex flex-col items-start gap-1">
       <button
         type="button"
         onClick={recording ? stop : start}
-        disabled={disabled}
-        title={recording ? 'Detener grabación' : 'Dictar por voz'}
+        disabled={busy}
+        title={recording ? 'Detener grabación' : processing ? 'Transcribiendo…' : 'Dictar por voz'}
         className="flex items-center justify-center rounded-xl transition-all min-h-[44px] min-w-[44px]"
         style={{
           background: recording ? 'var(--danger-bg)' : 'var(--brand-chip)',
           border: `1px solid ${recording ? 'var(--danger)' : 'var(--brand)'}`,
           color: recording ? 'var(--danger)' : 'var(--brand)',
+          opacity: busy && !recording ? 0.6 : 1,
         }}
       >
         {recording ? (
           <span className="flex items-center gap-1.5 px-3 text-sm font-medium">
             <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
             Grabando...
+          </span>
+        ) : processing ? (
+          <span className="flex items-center gap-1.5 px-3 text-sm font-medium">
+            <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+            Transcribiendo
           </span>
         ) : (
           <span className="text-xl">🎤</span>
