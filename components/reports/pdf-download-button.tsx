@@ -15,6 +15,7 @@
 import { useRef, useState } from 'react'
 import { pdf } from '@react-pdf/renderer'
 import { MonthlyReportDoc } from './monthly-report'
+import { shareOrDownload } from '@/lib/file-share'
 import type { Movement } from '@/types'
 
 interface Props {
@@ -44,22 +45,6 @@ function withTimeout<T>(p: Promise<T>, ms: number, tag: string): Promise<T> {
       e => { clearTimeout(t); reject(e) },
     )
   })
-}
-
-function triggerDownload(blob: Blob, fileName: string) {
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = fileName
-  a.rel = 'noopener'
-  a.style.display = 'none'
-  document.body.appendChild(a)
-  a.click()
-  // Cleanup en otro tick — algunos browsers necesitan el <a> en el DOM un microtick más
-  setTimeout(() => {
-    a.remove()
-    URL.revokeObjectURL(url)
-  }, 200)
 }
 
 export default function PdfDownloadButton({ periodSlug, periodLabel, movements, displayName, giro, includeInvestments }: Props) {
@@ -93,54 +78,15 @@ export default function PdfDownloadButton({ periodSlug, periodLabel, movements, 
 
       if (myId !== reqIdRef.current) return // user clickeó otra vez
 
-      // ── 2. Decidir share vs download por feature detection ─────────────
-      const file = new File([blob], fileName, { type: 'application/pdf' })
-      const canShareFiles =
-        typeof navigator !== 'undefined' &&
-        typeof navigator.share === 'function' &&
-        typeof navigator.canShare === 'function' &&
-        navigator.canShare({ files: [file] })
-
-      // Chrome/Edge desktop ahora soportan Web Share API también, así que
-      // canShareFiles=true ya no implica "es móvil". Cruzamos con una media
-      // query CSS para detectar input táctil sin hover — eso SÍ es móvil.
-      // En laptop/desktop preferimos download directo a Downloads (UX esperado).
-      const isTouchDevice =
-        typeof window !== 'undefined' &&
-        typeof window.matchMedia === 'function' &&
-        window.matchMedia('(hover: none) and (pointer: coarse)').matches
-
-      if (canShareFiles && isTouchDevice) {
-        // Mobile path — abrir share nativo. NO le ponemos timeout: el user
-        // puede tardarse eligiendo destino (whatsapp, mail, etc.) y eso es
-        // normal. Si Safari decide colgar share() (bug histórico), el user
-        // simplemente clickea el botón otra vez — el reqId nuevo descarta
-        // este branch.
-        try {
-          await navigator.share({
-            files: [file],
-            title: `Reporte ${periodLabel} · Fiza`,
-          })
-          if (myId !== reqIdRef.current) return
-          // Share OK
-          setState({ kind: 'idle' })
-          return
-        } catch (err) {
-          if (myId !== reqIdRef.current) return
-          if (err instanceof Error && err.name === 'AbortError') {
-            // User cerró el sheet sin compartir — respetar y volver a idle
-            setState({ kind: 'idle' })
-            return
-          }
-          // Cualquier otro error → cae a download como red de seguridad
-          console.warn('[PDF] share falló, descargando:', err)
-        }
-      }
+      // ── 2. Share o download via helper compartido (mismo pattern que Excel) ──
+      await shareOrDownload({
+        blob,
+        fileName,
+        shareTitle: `Reporte ${periodLabel} · Fiza`,
+        mimeType: 'application/pdf',
+      })
 
       if (myId !== reqIdRef.current) return
-
-      // ── 3. Download path — desktop + fallback de mobile ─────────────────
-      triggerDownload(blob, fileName)
       setState({ kind: 'idle' })
     } catch (err) {
       if (myId !== reqIdRef.current) return

@@ -36,6 +36,13 @@ const TrendView = dynamic(
   )}
 )
 
+// Excel button — la lib xlsx (~700KB) se importa async DENTRO del handler, así
+// que cargar el componente no aumenta el bundle inicial.
+const ExcelDownloadButton = dynamic(
+  () => import('@/components/reports/excel-download-button'),
+  { ssr: false }
+)
+
 type Tab = 'periodo' | 'comparar' | 'tendencia'
 
 const PERIOD_MODE_LABELS: Record<PeriodMode, string> = {
@@ -424,29 +431,38 @@ export default function ReportesPage() {
                       giro={profile.giro}
                       includeInvestments={includeInvestments}
                     />
-                    <button
-                      type="button" disabled
-                      title={plan === 'pro' ? 'Disponible en Fase 5' : 'Disponible en Pro'}
-                      className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 min-h-[48px] cursor-not-allowed"
-                      style={{
-                        background: 'var(--brand-chip)',
-                        border: '1px solid var(--brand-border)',
-                        color: 'var(--brand-mid)',
-                        opacity: 0.7,
-                      }}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                      </svg>
-                      Descargar Excel
-                      {plan === 'free' && (
+                    {plan === 'pro' ? (
+                      <ExcelDownloadButton
+                        periodSlug={slug}
+                        periodLabel={label}
+                        movements={movements}
+                        displayName={profile.displayName}
+                        giro={profile.giro}
+                        includeInvestments={includeInvestments}
+                      />
+                    ) : (
+                      // Free: botón ghosted con badge PRO + link a upgrade
+                      <a
+                        href="/ajustes"
+                        className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 min-h-[48px] transition-opacity"
+                        style={{
+                          background: 'var(--brand-chip)',
+                          border: '1px solid var(--brand-border)',
+                          color: 'var(--brand-mid)',
+                          opacity: 0.85,
+                        }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                        Descargar Excel
                         <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
                           style={{ background: 'var(--brand)', color: '#fff', letterSpacing: '0.05em' }}>
                           PRO
                         </span>
-                      )}
-                    </button>
+                      </a>
+                    )}
                   </div>
                 ) : null}
 
