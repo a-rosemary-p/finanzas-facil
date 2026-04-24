@@ -22,16 +22,12 @@ const s = StyleSheet.create({
   page: { fontFamily: 'Helvetica', fontSize: 9, color: TEXT, padding: '32pt 40pt', backgroundColor: '#FFFFFF' },
 
   /* ── Header ── */
-  header:         { paddingBottom: 16, borderBottom: `1.5pt solid ${BRAND}`, marginBottom: 20 },
-  headerTopRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
-  headerLogo:     { height: 22, objectFit: 'contain' },     // discreto, no domina
-  headerLogoCol:  { flexDirection: 'column', gap: 2 },
-  headerLogoBiz:  { fontFamily: 'Helvetica-Bold', fontSize: 8, color: BRAND, marginTop: 4 },
-  headerLogoMeta: { fontFamily: 'Helvetica', fontSize: 7, color: MUTED },
-  headerCenter:   { alignItems: 'center', gap: 5 },
-  headerMonth:    { fontFamily: 'Helvetica', fontSize: 10, color: MUTED, letterSpacing: 1 },
-  headerBusiness: { fontFamily: 'Helvetica-Bold', fontSize: 22, color: BRAND, textAlign: 'center' },
-  headerSub:      { fontFamily: 'Helvetica', fontSize: 9, color: MUTED },
+  header:         { alignItems: 'center', paddingBottom: 16, borderBottom: `1.5pt solid ${BRAND}`, marginBottom: 20 },
+  // Logo en esquina sup. izq. — usamos position absolute para no afectar el layout del bloque centrado.
+  headerLogo:     { position: 'absolute', top: 0, left: 0, height: 20 },
+  headerMonth:    { fontFamily: 'Helvetica', fontSize: 10, color: MUTED, letterSpacing: 1, marginTop: 4 },
+  headerBusiness: { fontFamily: 'Helvetica-Bold', fontSize: 22, color: BRAND, textAlign: 'center', marginTop: 4 },
+  headerSub:      { fontFamily: 'Helvetica', fontSize: 9, color: MUTED, marginTop: 4 },
 
   /* ── Section title ── */
   sectionTitle: { fontFamily: 'Helvetica-Bold', fontSize: 7, color: MUTED, letterSpacing: 1.2, marginBottom: 8 },
@@ -131,30 +127,17 @@ export function MonthlyReportDoc({ month, movements, displayName, giro, logoUrl 
     </View>
   )
 
-  // Logo discreto sup. izq. con nombre del negocio + período debajo (spec v0.26).
-  const HeaderLogo = () => (
-    <View style={s.headerLogoCol}>
-      <Image src={logoUrl} style={s.headerLogo} />
-      <Text style={s.headerLogoBiz}>{displayName}</Text>
-      <Text style={s.headerLogoMeta}>{monthTitle}</Text>
-    </View>
-  )
-
   return (
     <Document>
       {/* ── PAGE 1: Estado de Resultados ── */}
       <Page size="A4" style={s.page}>
-        {/* Header con logo sup. izq. + título centrado */}
+        {/* Header: logo absoluto sup-izq + título centrado */}
         <View style={s.header}>
-          <View style={s.headerTopRow}>
-            <HeaderLogo />
-          </View>
-          <View style={s.headerCenter}>
-            <Text style={s.headerMonth}>{monthTitle.toUpperCase()}</Text>
-            <Text style={s.headerBusiness}>{displayName}</Text>
-            {giro ? <Text style={s.headerSub}>{giro}</Text> : null}
-            <Text style={s.headerSub}>Estado de Resultados</Text>
-          </View>
+          <Image src={logoUrl} style={s.headerLogo} />
+          <Text style={s.headerMonth}>{monthTitle.toUpperCase()}</Text>
+          <Text style={s.headerBusiness}>{displayName}</Text>
+          {giro ? <Text style={s.headerSub}>{giro}</Text> : null}
+          <Text style={s.headerSub}>Estado de Resultados</Text>
         </View>
 
         {/* Summary pills */}
@@ -228,10 +211,7 @@ export function MonthlyReportDoc({ month, movements, displayName, giro, logoUrl 
       {/* ── PAGE 2+: Movimientos ── */}
       <Page size="A4" orientation="landscape" style={s.page}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, borderBottom: `1pt solid ${BRAND_BORDER}`, paddingBottom: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Image src={logoUrl} style={s.headerLogo} />
-            <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 14, color: BRAND }}>Movimientos</Text>
-          </View>
+          <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 14, color: BRAND }}>Movimientos</Text>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 10, color: BRAND }}>{displayName}</Text>
             <Text style={{ fontFamily: 'Helvetica', fontSize: 8, color: MUTED }}>{monthTitle}</Text>

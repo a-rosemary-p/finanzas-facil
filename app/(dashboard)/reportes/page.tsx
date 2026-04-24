@@ -211,40 +211,57 @@ export default function ReportesPage() {
         </div>
 
         {/* ── Selector de período (compartido entre vistas) ── */}
-        <div
-          className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center justify-between"
-          style={{ border: '1px solid var(--brand-border)' }}
-        >
-          <button
-            type="button"
-            onClick={() => changeMonth(prevMonth(month))}
-            disabled={atEarliest}
-            title={atEarliest && earliestMonth ? 'Actualiza a Pro para ver más meses atrás' : 'Mes anterior'}
-            className="p-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center disabled:opacity-30"
-            style={{ color: 'var(--brand-mid)', background: 'var(--brand-chip)' }}
-            aria-label="Mes anterior"
+        <div className="flex flex-col gap-1.5">
+          <div
+            className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center justify-between"
+            style={{ border: '1px solid var(--brand-border)' }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
+            <button
+              type="button"
+              onClick={() => changeMonth(prevMonth(month))}
+              disabled={atEarliest}
+              className="p-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center disabled:opacity-30"
+              style={{ color: 'var(--brand-mid)', background: 'var(--brand-chip)' }}
+              aria-label="Mes anterior"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
 
-          <span className="font-bold text-base" style={{ color: 'var(--brand)' }}>
-            {monthLabel(month)}
-          </span>
+            <span className="font-bold text-base" style={{ color: 'var(--brand)' }}>
+              {monthLabel(month)}
+            </span>
 
-          <button
-            type="button"
-            onClick={() => changeMonth(nextMonth(month))}
-            disabled={atCurrent}
-            className="p-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center disabled:opacity-30"
-            style={{ color: 'var(--brand-mid)', background: 'var(--brand-chip)' }}
-            aria-label="Mes siguiente"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
+            <button
+              type="button"
+              onClick={() => changeMonth(nextMonth(month))}
+              disabled={atCurrent}
+              className="p-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center disabled:opacity-30"
+              style={{ color: 'var(--brand-mid)', background: 'var(--brand-chip)' }}
+              aria-label="Mes siguiente"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Hint visible (no tooltip — los tooltips no se ven en mobile/touch).
+              Aparece solo cuando un Free está parado en el mes más viejo permitido. */}
+          {atEarliest && plan === 'free' && (
+            <div className="flex items-center justify-center gap-1.5 text-[11px] px-2"
+              style={{ color: 'var(--brand-mid)' }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0110 0v4" />
+              </svg>
+              <span>Tu plan Free incluye los últimos 3 meses.</span>
+              <a href="/ajustes" className="font-bold underline" style={{ color: 'var(--brand)' }}>
+                Activa Pro
+              </a>
+            </div>
+          )}
         </div>
 
         {/* ── Banner cuando un Free pidió un mes fuera del cap (defense-in-depth;
