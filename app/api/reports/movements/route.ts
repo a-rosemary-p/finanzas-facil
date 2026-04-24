@@ -99,7 +99,8 @@ export async function GET(request: Request) {
     .select('id, type, amount, description, category, movement_date, is_investment')
     .gte('movement_date', rangeStart)
     .lte('movement_date', rangeEnd)
-    .eq('user_id', user.id)  // defense-in-depth sobre RLS
+    .eq('user_id', user.id)              // defense-in-depth sobre RLS
+    .in('type', ['ingreso', 'gasto'])    // pendientes NO van en reportes (se manejan aparte)
     .order('movement_date', { ascending: false })
     .order('id', { ascending: false })
 

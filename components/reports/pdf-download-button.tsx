@@ -25,6 +25,8 @@ interface Props {
   movements: Movement[]
   displayName: string
   giro?: string
+  /** Refleja el toggle "Incluir inversiones" de la UI en el cálculo del PDF */
+  includeInvestments?: boolean
 }
 
 type State =
@@ -60,7 +62,7 @@ function triggerDownload(blob: Blob, fileName: string) {
   }, 200)
 }
 
-export default function PdfDownloadButton({ periodSlug, periodLabel, movements, displayName, giro }: Props) {
+export default function PdfDownloadButton({ periodSlug, periodLabel, movements, displayName, giro, includeInvestments }: Props) {
   const [state, setState] = useState<State>({ kind: 'idle' })
   // Cada click obtiene un id; resultados de clicks viejos se descartan
   const reqIdRef = useRef(0)
@@ -82,6 +84,7 @@ export default function PdfDownloadButton({ periodSlug, periodLabel, movements, 
             displayName={displayName}
             giro={giro}
             logoUrl={logoUrl}
+            includeInvestments={includeInvestments}
           />,
         ).toBlob(),
         PDF_TIMEOUT_MS,

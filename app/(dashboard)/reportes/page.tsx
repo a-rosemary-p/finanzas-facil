@@ -43,6 +43,8 @@ export default function ReportesPage() {
   const [movements, setMovements] = useState<Movement[]>([])
   const [loading, setLoading] = useState(false)
   const [blocked, setBlocked] = useState(false)
+  // Inversiones excluidas por default (igual que el dashboard) — toggle abajo.
+  const [includeInvestments, setIncludeInvestments] = useState(false)
 
   // ── Datos derivados del período ─────────────────────────────────────────
   const range = useMemo(() => periodRange(period), [period])
@@ -112,11 +114,17 @@ export default function ReportesPage() {
     }
   }
 
-  // ── Métricas (calculadas client-side, excluyen inversiones) ─────────────
+  // ── Métricas client-side ────────────────────────────────────────────────
+  // Inversiones se excluyen del total a menos que el toggle esté ON.
+  // Pendientes ya no llegan acá (filtrados en el server).
   let income = 0
   let expenses = 0
+  let investmentCount = 0
   for (const m of movements) {
-    if (m.isInvestment) continue
+    if (m.isInvestment) {
+      investmentCount++
+      if (!includeInvestments) continue
+    }
     if (m.type === 'ingreso') income += m.amount
     else if (m.type === 'gasto') expenses += m.amount
   }
@@ -264,29 +272,40 @@ export default function ReportesPage() {
             </button>
           </div>
 
-          {/* Pills de modo de período (solo Pro) */}
-          {plan === 'pro' && (
-            <div className="flex gap-1 p-1 rounded-xl"
-              style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}
-            >
-              {(Object.keys(PERIOD_MODE_LABELS) as PeriodMode[]).map(mode => {
-                const active = period.mode === mode
-                return (
-                  <button
-                    key={mode}
-                    onClick={() => changeMode(mode)}
-                    className="flex-1 text-[11px] font-semibold rounded-lg min-h-[32px] px-1.5 transition-colors"
-                    style={{
-                      background: active ? 'var(--brand)' : 'transparent',
-                      color: active ? '#fff' : 'var(--brand-mid)',
-                    }}
-                  >
-                    {PERIOD_MODE_LABELS[mode]}
-                  </button>
-                )
-              })}
-            </div>
-          )}
+          {/* Pills de modo de período. Free ve los demás ghosted con candado para
+              que sepa que existen como feature Pro. */}
+          <div className="flex gap-1 p-1 rounded-xl"
+            style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}
+          >
+            {(Object.keys(PERIOD_MODE_LABELS) as PeriodMode[]).map(mode => {
+              const active = period.mode === mode
+              const accessible = plan === 'pro' || mode === 'month'
+              return (
+                <button
+                  key={mode}
+                  onClick={accessible ? () => changeMode(mode) : undefined}
+                  disabled={!accessible}
+                  aria-label={accessible ? PERIOD_MODE_LABELS[mode] : `${PERIOD_MODE_LABELS[mode]} (Pro)`}
+                  className="flex-1 text-[11px] font-semibold rounded-lg min-h-[32px] px-1.5 transition-colors flex items-center justify-center gap-1"
+                  style={{
+                    background: active ? 'var(--brand)' : 'transparent',
+                    color: active ? '#fff' : 'var(--brand-mid)',
+                    opacity: accessible ? 1 : 0.45,
+                    cursor: accessible ? 'pointer' : 'not-allowed',
+                  }}
+                >
+                  {!accessible && (
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="3" y="11" width="18" height="11" rx="2" />
+                      <path d="M7 11V7a5 5 0 0110 0v4" />
+                    </svg>
+                  )}
+                  {PERIOD_MODE_LABELS[mode]}
+                </button>
+              )
+            })}
+          </div>
 
           {/* Hint visible para Free en el mes más viejo */}
           {atFreeEarliest && plan === 'free' && (
@@ -343,6 +362,35 @@ export default function ReportesPage() {
                   ))}
                 </div>
 
+                {/* Toggle de inversiones — solo aparece si hay inversiones en este período.
+                    Aclara al usuario por qué hay movimientos que no suman al total. */}
+                {investmentCount > 0 && (
+                  <label className="flex items-center justify-between bg-white rounded-xl px-3.5 py-2.5 cursor-pointer"
+                    style={{ border: '1px solid var(--brand-border)' }}>
+                    <div className="flex items-center gap-2">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                        style={{ color: 'var(--investment-text, #B89010)' }}>
+                        <polyline points="3 17 9 11 13 15 21 7" />
+                        <polyline points="14 7 21 7 21 14" />
+                      </svg>
+                      <span className="text-xs font-medium" style={{ color: 'var(--brand)' }}>
+                        Incluir inversiones en totales
+                      </span>
+                      <span className="text-[10px]" style={{ color: 'var(--brand-mid)' }}>
+                        ({investmentCount})
+                      </span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={includeInvestments}
+                      onChange={e => setIncludeInvestments(e.target.checked)}
+                      className="w-4 h-4"
+                      style={{ accentColor: 'var(--brand)' }}
+                    />
+                  </label>
+                )}
+
                 {/* Acciones de exportación */}
                 {movements.length === 0 ? (
                   <div className="bg-white rounded-xl shadow-sm p-6 text-center" style={{ border: '1px solid var(--brand-border)' }}>
@@ -358,6 +406,7 @@ export default function ReportesPage() {
                       movements={movements}
                       displayName={profile.displayName}
                       giro={profile.giro}
+                      includeInvestments={includeInvestments}
                     />
                     <button
                       type="button" disabled
@@ -394,14 +443,31 @@ export default function ReportesPage() {
                     <div className="flex flex-col gap-1.5">
                       {movements.map(m => {
                         const cfg = MOVEMENT_TYPE_CONFIG[m.type]
+                        // Si excluimos inversiones del total, las marcamos visualmente para
+                        // que el usuario entienda por qué este monto no suma al total.
+                        const dimmed = m.isInvestment && !includeInvestments
                         return (
                           <div key={m.id} className="bg-white rounded-xl px-3.5 py-2.5 flex items-center gap-3 shadow-sm"
-                            style={{ border: '1px solid var(--brand-border)' }}>
+                            style={{
+                              border: '1px solid var(--brand-border)',
+                              opacity: dimmed ? 0.65 : 1,
+                            }}>
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
                               style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
                               {cfg.label}
                             </span>
-                            <p className="flex-1 text-sm truncate" style={{ color: 'var(--brand)' }}>{m.description}</p>
+                            <p className="flex-1 text-sm truncate flex items-center gap-1.5" style={{ color: 'var(--brand)' }}>
+                              <span className="truncate">{m.description}</span>
+                              {m.isInvestment && (
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                  strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                                  style={{ color: 'var(--investment-text, #B89010)', flexShrink: 0 }}
+                                  aria-label="Inversión">
+                                  <polyline points="3 17 9 11 13 15 21 7" />
+                                  <polyline points="14 7 21 7 21 14" />
+                                </svg>
+                              )}
+                            </p>
                             <span className="text-sm font-bold shrink-0" style={{ color: cfg.color }}>
                               {cfg.sign}{formatCurrency(m.amount)}
                             </span>

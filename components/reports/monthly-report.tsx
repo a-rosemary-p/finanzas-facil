@@ -98,17 +98,20 @@ export interface MonthlyReportDocProps {
   displayName: string
   giro?: string
   logoUrl: string
+  /** Si false (default), inversiones se excluyen de totales y desglose. */
+  includeInvestments?: boolean
 }
 
-export function MonthlyReportDoc({ periodLabel, movements, displayName, giro, logoUrl }: MonthlyReportDocProps) {
+export function MonthlyReportDoc({ periodLabel, movements, displayName, giro, logoUrl, includeInvestments = false }: MonthlyReportDocProps) {
   const monthTitle = periodLabel
 
-  // P&L breakdown by category (investments excluded)
+  // P&L breakdown by category. Inversiones excluidas por default — toggle en
+  // la UI las puede incluir. Pendientes ya no llegan aquí (filtrados en server).
   const incByCat: CatMap = {}
   const expByCat: CatMap = {}
   let totalIncome = 0, totalExpenses = 0
   for (const m of movements) {
-    if (m.isInvestment) continue
+    if (m.isInvestment && !includeInvestments) continue
     if (m.type === 'ingreso') {
       incByCat[m.category] = (incByCat[m.category] ?? 0) + m.amount
       totalIncome += m.amount
