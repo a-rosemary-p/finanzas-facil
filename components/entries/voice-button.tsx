@@ -14,6 +14,9 @@ interface ISpeechRecognition extends EventTarget {
   interimResults: boolean
   start(): void
   stop(): void
+  // abort() libera el mic inmediatamente sin esperar el último resultado.
+  // En iOS Safari es la única forma confiable de soltar el micrófono rápido.
+  abort(): void
   onstart: (() => void) | null
   onend: (() => void) | null
   onerror: ((event: { error?: string }) => void) | null
@@ -47,29 +50,45 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
     setSupported(!!(window.SpeechRecognition || window.webkitSpeechRecognition))
   }, [])
 
-  // Cleanup: si el componente se desmonta (navegación SPA) o la página se oculta/cierra,
-  // detenemos la grabación explícitamente. Sin esto Chrome puede seguir ocupando el micro
-  // con el indicador rojo encendido hasta que el tab realmente muera.
+  // Cleanup: soltar el micrófono en todos los "el user se fue" posibles.
+  // En iOS Safari webkitSpeechRecognition es especialmente pegajosa; stop() espera
+  // procesar el último resultado, mientras que abort() libera el mic YA. Usamos abort()
+  // + nullear handlers para evitar que callbacks tardíos re-disparen estado.
   useEffect(() => {
-    function stopRec() {
+    function hardStop() {
       const r = recognitionRef.current
       if (!r) return
-      try { r.stop() } catch { /* ya paró */ }
+      // Orden importa: primero nulear los handlers para que eventos tardíos no corran,
+      // luego abort() para soltar el mic inmediatamente.
+      r.onstart = null
+      r.onend = null
+      r.onerror = null
+      r.onresult = null
+      try { r.abort() } catch { /* ya estaba muerta */ }
       recognitionRef.current = null
     }
 
-    // pagehide cubre tab close + SPA navigate + bfcache. Más confiable que beforeunload.
-    const onPageHide = () => stopRec()
-    // Si el user cambia de tab o minimiza, también paramos — evita gastar mic en background.
-    const onVisibility = () => { if (document.visibilityState === 'hidden') stopRec() }
+    // pagehide: cubre tab close, SPA navigate, bfcache entry. Más confiable que beforeunload.
+    const onPageHide = () => hardStop()
+    // visibilitychange: el user cambió de tab, minimizó, o en iOS backgroundeó Safari.
+    const onVisibility = () => { if (document.visibilityState === 'hidden') hardStop() }
+    // freeze: iOS Safari fires this when suspending the tab antes de `pagehide` en algunos flows.
+    const onFreeze = () => hardStop()
+    // blur del window: user dejó de interactuar con la ventana (backup para casos donde
+    // visibility no dispare en iOS al cerrar la app del browser sin matarla del todo).
+    const onBlur = () => hardStop()
 
     window.addEventListener('pagehide', onPageHide)
     document.addEventListener('visibilitychange', onVisibility)
+    document.addEventListener('freeze', onFreeze as EventListener)
+    window.addEventListener('blur', onBlur)
 
     return () => {
       window.removeEventListener('pagehide', onPageHide)
       document.removeEventListener('visibilitychange', onVisibility)
-      stopRec()
+      document.removeEventListener('freeze', onFreeze as EventListener)
+      window.removeEventListener('blur', onBlur)
+      hardStop()
     }
   }, [])
 
@@ -145,7 +164,13 @@ export function VoiceButton({ onTranscript, disabled }: VoiceButtonProps) {
   }
 
   function stop() {
-    recognitionRef.current?.stop()
+    const r = recognitionRef.current
+    if (!r) return
+    // abort() libera el mic YA; stop() puede tardar procesando el último chunk.
+    // En iOS Safari eso se traduce en indicador persistente.
+    try { r.abort() } catch { /* ya estaba muerto */ }
+    recognitionRef.current = null
+    setRecording(false)
   }
 
   return (
