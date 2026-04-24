@@ -101,7 +101,16 @@ export default function PdfDownloadButton({ month, movements, displayName, giro 
         typeof navigator.canShare === 'function' &&
         navigator.canShare({ files: [file] })
 
-      if (canShareFiles) {
+      // Chrome/Edge desktop ahora soportan Web Share API también, así que
+      // canShareFiles=true ya no implica "es móvil". Cruzamos con una media
+      // query CSS para detectar input táctil sin hover — eso SÍ es móvil.
+      // En laptop/desktop preferimos download directo a Downloads (UX esperado).
+      const isTouchDevice =
+        typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(hover: none) and (pointer: coarse)').matches
+
+      if (canShareFiles && isTouchDevice) {
         // Mobile path — abrir share nativo. NO le ponemos timeout: el user
         // puede tardarse eligiendo destino (whatsapp, mail, etc.) y eso es
         // normal. Si Safari decide colgar share() (bug histórico), el user
