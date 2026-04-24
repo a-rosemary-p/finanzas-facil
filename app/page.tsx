@@ -532,7 +532,7 @@ export default function HomePage() {
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
       <section
         className="relative overflow-hidden"
-        style={{ background: '#578466' }}
+        style={{ background: '#5F8A6C' }}
       >
         <div className="max-w-5xl mx-auto px-5 pt-16 pb-28 md:py-20 md:pb-32 flex flex-col md:flex-row items-center gap-10 md:gap-14">
 
