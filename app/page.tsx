@@ -457,6 +457,7 @@ const secSubStyle: React.CSSProperties = {
 export default function HomePage() {
   const [scrolled, setScrolled] = useState(false)
   const [openFAQ, setOpenFAQ]   = useState<number | null>(0)
+  const [videoFailed, setVideoFailed] = useState(false)
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20)
@@ -654,26 +655,40 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* iPhone mockup — video */}
+          {/* iPhone mockup — video; falls back to static PNG (with drop-shadow) if decode fails */}
           <div className="flex-shrink-0 w-full md:w-auto flex justify-center">
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
-              poster="/iphone-hero.png"
-              aria-label="App fiza en iPhone"
-              style={{
-                width: '100%',
-                maxWidth: '340px',
-                height: 'auto',
-                display: 'block',
-                filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.35))',
-              }}
-            >
-              <source src="/iphone-hero.mp4" type="video/mp4" />
-            </video>
+            {videoFailed ? (
+              <img
+                src="/iphone-hero.png"
+                alt="App fiza en iPhone"
+                draggable={false}
+                style={{
+                  width: '100%',
+                  maxWidth: '391px',
+                  height: 'auto',
+                  display: 'block',
+                  filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.35))',
+                }}
+              />
+            ) : (
+              <video
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                onError={() => setVideoFailed(true)}
+                aria-label="App fiza en iPhone"
+                style={{
+                  width: '100%',
+                  maxWidth: '391px',
+                  height: 'auto',
+                  display: 'block',
+                }}
+              >
+                <source src="/iphone-hero.mp4" type="video/mp4" />
+              </video>
+            )}
           </div>
         </div>
 
