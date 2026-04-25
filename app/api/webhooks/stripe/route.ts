@@ -16,14 +16,65 @@ async function updateProfileByCustomer(
   patch: Record<string, unknown>
 ) {
   const admin = getAdmin()
-  const { error } = await admin
+  const nowIso = new Date().toISOString()
+
+  // ── 1) Camino feliz: matchea por stripe_customer_id ──────────────────
+  // Usamos .select('id') para saber cuántas filas matcheó. Sin esto, una
+  // ausencia de fila se ve como éxito silencioso.
+  const { data, error } = await admin
     .from('profiles')
-    .update({ ...patch, updated_at: new Date().toISOString() })
+    .update({ ...patch, updated_at: nowIso })
     .eq('stripe_customer_id', customerId)
+    .select('id')
 
   if (error) {
     console.error('[webhook] updateProfileByCustomer error', error)
     throw error
+  }
+
+  if (data && data.length > 0) return // Match feliz, listo
+
+  // ── 2) Fallback: busca por metadata.supabase_user_id en Stripe ────────
+  // Caso común: /api/checkout creó el customer pero la write del
+  // stripe_customer_id en `profiles` falló o se hizo en otra fila por
+  // alguna razón. Sin este fallback, el UPDATE afectaría 0 filas y el user
+  // pagaría sin recibir Pro.
+  console.warn('[webhook] no profile matched stripe_customer_id, trying metadata fallback', { customerId })
+
+  try {
+    const stripe = getStripe()
+    const customer = await stripe.customers.retrieve(customerId)
+    if (customer.deleted) {
+      console.error('[webhook] customer está deleted en Stripe', { customerId })
+      return
+    }
+    const userId = (customer as Stripe.Customer).metadata?.supabase_user_id
+    if (!userId) {
+      console.error('[webhook] customer sin supabase_user_id en metadata', { customerId })
+      return
+    }
+
+    // Update por user.id + backfill del stripe_customer_id para que
+    // futuros eventos maticheen directo sin necesidad del fallback.
+    const { error: fbErr, data: fbData } = await admin
+      .from('profiles')
+      .update({ ...patch, stripe_customer_id: customerId, updated_at: nowIso })
+      .eq('id', userId)
+      .select('id')
+    if (fbErr) {
+      console.error('[webhook] metadata fallback update error', fbErr)
+      return
+    }
+    if (fbData && fbData.length > 0) {
+      console.log('[webhook] recovered via metadata fallback', { customerId, userId })
+    } else {
+      console.error('[webhook] metadata fallback: profiles row not found for user_id', { customerId, userId })
+    }
+  } catch (err) {
+    console.error('[webhook] metadata fallback threw', err)
+    // No re-throw: el evento ya está claimed en stripe_events, no podemos
+    // re-procesar. Mejor dejar que termine y que el operador limpie a mano
+    // viendo los logs.
   }
 }
 
