@@ -126,15 +126,6 @@ function IconInstagram({ size = 20 }: { size?: number }) {
 
 /* ── Business icons ───────────────────────────────────────────────────────── */
 
-function IconUtensils({ size = 22 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M3 2v7c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V2M7 2v20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      <path d="M21 15V2a5 5 0 00-5 5v5.5M19.5 12.5V22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  )
-}
-
 function IconScissors({ size = 22 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -161,22 +152,28 @@ function IconStore({ size = 22 }: { size?: number }) {
   )
 }
 
-function IconTruck({ size = 22 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M1 3h15v13H1z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-      <path d="M16 8h4l3 4v4h-7V8z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-      <circle cx="5.5" cy="18.5" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
-      <circle cx="18.5" cy="18.5" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
-    </svg>
-  )
-}
-
 function IconBriefcase({ size = 22 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
       <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2M2 12h20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function IconLightbulb({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M9 18h6M10 21h4M12 3a6 6 0 00-3.5 10.9c.5.4.8.9.9 1.5l.1.6h5l.1-.6c.1-.6.4-1.1.9-1.5A6 6 0 0012 3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function IconLaptop({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="3" y="5" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M2 19h20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
   )
 }
@@ -342,12 +339,12 @@ const BUSINESSES: Array<{
   type: string
   quote: string
 }> = [
-  { Icon: IconUtensils, type: 'Taquerías y restaurantes', quote: '"Ya sé exactamente cuánto gané hoy"' },
-  { Icon: IconScissors, type: 'Estéticas y salones',      quote: '"Los pendientes de pago nunca se me olvidan"' },
-  { Icon: IconWrench,   type: 'Talleres mecánicos',        quote: '"El reporte mensual me lo mando yo solo"' },
-  { Icon: IconStore,    type: 'Tiendas y abarrotes',       quote: '"Llevo mis cuentas en el celular, no en papel"' },
-  { Icon: IconTruck,    type: 'Food trucks y puestos',     quote: '"Sé cuánto gané en cada evento o turno"' },
-  { Icon: IconBriefcase,type: 'Freelancers y vendedores',  quote: '"Lo anoto mientras atiendo al cliente"' },
+  { Icon: IconBriefcase, type: 'Freelancers y consultores',     quote: '"Cobro proyectos y comisiones, todo junto"' },
+  { Icon: IconLightbulb, type: 'Emprendedores y founders',       quote: '"Sé en qué se va cada peso del negocio"' },
+  { Icon: IconLaptop,    type: 'Creadores y vendedores online',  quote: '"Pagos por web, transferencia y efectivo — todo en uno"' },
+  { Icon: IconScissors,  type: 'Estéticas y salones',            quote: '"Los pendientes de pago nunca se me olvidan"' },
+  { Icon: IconWrench,    type: 'Talleres y servicios',           quote: '"El reporte mensual me lo mando yo solo"' },
+  { Icon: IconStore,     type: 'Tiendas y restaurantes',         quote: '"Llevo mis cuentas en el celular, no en papel"' },
 ]
 
 const FEATURE_HIGHLIGHTS: Array<{
@@ -414,7 +411,7 @@ const FAQ = [
   },
   {
     q: '¿Para qué tipos de negocio funciona?',
-    a: 'Para cualquier negocio pequeño: taquerías, estéticas, talleres, tiendas, food trucks, freelancers, y cualquier actividad con ingresos y gastos — en efectivo o transferencia.',
+    a: 'Para freelancers, emprendedores, creadores que venden online, y cualquier negocio chico — estéticas, talleres, tiendas, restaurantes. Si tienes ingresos y gastos, te sirve. Funciona igual con efectivo, transferencia, o cobros por web.',
   },
   {
     q: '¿En qué se diferencia de una libreta o de Excel?',
@@ -580,7 +577,7 @@ export default function HomePage() {
                 maxWidth: '420px',
               }}
             >
-              “Vendí $2,000, salió $600 en materiales” — y listo, Fiza lo organiza.
+              “Cobré $8,500 del proyecto del cliente, $1,200 fue de comisiones” — y listo, Fiza lo organiza.
             </p>
 
             <Link
@@ -1056,7 +1053,7 @@ export default function HomePage() {
               {[
                 { label: 'Privacidad', href: '/privacidad' },
                 { label: 'Términos',   href: '/terminos' },
-                { label: 'Contacto',   href: 'mailto:hola@fiza.mx' },
+                { label: 'Contacto',   href: 'mailto:admin@fiza.mx' },
               ].map(link => (
                 <Link
                   key={link.label}

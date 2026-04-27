@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { CATEGORIES, MOVEMENT_TYPES } from '@/lib/constants'
+import { CATEGORIES_ALL, MOVEMENT_TYPES } from '@/lib/constants'
 import type { Movement } from '@/types'
 
 export async function PATCH(
@@ -41,7 +41,9 @@ export async function PATCH(
     patch['is_investment'] = Boolean(body['isInvestment'])
   }
   if (body['category'] !== undefined) {
-    patch['category'] = CATEGORIES.includes(body['category'] as (typeof CATEGORIES)[number])
+    // Acepta nuevas + legacy: editar un mov viejo con 'Ingredientes' no debe
+    // forzar pasar a 'Otro' si el user no tocó la categoría.
+    patch['category'] = CATEGORIES_ALL.includes(body['category'] as (typeof CATEGORIES_ALL)[number])
       ? body['category']
       : 'Otro'
   }

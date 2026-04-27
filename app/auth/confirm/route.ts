@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 // puede phishear con `/auth/confirm?next=https://evil.com` y el usuario que
 // apenas confirmó su correo termina en el dominio atacante.
 const ALLOWED_NEXT_PATHS = new Set([
-  '/dashboard',
+  '/registros',
   '/perfil',
   '/ajustes',
   '/reportes',
@@ -14,7 +14,7 @@ const ALLOWED_NEXT_PATHS = new Set([
 ])
 
 function safeNext(raw: string | null): string {
-  const fallback = '/dashboard'
+  const fallback = '/registros'
   if (!raw) return fallback
   // Rechaza cualquier cosa que no sea un path absoluto interno sin escapes
   if (!raw.startsWith('/')) return fallback       // relative / external

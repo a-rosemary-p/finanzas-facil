@@ -9,6 +9,7 @@ import {
 } from 'recharts'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import { formatCurrency } from '@/lib/utils'
+import { startProCheckout } from '@/lib/upgrade-to-pro'
 
 type Granularity = 'month' | 'week'
 type Series = 'income' | 'expenses' | 'net'
@@ -222,9 +223,14 @@ export default function TrendView({ plan }: TrendViewProps) {
           </svg>
           <div className="text-xs leading-relaxed" style={{ color: 'var(--brand-mid)' }}>
             Tu plan Free muestra los últimos 3 meses.{' '}
-            <a href="/ajustes" className="font-bold underline" style={{ color: 'var(--brand)' }}>
+            <button
+              type="button"
+              onClick={() => { void startProCheckout() }}
+              className="font-bold underline"
+              style={{ color: 'var(--brand)', background: 'transparent', padding: 0 }}
+            >
               Activa Pro
-            </a>{' '}
+            </button>{' '}
             para 12 meses + vista semanal + toggles de serie.
           </div>
         </div>

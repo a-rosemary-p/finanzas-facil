@@ -24,15 +24,41 @@ export const PLANS = {
   },
 } as const
 
+// Categorías ACTIVAS — las que el LLM puede usar y aparecen en el dropdown.
+// Renombradas/expandidas en abr 2026 para reflejar enfoque a freelancers
+// y emprendedores, no solo negocios físicos. Movimientos viejos con
+// categorías legacy ('Ingredientes', 'Servicios') siguen funcionando porque
+// la columna `movements.category` es TEXT — solo no aparecen como opción nueva.
 export const CATEGORIES = [
+  // Ingresos
   'Ventas',
-  'Ingredientes',
-  'Servicios',
-  'Transporte',
+  'Honorarios',
+  'Comisiones recibidas',
+  'Reembolsos',
+  // Operación
+  'Insumos y materiales',
+  'Software y suscripciones',
+  'Comisiones de plataforma',
+  'Marketing y publicidad',
+  'Equipo y herramientas',
+  // Negocio
   'Renta',
   'Servicios básicos',
+  'Transporte',
+  'Honorarios profesionales',
+  'Impuestos',
   'Otro',
 ] as const
+
+// Categorías LEGACY que pueden existir en la DB de antes del rediseño abr 2026.
+// Las usamos en server-side validators (entry/confirm, movements/[id] PATCH) para
+// que un edit no destruya el valor original — sin esto, editar un movimiento viejo
+// con `category='Ingredientes'` lo coercaría a 'Otro'. NO se ofrecen en el dropdown
+// ni el LLM las clasifica nuevas.
+export const CATEGORIES_LEGACY = ['Ingredientes', 'Servicios'] as const
+
+// Whitelist completa para validación server-side (acepta nuevas + legacy).
+export const CATEGORIES_ALL = [...CATEGORIES, ...CATEGORIES_LEGACY] as const
 
 export const MOVEMENT_TYPES = ['ingreso', 'gasto', 'pendiente'] as const
 

@@ -9,6 +9,7 @@
 import { useEffect, useState } from 'react'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import { formatCurrency } from '@/lib/utils'
+import { startProCheckout } from '@/lib/upgrade-to-pro'
 
 type ComparePeriod = 'week' | 'month' | 'year'
 
@@ -398,10 +399,14 @@ function FreePreview() {
           <p className="text-xs leading-relaxed" style={{ color: 'var(--brand-mid)' }}>
             Mira si vas mejor o peor que la semana, mes o año anterior — con desglose por categoría.
           </p>
-          <a href="/ajustes" className="text-sm font-bold py-2 px-4 rounded-xl text-white inline-block"
-            style={{ background: 'var(--brand)' }}>
+          <button
+            type="button"
+            onClick={() => { void startProCheckout() }}
+            className="text-sm font-bold py-2 px-4 rounded-xl text-white inline-block"
+            style={{ background: 'var(--brand)' }}
+          >
             Activar Pro
-          </a>
+          </button>
         </div>
       </div>
     </div>

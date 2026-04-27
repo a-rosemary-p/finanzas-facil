@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import { useAuth } from '@/hooks/use-auth'
+import { AppHeader } from '@/components/app-header'
 import { formatCurrency } from '@/lib/utils'
 import { MOVEMENT_TYPE_CONFIG } from '@/lib/constants'
 import { CompareView } from '@/components/reports/compare-view'
@@ -13,6 +14,7 @@ import {
   isAccessibleForFree, isFuturePeriod,
 } from '@/lib/periods'
 import type { Movement } from '@/types'
+import { startProCheckout } from '@/lib/upgrade-to-pro'
 
 // react-pdf solo client-side
 const PdfDownloadButton = dynamic(
@@ -149,18 +151,6 @@ export default function ReportesPage() {
   }
   const net = income - expenses
 
-  // ── Hamburger menu ──────────────────────────────────────────────────────
-  const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (!menuOpen) return
-    function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [menuOpen])
-
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -171,50 +161,7 @@ export default function ReportesPage() {
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(115deg, #BFDACB 25%, #E8F0B9 75%)' }}>
-      {/* ── Header ───────────────────────────────────────────────────────── */}
-      <header className="bg-white sticky top-0 z-10 flex items-center justify-between px-4"
-        style={{
-          borderBottom: '1px solid var(--brand-border)',
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 10px)',
-          paddingBottom: '10px', minHeight: '56px',
-        }}
-      >
-        <a href="/dashboard">
-          <img src="/logo-green.png" alt="fiza" style={{ height: '32px', width: 'auto' }} />
-        </a>
-
-        <div className="relative" ref={menuRef}>
-          <button
-            type="button"
-            onClick={() => setMenuOpen(v => !v)}
-            className="flex flex-col items-center justify-center gap-[5px] rounded-lg min-h-[44px] min-w-[44px] transition-colors"
-            style={{ background: menuOpen ? 'var(--brand-chip)' : 'transparent', border: '1px solid var(--brand-border)' }}
-            aria-label="Menú"
-          >
-            <span className="block w-[18px] h-[2px] rounded-full" style={{ background: 'var(--brand-mid)' }} />
-            <span className="block w-[18px] h-[2px] rounded-full" style={{ background: 'var(--brand-mid)' }} />
-            <span className="block w-[18px] h-[2px] rounded-full" style={{ background: 'var(--brand-mid)' }} />
-          </button>
-
-          {menuOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg z-50 overflow-hidden"
-              style={{ border: '1px solid var(--brand-border)', top: '100%' }}>
-              {[
-                { label: 'Dashboard', href: '/dashboard' },
-                { label: 'Perfil', href: '/perfil' },
-                { label: 'Ajustes', href: '/ajustes' },
-                { label: 'Reportes', href: '/reportes' },
-              ].map(item => (
-                <a key={item.label} href={item.href} onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors hover:bg-[var(--brand-chip)] min-h-[48px]"
-                  style={{ color: 'var(--brand)' }}>
-                  {item.label}
-                </a>
-              ))}
-            </div>
-          )}
-        </div>
-      </header>
+      <AppHeader />
 
       <main className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-5"
         style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}
@@ -338,9 +285,14 @@ export default function ReportesPage() {
                 <path d="M7 11V7a5 5 0 0110 0v4" />
               </svg>
               <span>Tu plan Free incluye los últimos 3 meses.</span>
-              <a href="/ajustes" className="font-bold underline" style={{ color: 'var(--brand)' }}>
+              <button
+                type="button"
+                onClick={() => { void startProCheckout() }}
+                className="font-bold underline"
+                style={{ color: 'var(--brand)', background: 'transparent', padding: 0 }}
+              >
                 Activa Pro
-              </a>
+              </button>
             </div>
           )}
         </div>
@@ -441,9 +393,10 @@ export default function ReportesPage() {
                         includeInvestments={includeInvestments}
                       />
                     ) : (
-                      // Free: botón ghosted con badge PRO + link a upgrade
-                      <a
-                        href="/ajustes"
+                      // Free: botón ghosted con badge PRO — click va directo a Stripe checkout.
+                      <button
+                        type="button"
+                        onClick={() => { void startProCheckout() }}
                         className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 min-h-[48px] transition-opacity"
                         style={{
                           background: 'var(--brand-chip)',
@@ -461,7 +414,7 @@ export default function ReportesPage() {
                           style={{ background: 'var(--brand)', color: '#fff', letterSpacing: '0.05em' }}>
                           PRO
                         </span>
-                      </a>
+                      </button>
                     )}
                   </div>
                 ) : null}

@@ -20,12 +20,48 @@ export async function GET(request: Request) {
 
   // ── Parse query params ────────────────────────────────────────────────────
   const { searchParams } = new URL(request.url)
+  const sort           = searchParams.get('sort') ?? 'date'  // 'date' (default) | 'recent'
   const filter        = (searchParams.get('filter') ?? 'month') as DateFilter
   const typeFilter    = (searchParams.get('type')   ?? 'all')   as TypeFilter
   const showPendientes  = searchParams.get('showPendientes')  !== 'false'
   const showInvestments = searchParams.get('showInvestments') === 'true'
   const offset   = Math.max(0, parseInt(searchParams.get('offset')   ?? '0', 10))
   const pageSize = Math.min(50, parseInt(searchParams.get('pageSize') ?? String(PAGE_SIZE), 10))
+
+  // ── sort=recent: lista de los más recientes por created_at ───────────────
+  //
+  // Pensado para el card "Últimos movimientos" de /registros, donde el user
+  // verifica visualmente que lo que acaba de registrar se guardó. Diferente
+  // del default (sort='date' = order by movement_date), que está pensado para
+  // explorar el historial por fecha real del movimiento.
+  //
+  // - Ignora filter/selectedMonth/from/to/showInvestments/showPendientes —
+  //   queremos ver TODO lo registrado recientemente, sin filtros.
+  // - Ignora el cap de 30 días de Free (lo que importa es "lo último que
+  //   registré", no "qué pasó en este período"). Free no abusa porque solo
+  //   pide N filas.
+  // - Sin métricas — esto NO es un período, no tiene sentido sumar.
+  if (sort === 'recent') {
+    const { data: rows } = await supabase
+      .from('movements')
+      .select('id, type, amount, description, category, movement_date, is_investment, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .order('id',         { ascending: false })  // tie-break determinista
+      .range(offset, offset + pageSize - 1)
+
+    const movements = (rows ?? []).map(r => ({
+      id:           r['id']            as string,
+      type:         r['type']          as string,
+      amount:       Number(r['amount']),
+      description:  r['description']   as string,
+      category:     r['category']      as string,
+      movementDate: r['movement_date'] as string,
+      isInvestment: (r['is_investment'] as boolean) ?? false,
+    }))
+
+    return Response.json({ movements, sort: 'recent' })
+  }
 
   // selectedMonth arrives as 'YYYY-MM'; reconstruct as local noon to avoid TZ drift
   const selMonthStr = searchParams.get('selectedMonth') // 'YYYY-MM' or null

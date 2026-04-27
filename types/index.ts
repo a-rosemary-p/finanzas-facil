@@ -4,14 +4,30 @@
 export type Plan = 'free' | 'pro'
 export type SubscriptionStatus = 'none' | 'active' | 'trialing' | 'past_due' | 'canceled' | 'unpaid' | 'incomplete_expired'
 export type MovementType = 'ingreso' | 'gasto' | 'pendiente'
+// Categorías de movimiento. Las activas son las que el LLM clasifica y el
+// dropdown ofrece. Las legacy son valores históricos que pueden venir de la
+// DB (movs creados pre-rediseño abr 2026) — quedan en el union para que
+// TypeScript no marque error al leer datos antiguos.
 export type Category =
+  // Activas
   | 'Ventas'
-  | 'Ingredientes'
-  | 'Servicios'
-  | 'Transporte'
+  | 'Honorarios'
+  | 'Comisiones recibidas'
+  | 'Reembolsos'
+  | 'Insumos y materiales'
+  | 'Software y suscripciones'
+  | 'Comisiones de plataforma'
+  | 'Marketing y publicidad'
+  | 'Equipo y herramientas'
   | 'Renta'
   | 'Servicios básicos'
+  | 'Transporte'
+  | 'Honorarios profesionales'
+  | 'Impuestos'
   | 'Otro'
+  // Legacy (pre abr 2026)
+  | 'Ingredientes'
+  | 'Servicios'
 export type DateFilter = 'today' | '7days' | 'month' | 'year' | 'all' | 'custom'
 export type TypeFilter = 'all' | 'ingreso' | 'gasto' | 'pendiente'
 

@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import type { SettingsUpdate } from '@/types'
 import { WaveRule } from '@/components/ui/wave'
+import { AppHeader } from '@/components/app-header'
+import { startProCheckout } from '@/lib/upgrade-to-pro'
 
 type EditingSection = 'cuenta' | 'password' | null
 
@@ -133,11 +135,9 @@ function EditInput({ label, value, onChange, type = 'text', placeholder, error }
 
 // ── Página ──────────────────────────────────────────────────
 export default function AjustesPage() {
-  const { profile, loading, logout, updateSettings, updateEmail, updatePassword } = useAuth()
+  const { profile, loading, updateSettings, updateEmail, updatePassword } = useAuth()
   const [editingSection, setEditingSection] = useState<EditingSection>(null)
   const [saving, setSaving] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
 
   // ── Cuenta (email) ──
   const [emailDraft, setEmailDraft] = useState('')
@@ -153,18 +153,6 @@ export default function AjustesPage() {
   // ── Stripe ──
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
-
-  // Cerrar menú al hacer clic fuera
-  useEffect(() => {
-    if (!menuOpen) return
-    function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [menuOpen])
 
   // Timer para mensaje de éxito de contraseña
   useEffect(() => {
@@ -257,13 +245,8 @@ export default function AjustesPage() {
 
   const handleUpgrade = useCallback(async () => {
     setCheckoutLoading(true)
-    try {
-      const res = await fetchWithAuthRetry('/api/checkout', { method: 'POST' })
-      const data = await res.json() as { url?: string; error?: string }
-      if (data.url) window.location.href = data.url
-      else if (data.error) window.alert(data.error)
-    } catch { window.alert('No se pudo conectar. Intenta de nuevo.') }
-    finally { setCheckoutLoading(false) }
+    await startProCheckout()
+    setCheckoutLoading(false)
   }, [])
 
   const handlePortal = useCallback(async () => {
@@ -291,74 +274,7 @@ export default function AjustesPage() {
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(115deg, #BFDACB 25%, #E8F0B9 75%)' }}>
 
-      {/* Header */}
-      <header
-        className="bg-white sticky top-0 z-10 flex items-center justify-between px-4"
-        style={{
-          borderBottom: '1px solid var(--brand-border)',
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 10px)',
-          paddingBottom: '10px',
-          minHeight: '56px',
-        }}
-      >
-        <a href="/dashboard">
-          <img src="/logo-green.png" alt="fiza" style={{ height: '32px', width: 'auto' }} />
-        </a>
-
-        {/* Menú hamburger */}
-        <div className="relative" ref={menuRef}>
-          <button
-            type="button"
-            onClick={() => setMenuOpen(v => !v)}
-            className="flex flex-col items-center justify-center gap-[5px] rounded-lg min-h-[44px] min-w-[44px] transition-colors"
-            style={{ background: menuOpen ? 'var(--brand-chip)' : 'transparent', border: '1px solid var(--brand-border)' }}
-            aria-label="Menú"
-          >
-            <span className="block w-[18px] h-[2px] rounded-full" style={{ background: 'var(--brand-mid)' }} />
-            <span className="block w-[18px] h-[2px] rounded-full" style={{ background: 'var(--brand-mid)' }} />
-            <span className="block w-[18px] h-[2px] rounded-full" style={{ background: 'var(--brand-mid)' }} />
-          </button>
-
-          {menuOpen && (
-            <div
-              className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg z-50 overflow-hidden"
-              style={{ border: '1px solid var(--brand-border)', top: '100%' }}
-            >
-              {[
-                { label: 'Dashboard', href: '/dashboard' },
-                { label: 'Perfil', href: '/perfil' },
-                { label: 'Ajustes', href: '/ajustes' },
-                { label: 'Reportes', href: '/reportes' },
-              ].map(item => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors hover:bg-[var(--brand-chip)] min-h-[48px]"
-                  style={{ color: 'var(--brand)' }}
-                >
-                  {item.label}
-                </a>
-              ))}
-              <div>
-                <WaveRule />
-                <button
-                  type="button"
-                  onClick={() => { setMenuOpen(false); logout() }}
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium w-full transition-colors hover:bg-[var(--danger-bg)] min-h-[48px]"
-                  style={{ color: 'var(--danger)' }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                    <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-                  </svg>
-                  <span>Salir</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </header>
+      <AppHeader />
 
       <main className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-4"
         style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}
@@ -566,11 +482,11 @@ export default function AjustesPage() {
 
         {/* Volver */}
         <a
-          href="/dashboard"
+          href="/registros"
           className="text-sm font-medium py-3 rounded-xl min-h-[44px] flex items-center justify-center transition-colors"
           style={{ color: 'var(--brand-mid)', background: 'rgba(255,255,255,0.6)' }}
         >
-          ← Volver al dashboard
+          ← Volver a registros
         </a>
 
       </main>
