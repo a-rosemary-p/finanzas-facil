@@ -75,18 +75,22 @@ export function ConfirmationScreen({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rawText, entryDate, movements: valid }),
       })
-      const data: unknown = await res.json()
+      const data: unknown = await res.json().catch(() => null)
 
       if (!res.ok) {
-        const err = data as Record<string, unknown>
-        setError((err['message'] as string) || (err['error'] as string) || 'Error al confirmar.')
+        const err = (data ?? {}) as Record<string, unknown>
+        // Loguea el detalle al console para que sea diagnosticable cuando el
+        // user reporta "error al guardar". El UX queda igual.
+        console.error('[confirm] failed', { status: res.status, body: err, sent: { rawText, entryDate, movements: valid } })
+        setError((err['message'] as string) || (err['error'] as string) || `Error al confirmar (${res.status}).`)
         setLoading(false)
         return
       }
 
       const { entry } = data as { entry: Entry }
       onConfirmed(entry)
-    } catch {
+    } catch (err) {
+      console.error('[confirm] network error', err)
       setError('No pudimos conectar. Intenta de nuevo.')
       setLoading(false)
     }

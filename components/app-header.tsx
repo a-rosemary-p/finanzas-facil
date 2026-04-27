@@ -142,8 +142,14 @@ export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
       </div>
 
       {/* Wave cutoff inferior — SVG blanco que sangra hacia el gradiente.
-       * Reemplaza el border-bottom recto. Posicionado absoluto al bottom del
-       * header con z-index > 0 para que aparezca sobre el contenido siguiente. */}
+       * Reemplaza el border-bottom recto.
+       *
+       * Bug que tenía sin `height` explícito: en desktop con viewport ancho,
+       * el SVG sin height definido se renderizaba con la altura default del
+       * browser (~150px) y, con preserveAspectRatio="none", el path estiraba
+       * la wave verticalmente — por eso "se separaba" del header. Fijamos
+       * height al rango y del viewBox para que se mantenga proporcional
+       * sin importar el ancho. */}
       <svg
         aria-hidden="true"
         viewBox="0 0 390 12"
@@ -151,8 +157,9 @@ export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
         style={{
           display: 'block',
           width: '100%',
+          height: 12,
           position: 'absolute',
-          bottom: -10,
+          bottom: -11,   // 1px de overlap con el header para evitar hairline gap
           left: 0,
           zIndex: 1,
           pointerEvents: 'none',
