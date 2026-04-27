@@ -1,34 +1,58 @@
 /**
- * Sparkline decorativo para el card de métricas.
+ * Sparkline para el card de métricas — curva real basada en data del período.
  *
- * Decisión consciente (abr 2026): los paths son fijos para up/down/flat.
- * NO refleja datos reales — la curva es muy chica (90×10 px) para que el user
- * lea forma significativa, y queríamos evitar agregar otro fetch al mount de
- * `/registros`. La señal de "estás mejor o peor" la lleva el delta numérico
- * que va debajo. Si en el futuro queremos curva real, los datapoints saldrían
- * del endpoint /api/reports/trend (12 puntos de la última semana/mes).
+ * Antes (commit fa7c983): paths fijos `up`/`down`/`flat`. Se veía claramente
+ * decorativo y los users no le creían. Ahora consume los `points` que devuelve
+ * `/api/reports/compare?period=X` (un valor por bucket; ver bucketRanges en el
+ * endpoint para los conteos por período: 7 daily / 7 daily / ~30 daily / 12
+ * monthly).
+ *
+ * Path = polyline simple (sin curvas suavizadoras). En 90×10 px las curvas
+ * Bezier no aportan nada visualmente y meten ruido.
  */
 
 interface SparklineProps {
-  trend: 'up' | 'down' | 'flat'
+  points: number[]
   color: string
 }
 
-const PATHS: Record<SparklineProps['trend'], string> = {
-  up:   'M 0 7 C 10 9, 20 3, 30 6 S 50 9, 60 5 S 75 2, 90 4',
-  down: 'M 0 3 C 10 1, 20 7, 30 4 S 50 1, 60 5 S 75 8, 90 7',
-  flat: 'M 0 5 C 10 3, 20 7, 30 5 S 50 3, 60 6 S 75 7, 90 5',
-}
+const VIEW_W = 90
+const VIEW_H = 10
+const PADDING = 1
 
-export function Sparkline({ trend, color }: SparklineProps) {
+export function Sparkline({ points, color }: SparklineProps) {
+  // Casos donde no vale la pena dibujar — el padre decide ocultar el bloque.
+  if (points.length < 2) return null
+
+  const min = Math.min(...points)
+  const max = Math.max(...points)
+  const range = max - min
+  const usableH = VIEW_H - PADDING * 2
+
+  // Si todos los buckets son idénticos (incluido todos = 0), trazamos una
+  // línea horizontal centrada — más honesto que "subir o bajar artificialmente".
+  const flat = range === 0
+  const baselineY = VIEW_H - PADDING - usableH / 2
+
+  const d = points
+    .map((v, i) => {
+      const x = (i / (points.length - 1)) * VIEW_W
+      const y = flat
+        ? baselineY
+        : VIEW_H - PADDING - ((v - min) / range) * usableH
+      const cmd = i === 0 ? 'M' : 'L'
+      return `${cmd} ${x.toFixed(2)} ${y.toFixed(2)}`
+    })
+    .join(' ')
+
   return (
     <svg
-      viewBox="0 0 90 10"
+      viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
       preserveAspectRatio="none"
       aria-hidden="true"
-      style={{ display: 'block', width: '100%', height: 10, opacity: 0.45 }}
+      style={{ display: 'block', width: '100%', height: 10, opacity: 0.55 }}
     >
-      <path d={PATHS[trend]} fill="none" stroke={color} strokeWidth="1.3" strokeLinecap="round" />
+      <path d={d} fill="none" stroke={color} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }

@@ -44,6 +44,21 @@ interface Aggregate {
   byCategory: ByCategory
 }
 
+// Series cortas para los sparkline del card de métricas en /registros.
+// Una entrada = un bucket en el período actual.
+//   today  → 7 buckets diarios (los últimos 7 días incluyendo hoy)
+//   week   → 7 buckets diarios (lunes a domingo de la semana actual)
+//   month  → buckets diarios cubriendo todo el mes (28-31 entradas)
+//   year   → 12 buckets mensuales (enero-diciembre del año actual)
+// Los buckets futuros (días posteriores a hoy en mes/semana, meses futuros del
+// año, etc.) van con 0 — el sparkline en el cliente reflejará la caída a 0
+// al final, lo cual es lectura honesta.
+interface SparkSeries {
+  income: number[]
+  expenses: number[]
+  net: number[]
+}
+
 function fmtYMD(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
@@ -228,11 +243,94 @@ export async function GET(request: Request) {
     previous = scaleAggregate(previous, 1 / TODAY_BASELINE_DAYS)
   }
 
+  const sparkline = computeSparkline(period, allMovements, new Date())
+
   return Response.json({
     period,
     current,
     previous,
+    sparkline,
   })
+}
+
+// ─── Sparkline: buckets para curvas reales ────────────────────────────────────
+
+function bucketRanges(period: ComparePeriod, today: Date): Array<{ start: string; end: string }> {
+  const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+
+  switch (period) {
+    case 'today': {
+      // Los últimos 7 días incluyendo hoy. Para "today" no podemos usar buckets
+      // por hora confiablemente — los movimientos no llevan timestamp granular,
+      // solo `movement_date`. La curva muestra contexto de la última semana.
+      const buckets: Array<{ start: string; end: string }> = []
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(todayMidnight)
+        d.setDate(todayMidnight.getDate() - i)
+        const s = fmtYMD(d)
+        buckets.push({ start: s, end: s })
+      }
+      return buckets
+    }
+    case 'week': {
+      const monday = startOfWeek(todayMidnight)
+      const buckets: Array<{ start: string; end: string }> = []
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(monday)
+        d.setDate(monday.getDate() + i)
+        const s = fmtYMD(d)
+        buckets.push({ start: s, end: s })
+      }
+      return buckets
+    }
+    case 'month': {
+      const firstDay = new Date(todayMidnight.getFullYear(), todayMidnight.getMonth(), 1)
+      const lastDay = lastDayOfMonth(todayMidnight.getFullYear(), todayMidnight.getMonth())
+      const buckets: Array<{ start: string; end: string }> = []
+      const cursor = new Date(firstDay)
+      while (cursor <= lastDay) {
+        const s = fmtYMD(cursor)
+        buckets.push({ start: s, end: s })
+        cursor.setDate(cursor.getDate() + 1)
+      }
+      return buckets
+    }
+    case 'year': {
+      const buckets: Array<{ start: string; end: string }> = []
+      const year = todayMidnight.getFullYear()
+      for (let m = 0; m < 12; m++) {
+        const start = fmtYMD(new Date(year, m, 1))
+        const end   = fmtYMD(new Date(year, m + 1, 0))
+        buckets.push({ start, end })
+      }
+      return buckets
+    }
+  }
+}
+
+function computeSparkline(
+  period: ComparePeriod,
+  movs: Movement[],
+  today: Date,
+): SparkSeries {
+  const buckets = bucketRanges(period, today)
+  const income   = new Array(buckets.length).fill(0) as number[]
+  const expenses = new Array(buckets.length).fill(0) as number[]
+
+  // Index por fecha: para buckets de 1 día (today/week/month) un map directo
+  // por movement_date es O(1). Para year (buckets de mes), iteramos lineal
+  // — solo 12 buckets, costo despreciable.
+  for (const m of movs) {
+    if (m.isInvestment) continue
+    if (m.type !== 'ingreso' && m.type !== 'gasto') continue
+    const idx = buckets.findIndex(b => m.movementDate >= b.start && m.movementDate <= b.end)
+    if (idx === -1) continue
+    if (m.type === 'ingreso') income[idx] += m.amount
+    else expenses[idx] += m.amount
+  }
+
+  const net = income.map((v, i) => v - expenses[i])
+  return { income, expenses, net }
 }
 
 function scaleAggregate(agg: Aggregate, factor: number): Aggregate {

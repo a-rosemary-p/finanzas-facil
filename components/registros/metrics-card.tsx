@@ -26,6 +26,13 @@ interface CompareResponse {
   period: string
   current:  { income: number; expenses: number; net: number }
   previous: { income: number; expenses: number; net: number }
+  // Sparkline series para el período actual: un valor por bucket (7 / 7 / ~30 / 12
+  // dependiendo del período). Ver `/api/reports/compare/route.ts:bucketRanges`.
+  sparkline?: {
+    income:   number[]
+    expenses: number[]
+    net:      number[]
+  }
 }
 
 const PREV_LABEL: Record<RegistrosPeriod, string> = {
@@ -58,6 +65,7 @@ export function MetricsCard({ period, onPeriodChange, refreshKey = 0 }: Props) {
 
   const current  = data?.current  ?? { income: 0, expenses: 0, net: 0 }
   const previous = data?.previous ?? { income: 0, expenses: 0, net: 0 }
+  const spark    = data?.sparkline
 
   return (
     <div
@@ -86,6 +94,7 @@ export function MetricsCard({ period, onPeriodChange, refreshKey = 0 }: Props) {
           icon={<IconWallet size={20} />}
           value={current.income}
           previousValue={previous.income}
+          sparkPoints={spark?.income}
           colorVar="--income-text"
           bgVar="--income-bg"
           previousLabel={PREV_LABEL[period]}
@@ -97,6 +106,7 @@ export function MetricsCard({ period, onPeriodChange, refreshKey = 0 }: Props) {
           icon={<IconReceipt size={20} />}
           value={current.expenses}
           previousValue={previous.expenses}
+          sparkPoints={spark?.expenses}
           colorVar="--expense-text"
           bgVar="--expense-bg"
           previousLabel={PREV_LABEL[period]}
@@ -108,6 +118,7 @@ export function MetricsCard({ period, onPeriodChange, refreshKey = 0 }: Props) {
           icon={<IconChartPieSlice size={20} />}
           value={current.net}
           previousValue={previous.net}
+          sparkPoints={spark?.net}
           colorVar="--brand"
           bgVar="--income-bg"
           previousLabel={PREV_LABEL[period]}
@@ -124,6 +135,7 @@ interface SubCardProps {
   icon: React.ReactNode
   value: number
   previousValue: number
+  sparkPoints?: number[]
   colorVar: string  // CSS var name without `var()`
   bgVar: string
   previousLabel: string
@@ -133,7 +145,7 @@ interface SubCardProps {
 }
 
 function SubCard({
-  label, icon, value, previousValue, colorVar, bgVar,
+  label, icon, value, previousValue, sparkPoints, colorVar, bgVar,
   previousLabel, higherIsBetter, loading,
 }: SubCardProps) {
   const color = `var(${colorVar})`
@@ -141,17 +153,14 @@ function SubCard({
 
   // Lógica del delta — todas las decisiones de visibilidad viven aquí.
   const delta = computeDelta(value, previousValue)
-  const trend: 'up' | 'down' | 'flat' =
-    delta?.kind === 'pct'
-      ? (delta.pct > 0.5 ? 'up' : delta.pct < -0.5 ? 'down' : 'flat')
-      : delta?.kind === 'new' ? 'up' : 'flat'
 
   // "Mejoró" = delta apunta en la dirección buena para esta métrica.
-  // (Sin uso visual hoy — sparkline solo refleja signo. Lo dejamos calculado
-  // por si en el futuro queremos colorear el texto del delta.)
+  // (Sin uso visual hoy. Lo dejamos calculado por si en el futuro queremos
+  // colorear el texto del delta.)
   void higherIsBetter
 
   const showDeltaBlock = !!delta
+  const hasSpark = !!sparkPoints && sparkPoints.length >= 2
 
   return (
     <div
@@ -174,9 +183,11 @@ function SubCard({
 
       {showDeltaBlock && !loading && (
         <>
-          <div className="mt-1.5">
-            <Sparkline trend={trend} color={color} />
-          </div>
+          {hasSpark && (
+            <div className="mt-1.5">
+              <Sparkline points={sparkPoints!} color={color} />
+            </div>
+          )}
           <div
             className="text-[8.5px] font-semibold text-center mt-1 leading-tight"
             style={{ color, opacity: 0.7 }}
