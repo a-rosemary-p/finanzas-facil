@@ -200,12 +200,17 @@ export function InputCard({ onMovementsExtracted }: Props) {
         </span>
       </div>
 
-      {/* 3 botones */}
+      {/* 3 botones.
+       *
+       * NOTA sobre el input file: NO ponemos `capture="environment"`. Ese
+       * atributo fuerza la cámara directa y se pierde el sheet nativo de
+       * iOS/Android que ofrece Cámara / Foto Library / Archivos. Sin el
+       * atributo, ambos sistemas operativos muestran el menú correcto
+       * automáticamente. En desktop el comportamiento es el mismo (file picker). */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/jpeg,image/png,image/webp"
-        capture="environment"
         className="hidden"
         onChange={handlePhotoChange}
       />
@@ -215,16 +220,20 @@ export function InputCard({ onMovementsExtracted }: Props) {
       >
         <CaptureButton
           variant="filled"
-          icon={<IconCamera size={28} />}
+          icon={photoLoading ? <Spinner size={28} /> : <IconCamera size={28} />}
           label={photoLoading ? 'Analizando…' : 'Foto'}
-          hint="Recibos y facturas"
+          hint={photoLoading ? '' : 'Recibos y facturas'}
           active={photoLoading}
           disabled={busy && !photoLoading}
           onClick={openPhotoPicker}
         />
         <CaptureButton
           variant="filled"
-          icon={<IconMicrophone size={28} />}
+          icon={
+            transcribing
+              ? <Spinner size={28} />
+              : <IconMicrophone size={28} />
+          }
           label={
             recorder.isRecording
               ? formatRecordingTimer(recorder.elapsedMs)
@@ -232,7 +241,7 @@ export function InputCard({ onMovementsExtracted }: Props) {
               ? 'Transcribiendo…'
               : 'Dictar'
           }
-          hint={recorder.isRecording ? '' : 'Cuéntame qué pasó'}
+          hint={recorder.isRecording || transcribing ? '' : 'Cuéntame qué pasó'}
           active={recorder.isRecording || transcribing}
           disabled={(busy && !recorder.isRecording && !transcribing) || !recorder.supported}
           onClick={toggleRecording}
@@ -411,6 +420,34 @@ function CaptureButton({ variant, icon, label, hint, active, disabled, onClick }
         </span>
       )}
     </button>
+  )
+}
+
+// Spinner inline para los CaptureButtons cuando están "procesando" (Foto
+// analizando con OCR+LLM, Dictar transcribiendo con Whisper). Reemplaza el
+// ícono del botón sin cambiar layout.
+//
+// Usa `currentColor` igual que los íconos — hereda el color del padre, así
+// queda blanco sobre fondo salvia automáticamente.
+function Spinner({ size = 28 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      style={{ animation: 'fz-spin 0.9s linear infinite' }}
+    >
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" opacity="0.25" />
+      <path
+        d="M21 12a9 9 0 0 0-9-9"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <style>{`@keyframes fz-spin { to { transform: rotate(360deg) } }`}</style>
+    </svg>
   )
 }
 
