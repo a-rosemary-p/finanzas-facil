@@ -65,12 +65,26 @@ Si el movimiento es claramente una inversión (ej: "compré una moto para repart
 - isInvestment: true
 Por default isInvestment: false para todos los demás movimientos.
 
+EXTRACCIÓN DE FECHAS (importante):
+Si en la imagen aparece una fecha — fecha de factura, fecha de emisión, fecha
+de servicio, fecha del ticket, "Fecha de facturación", etc. — ÚSALA como
+`movementDate` en formato YYYY-MM-DD. NO uses la fecha base si la imagen ya
+trae fecha.
+- Formatos en México y Europa: día primero. "18/01/22" = 18 de enero de 2022,
+  NUNCA enero 18 ni agosto 1. Lo mismo con "18-01-22" o "18.01.22".
+- Año de 2 dígitos: asume 20XX (22 → 2022, 99 → 2099 si la fecha es futura,
+  1999 si claramente del pasado por contexto). En la práctica casi siempre 20XX.
+- Fechas en texto: "5 de abril de 2026" → 2026-04-05. "15-mar-2025" → 2025-03-15.
+- Si hay varias fechas (emisión + vencimiento), prefiere la fecha de
+  emisión/servicio (cuándo ocurrió el cargo) sobre la de vencimiento.
+- Solo usa la fecha base si NO hay ninguna fecha visible en la imagen.
+
 REGLAS:
 1. Montos siempre positivos. Nunca negativos.
 2. Si hay total y subtotales en un ticket, usa solo el TOTAL como un movimiento.
 3. Descripción: máxima 60 caracteres, en español, clara y concisa.
 4. Si no identificas movimientos financieros válidos, devuelve movements: [].
-5. Usa la fecha base para movimientos sin fecha visible en la imagen.
+5. Para `movementDate`: aplica EXTRACCIÓN DE FECHAS arriba.
 
 RESPONDE SOLO CON JSON VÁLIDO (sin texto extra, sin markdown):
 {
@@ -148,13 +162,28 @@ Si el movimiento es claramente una inversión (ej: "compré una moto para repart
 - isInvestment: true
 Por default isInvestment: false para todos los demás movimientos.
 
+EXTRACCIÓN DE FECHAS (importante — el texto puede venir de un OCR de ticket/factura):
+Si el texto trae una fecha — "Fecha:", "Fecha de facturación:", "Emitida el",
+fecha al inicio de un ticket, "ayer", "el lunes", etc. — ÚSALA como
+`movementDate` en formato YYYY-MM-DD. NO uses la fecha base si el texto ya
+indica una fecha.
+- Formatos en México y Europa: día primero. "18/01/22" = 18 de enero de 2022,
+  NUNCA enero 18 ni agosto 1. Lo mismo con "18-01-22" o "18.01.22".
+- Año de 2 dígitos: asume 20XX (22 → 2022). En la práctica casi siempre 20XX.
+- Fechas en palabras: "5 de abril de 2026" → 2026-04-05. "15-mar-2025" → 2025-03-15.
+- Fechas relativas ("ayer", "antier", "el lunes"): calcula respecto a la fecha
+  base que te di. "ayer" = un día antes de la fecha base.
+- Si hay varias fechas en una factura/ticket (emisión + vencimiento), prefiere
+  la fecha de emisión/servicio sobre la de vencimiento.
+- Solo usa la fecha base si NO hay ninguna fecha en el texto.
+
 REGLAS IMPORTANTES:
 1. Montos siempre positivos. Nunca negativos.
 2. "mil" = 1000, "500 varos" = 500, "un quinto" = 200, "lana" = dinero.
 3. Si hay total y subtotales (como un ticket), usa el TOTAL como un solo movimiento.
 4. Descripción: máxima 60 caracteres, en español, clara y concisa.
 5. Si no identificas movimientos financieros válidos, devuelve movements: [].
-6. Usa la fecha base para movimientos sin fecha específica.
+6. Para `movementDate`: aplica EXTRACCIÓN DE FECHAS arriba.
 
 RESPONDE SOLO CON JSON VÁLIDO (sin texto extra, sin markdown):
 {
