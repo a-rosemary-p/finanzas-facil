@@ -418,7 +418,18 @@ function MicDemo({ onComplete }: { onComplete: () => void }) {
         )}
       </div>
 
-      <BottomCard>
+      {/* Status card — div normal (NO BottomCard). BottomCard usa
+       * position:fixed que se escapaba del flex-col padre, dejando el
+       * card encima de la burbuja del chat. Ahora el card vive dentro
+       * del flow y se apila debajo de la burbuja como esperamos. */}
+      <div
+        style={{
+          background: 'var(--paper)',
+          borderRadius: 18,
+          boxShadow: 'var(--sh-3)',
+          padding: '18px 20px',
+        }}
+      >
         <div className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>
           {phase === 'recording'
             ? 'Grabando lo que dijiste...'
@@ -438,7 +449,7 @@ function MicDemo({ onComplete }: { onComplete: () => void }) {
             <IconArrowRight size={16} />
           </button>
         </div>
-      </BottomCard>
+      </div>
 
       <style>{`
         @keyframes fz-cursor { 50% { opacity: 0 } }

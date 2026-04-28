@@ -2,12 +2,10 @@
 
 > **La spec viva está fuera del repo**, en la carpeta del proyecto.
 >
-> Versión actual: **v0.27** (abril 26, 2026)
-> Archivo: `C:\Users\arome\Documents - Local\App Finanzas Pymes\Fiza_APP_SPEC v0.27. 260426.md`
+> Versión actual: **v0.28** (abril 27, 2026)
+> Archivo: `C:\Users\arome\Documents - Local\App Finanzas Pymes\Fiza_APP_SPEC v0.28. 270426.md`
 >
-> Contiene: rutas, API routes (`/api/reports/{movements,compare,trend}`, `/api/transcribe`,
-> etc.), schema DB (migrations 001–009), hooks, componentes, tipos, constantes, flujos,
-> enforcement Free vs Pro, security headers, rate limiting, y changelogs v0.21 → v0.27.
+> Contiene: rutas (incl. `/pendientes`), API routes (incl. `/api/recurring`, `/api/onboarding/complete`), schema DB (migrations 001–015), hooks (usePendings, useRecurring), componentes (pendientes/, onboarding/), tipos, constantes, flujos, enforcement Base vs Pro, security headers, rate limiting, audit trail, recurrentes, onboarding, y changelogs v0.21 → v0.28.
 
 ---
 
@@ -23,6 +21,10 @@
 - **Webhook de Stripe** usa `SUPABASE_SERVICE_ROLE_KEY` (admin client) — no usar ese cliente en otra parte, salvo `/api/city-stats`. Cada evento entra a `stripe_events` para idempotencia. Si UPDATE matchea 0 filas → fallback por `metadata.supabase_user_id` (parche post-v0.26 integrado a v0.27).
 - **`<AppHeader />` es el único header.** No vuelvas a poner uno inline. Si necesitas variar, usa props.
 - **CTAs de upgrade van directo a Stripe via `startProCheckout()`** (`lib/upgrade-to-pro.ts`). Nunca rebotes al user con `<a href="/ajustes">`. Excepción: la landing pública (sin sesión).
+- **Pendientes con dirección (v0.28):** `pending_direction` ('ingreso'|'gasto'|null). Al pagar, `usePendings.markAsPaid` la lee. Default 'gasto' para back-compat.
+- **Recurrentes son next-only (v0.28):** un pendiente vivo a la vez. `materializeNextPending()` es idempotente. Crear/pausar/borrar via `/api/recurring`. Editar template afecta los próximos, NO el activo.
+- **Audit trail (v0.28):** `movement_events` con `event_type` ('created'/'paid'/'edited'/'recurring_materialized') sin CHECK (drop en migration 011). Inmutable (UPDATE/DELETE revocados). CASCADE con movements al borrar.
+- **Onboarding (v0.28):** flag `profiles.onboarded_at`. NO uses `total_movements===0` solo. Set via `POST /api/onboarding/complete`.
 - **Nunca construir URLs desde `req.url` / `Host`** para redirects cross-origin. Usar `NEXT_PUBLIC_APP_URL` u otra env confiable.
 - **Rate limiting** via `lib/rate-limit.ts`. Cualquier endpoint que llame OpenAI u otro servicio caro debe llamar `consumeRateLimit(supabase, user.id, 'bucket')`. Buckets actuales: `entry`, `entry_photo`, `transcribe`. Agregar uno nuevo no requiere migration.
 - **Open redirects**: ningún endpoint debe aceptar un `next` / `redirect` param sin allow-list. Ver `app/auth/confirm/route.ts:safeNext` como patrón.
