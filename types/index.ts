@@ -102,6 +102,38 @@ export interface Movement {
    */
   paidAt?: string | null
   originalType?: MovementType | null
+  /**
+   * Recurrentes (v0.27 sprint 3):
+   * - `pendingDirection`: si type === 'pendiente', en qué se convertirá al
+   *   ser pagado. 'ingreso' (pendiente de cobro) o 'gasto' (de pago).
+   *   NULL es back-compat — asume gasto.
+   * - `recurringMovementId`: si este pendiente fue generado por un recurrente,
+   *   apunta al template. Al pagarse, se dispara la materialización del
+   *   siguiente pendiente.
+   */
+  pendingDirection?: 'ingreso' | 'gasto' | null
+  recurringMovementId?: string | null
+}
+
+/**
+ * Template recurrente — genera un pendiente activo a la vez. Al pagar ese
+ * pendiente, el siguiente se materializa automáticamente.
+ */
+export type RecurringFrequency = 'week' | 'month' | 'year'
+
+export interface RecurringMovement {
+  id: string
+  /** 'ingreso' o 'gasto' — la dirección final, no 'pendiente'. */
+  type: 'ingreso' | 'gasto'
+  amount: number
+  description: string
+  category: Category
+  frequency: RecurringFrequency
+  nextDueDate: string         // YYYY-MM-DD — cuándo es la PRÓXIMA materialización
+  isActive: boolean
+  lastMaterializedAt?: string | null
+  createdAt: string
+  updatedAt: string
 }
 
 // Movimiento pendiente de confirmación (antes de guardar en DB)
@@ -117,6 +149,17 @@ export interface PendingMovement {
   originalAmount?: number
   originalCurrency?: 'MXN' | 'USD' | 'EUR'
   exchangeRateUsed?: number
+  /**
+   * Recurrentes (v0.27 sprint 3): el LLM puede detectar frases como
+   * "pago renta cada mes" y marcar el movimiento. Si está presente y el
+   * user confirma, /api/entry/confirm crea un `recurring_movements` además
+   * del movement.
+   * - Para `type='pendiente'`: pendingDirection captura la dirección del
+   *   pendiente (lo que será al pagarse).
+   */
+  pendingDirection?: 'ingreso' | 'gasto' | null
+  isRecurring?: boolean
+  recurringFrequency?: 'week' | 'month' | 'year' | null
 }
 
 export interface DashboardMetrics {

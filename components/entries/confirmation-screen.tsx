@@ -231,18 +231,51 @@ export function ConfirmationScreen({
             </select>
           </div>
 
-          {/* Fecha */}
+          {/* Fecha. Pendientes pueden ser futuros — para esos no aplicamos
+           * `max=today`. Para ingreso/gasto sí cap (evita typos de "registrar
+           * gasto que aún no pasa"). */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>Fecha</label>
             <input
               type="date"
               value={m.movementDate}
-              max={getTodayString()}
+              max={m.type === 'pendiente' ? undefined : getTodayString()}
               onChange={e => update(m.tempId, { movementDate: e.target.value })}
               className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
               style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
             />
           </div>
+
+          {/* Pendiente: dirección (cobro o pago). Sólo visible para type='pendiente'. */}
+          {m.type === 'pendiente' && (
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>
+                ¿Vas a cobrar o vas a pagar?
+              </label>
+              <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}>
+                {([
+                  { value: 'gasto'   as const, label: 'Voy a pagar'    },
+                  { value: 'ingreso' as const, label: 'Me van a pagar' },
+                ]).map(opt => {
+                  const active = (m.pendingDirection ?? 'gasto') === opt.value
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => update(m.tempId, { pendingDirection: opt.value })}
+                      className="flex-1 text-xs font-bold rounded-md py-1.5 transition-colors"
+                      style={{
+                        background: active ? 'var(--brand)' : 'transparent',
+                        color: active ? '#fff' : 'var(--brand-mid)',
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Toggle inversión */}
           <label className="flex items-center gap-2 cursor-pointer py-1">
@@ -256,6 +289,45 @@ export function ConfirmationScreen({
               Marcar como inversión (activo a largo plazo)
             </span>
           </label>
+
+          {/* Recurrente: el LLM puede pre-marcar esto si detectó "cada mes" etc.;
+           * el user puede toggle. Si está activo, /api/entry/confirm crea
+           * un recurring_movements en lugar de un mov directo. */}
+          <div className="flex flex-col gap-1.5 rounded-lg p-2.5"
+            style={{ background: m.isRecurring ? 'var(--brand-chip)' : 'transparent', border: m.isRecurring ? '1px solid var(--brand-border)' : '1px solid transparent' }}>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={m.isRecurring ?? false}
+                onChange={e => update(m.tempId, {
+                  isRecurring: e.target.checked,
+                  recurringFrequency: e.target.checked ? (m.recurringFrequency ?? 'month') : null,
+                })}
+                className="w-4 h-4"
+                style={{ accentColor: 'var(--brand)' }}
+              />
+              <span className="text-xs font-medium" style={{ color: m.isRecurring ? 'var(--brand)' : 'var(--brand-mid)' }}>
+                Se repite cada
+              </span>
+              {m.isRecurring && (
+                <select
+                  value={m.recurringFrequency ?? 'month'}
+                  onChange={e => update(m.tempId, { recurringFrequency: e.target.value as 'week' | 'month' | 'year' })}
+                  className="text-xs font-bold border rounded-md px-2 py-1 focus:outline-none"
+                  style={{ borderColor: 'var(--brand)', color: 'var(--brand)', background: '#fff' }}
+                >
+                  <option value="week">semana</option>
+                  <option value="month">mes</option>
+                  <option value="year">año</option>
+                </select>
+              )}
+            </label>
+            {m.isRecurring && (
+              <p className="text-[11px] leading-relaxed" style={{ color: 'var(--brand-mid)' }}>
+                El próximo se va a generar como pendiente cuando este se pague.
+              </p>
+            )}
+          </div>
         </div>
       ))}
 

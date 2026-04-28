@@ -82,6 +82,23 @@ export function parseGeminiResponse(
     // Campo de inversión
     const isInvestment = m['isInvestment'] === true
 
+    // Campos de recurrente / dirección de pendiente (sprint 3)
+    const rawDirection = m['pendingDirection']
+    const pendingDirection: 'ingreso' | 'gasto' | null =
+      type === 'pendiente'
+        ? (rawDirection === 'ingreso' ? 'ingreso' : rawDirection === 'gasto' ? 'gasto' : 'gasto')
+        : null
+
+    const isRecurring = m['isRecurring'] === true
+    const rawFreq = m['recurringFrequency']
+    const recurringFrequency: 'week' | 'month' | 'year' | null =
+      isRecurring && (rawFreq === 'week' || rawFreq === 'month' || rawFreq === 'year')
+        ? rawFreq
+        : null
+    // Si dijo isRecurring pero no dio frecuencia válida, lo desactivamos
+    // (mejor no crear un recurrente sin saber cada cuánto).
+    const finalIsRecurring = isRecurring && recurringFrequency !== null
+
     valid.push({
       tempId: crypto.randomUUID(),
       type: type as PendingMovement['type'],
@@ -93,6 +110,9 @@ export function parseGeminiResponse(
       originalAmount,
       originalCurrency,
       exchangeRateUsed,
+      pendingDirection,
+      isRecurring: finalIsRecurring,
+      recurringFrequency,
     })
   }
 

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { CATEGORIES_ALL, MOVEMENT_TYPES } from '@/lib/constants'
+import { materializeNextPending } from '@/lib/recurring/materialize'
 import type { Movement } from '@/types'
 
 export async function PATCH(
@@ -57,17 +58,18 @@ export async function PATCH(
   // en movement_events. Sin esto solo sabríamos el estado final.
   const { data: before } = await supabase
     .from('movements')
-    .select('id, type, amount, description, category, movement_date, is_investment, paid_at, original_type')
+    .select('id, type, amount, description, category, movement_date, is_investment, paid_at, original_type, pending_direction, recurring_movement_id')
     .eq('id', id)
     .eq('user_id', user.id)
     .single()
 
-  // Caso especial: pagar un pendiente. Detectamos cambio type=pendiente→gasto
+  // Caso especial: pagar un pendiente. Detectamos cambio type=pendiente→ingreso/gasto
   // y agregamos paid_at + original_type al UPDATE para preservar la señal.
-  // (También se loguea como evento 'paid' abajo.)
+  // pending_direction (si existía) se mantiene intacto — el cliente puede
+  // omitirlo del PATCH y el server NO lo borra.
   const isPaying =
     before?.type === 'pendiente' &&
-    patch['type'] === 'gasto'
+    (patch['type'] === 'gasto' || patch['type'] === 'ingreso')
   if (isPaying) {
     patch['paid_at'] = new Date().toISOString()
     patch['original_type'] = 'pendiente'
@@ -78,7 +80,7 @@ export async function PATCH(
     .update(patch)
     .eq('id', id)
     .eq('user_id', user.id)
-    .select('id, type, amount, description, category, movement_date, is_investment, paid_at, original_type')
+    .select('id, type, amount, description, category, movement_date, is_investment, paid_at, original_type, pending_direction, recurring_movement_id')
     .single()
 
   if (error || !data) {
@@ -140,6 +142,15 @@ export async function PATCH(
     isInvestment: (data['is_investment'] as boolean) ?? false,
     paidAt: (data['paid_at'] as string | null) ?? null,
     originalType: (data['original_type'] as Movement['type'] | null) ?? null,
+    pendingDirection: (data['pending_direction'] as 'ingreso' | 'gasto' | null) ?? null,
+    recurringMovementId: (data['recurring_movement_id'] as string | null) ?? null,
+  }
+
+  // ── Sprint 3: si pagamos un pendiente que vino de un recurrente,
+  // materializa el siguiente. Idempotente — si por alguna razón ya se creó
+  // (ej. PATCH duplicado), el helper detecta y skipea.
+  if (isPaying && before?.recurring_movement_id) {
+    void materializeNextPending(supabase, before.recurring_movement_id as string)
   }
 
   return Response.json({ movement })

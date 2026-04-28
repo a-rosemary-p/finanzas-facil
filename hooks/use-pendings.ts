@@ -29,7 +29,7 @@ export function usePendings() {
       const supabase = createClient()
       const { data, error: err } = await supabase
         .from('movements')
-        .select('id, type, amount, description, category, movement_date, is_investment, paid_at, original_type')
+        .select('id, type, amount, description, category, movement_date, is_investment, paid_at, original_type, pending_direction, recurring_movement_id')
         .eq('type', 'pendiente')
         .order('movement_date', { ascending: true })
 
@@ -48,6 +48,8 @@ export function usePendings() {
             isInvestment: (r.is_investment as boolean) ?? false,
             paidAt: (r.paid_at as string | null) ?? null,
             originalType: (r.original_type as Movement['type'] | null) ?? null,
+            pendingDirection: (r.pending_direction as 'ingreso' | 'gasto' | null) ?? null,
+            recurringMovementId: (r.recurring_movement_id as string | null) ?? null,
           }))
         )
       }
@@ -61,14 +63,18 @@ export function usePendings() {
 
   useEffect(() => { void load() }, [load])
 
-  // Marca un pendiente como pagado: cambia type a 'gasto' y settea
-  // movement_date=hoy para que aparezca en el período actual. El audit trail
-  // (insertar evento en movement_events) lo hace el endpoint PATCH server-side.
+  // Marca un pendiente como pagado. El tipo destino depende de
+  // `pendingDirection` (si está presente). Para back-compat, si no hay
+  // dirección asume gasto.
+  // movement_date queda con la fecha original (cuándo era el compromiso) —
+  // el server marca paid_at = NOW() para el audit trail. Si el user quiere
+  // cambiar la fecha de "cuando se pagó", lo hace en modo edit.
   const markAsPaid = useCallback(async (id: string) => {
-    const today = new Date()
-    const todayYMD = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+    // Encontramos el pending para leer su dirección antes de optimistic remove.
+    const target = pendings.find(p => p.id === id)
+    const targetType: 'ingreso' | 'gasto' =
+      target?.pendingDirection === 'ingreso' ? 'ingreso' : 'gasto'
 
-    // Optimistic remove de la lista visible — vuelve a aparecer si el PATCH falla.
     const prev = pendings
     setPendings(p => p.filter(m => m.id !== id))
 
@@ -76,7 +82,7 @@ export function usePendings() {
       const res = await fetch(`/api/movements/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'gasto', movementDate: todayYMD }),
+        body: JSON.stringify({ type: targetType }),
       })
       if (!res.ok) {
         setPendings(prev) // rollback

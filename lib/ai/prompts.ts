@@ -177,6 +177,27 @@ indica una fecha.
   la fecha de emisión/servicio sobre la de vencimiento.
 - Solo usa la fecha base si NO hay ninguna fecha en el texto.
 
+PENDIENTES Y SU DIRECCIÓN:
+Si el movimiento es de tipo "pendiente", agrega también "pendingDirection":
+- "ingreso" si es algo que VAN A COBRAR ("me van a pagar", "me deben", "voy a cobrar")
+- "gasto" si es algo que VAN A PAGAR ("voy a pagar", "debo", "tengo que pagar")
+Default si no es claro: "gasto".
+
+DETECCIÓN DE RECURRENTES:
+Si el texto sugiere que el movimiento se repite — "cada mes", "cada semana",
+"todos los lunes", "el día 1 de cada mes", "mensual", "anualmente", "renta
+mensual", "salario quincenal", etc. — agrega:
+- "isRecurring": true
+- "recurringFrequency": "week" | "month" | "year"
+Reglas:
+- "cada mes" / "mensual" / "el día X de cada mes" → "month"
+- "cada semana" / "semanal" / "todos los X" (donde X es un día) → "week"
+- "anual" / "cada año" / "una vez al año" → "year"
+- "quincenal" → como aproximación, usa "month" (la app no soporta quincena hoy).
+NO marques isRecurring si el user solo dice "el lunes" o "mañana" — eso es
+una sola vez, no recurrente. Solo cuando hay clara indicación de repetición.
+Default isRecurring: false.
+
 REGLAS IMPORTANTES:
 1. Montos siempre positivos. Nunca negativos.
 2. "mil" = 1000, "500 varos" = 500, "un quinto" = 200, "lana" = dinero.
@@ -197,7 +218,10 @@ RESPONDE SOLO CON JSON VÁLIDO (sin texto extra, sin markdown):
       "isInvestment": boolean,
       "description": "descripción breve en español",
       "category": "categoría válida",
-      "movementDate": "YYYY-MM-DD"
+      "movementDate": "YYYY-MM-DD",
+      "pendingDirection": "ingreso" | "gasto" | null,
+      "isRecurring": boolean,
+      "recurringFrequency": "week" | "month" | "year" | null
     }
   ]
 }

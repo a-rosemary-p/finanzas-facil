@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { PLANS } from '@/lib/constants'
 import { CATEGORIES, MOVEMENT_TYPES } from '@/lib/constants'
+import { materializeNextPending } from '@/lib/recurring/materialize'
 import type { Entry, Movement } from '@/types'
 
 export async function POST(request: Request) {
@@ -40,25 +41,43 @@ export async function POST(request: Request) {
       .filter(m => MOVEMENT_TYPES.includes(m['type'] as (typeof MOVEMENT_TYPES)[number]))
       .filter(m => typeof m['amount'] === 'number' && isFinite(m['amount'] as number) && (m['amount'] as number) > 0)
       .filter(m => typeof m['description'] === 'string' && (m['description'] as string).trim().length > 0)
-      .map(m => ({
-        type: m['type'] as Movement['type'],
-        amount: Math.round((m['amount'] as number) * 100) / 100,
-        description: (m['description'] as string).trim().slice(0, 60),
-        category: CATEGORIES.includes(m['category'] as (typeof CATEGORIES)[number])
-          ? (m['category'] as Movement['category'])
-          : ('Otro' as const),
-        movementDate:
-          typeof m['movementDate'] === 'string' && dateRegex.test(m['movementDate'] as string)
-            ? (m['movementDate'] as string)
-            : entryDate,
-        isInvestment: m['isInvestment'] === true,
-        originalAmount:
-          typeof m['originalAmount'] === 'number' ? (m['originalAmount'] as number) : (m['amount'] as number),
-        originalCurrency:
-          m['originalCurrency'] === 'USD' ? 'USD' : m['originalCurrency'] === 'EUR' ? 'EUR' : 'MXN',
-        exchangeRateUsed:
-          typeof m['exchangeRateUsed'] === 'number' ? (m['exchangeRateUsed'] as number) : 1,
-      }))
+      .map(m => {
+        const type = m['type'] as Movement['type']
+        const rawDir = m['pendingDirection']
+        // Solo pendientes pueden tener dirección. ingreso/gasto la ignoran.
+        const pendingDirection: 'ingreso' | 'gasto' | null =
+          type === 'pendiente'
+            ? (rawDir === 'ingreso' ? 'ingreso' : 'gasto')
+            : null
+
+        const rawFreq = m['recurringFrequency']
+        const recurringFrequency: 'week' | 'month' | 'year' | null =
+          rawFreq === 'week' || rawFreq === 'month' || rawFreq === 'year' ? rawFreq : null
+        const isRecurring = m['isRecurring'] === true && recurringFrequency !== null
+
+        return {
+          type,
+          amount: Math.round((m['amount'] as number) * 100) / 100,
+          description: (m['description'] as string).trim().slice(0, 60),
+          category: CATEGORIES.includes(m['category'] as (typeof CATEGORIES)[number])
+            ? (m['category'] as Movement['category'])
+            : ('Otro' as const),
+          movementDate:
+            typeof m['movementDate'] === 'string' && dateRegex.test(m['movementDate'] as string)
+              ? (m['movementDate'] as string)
+              : entryDate,
+          isInvestment: m['isInvestment'] === true,
+          originalAmount:
+            typeof m['originalAmount'] === 'number' ? (m['originalAmount'] as number) : (m['amount'] as number),
+          originalCurrency:
+            m['originalCurrency'] === 'USD' ? 'USD' : m['originalCurrency'] === 'EUR' ? 'EUR' : 'MXN',
+          exchangeRateUsed:
+            typeof m['exchangeRateUsed'] === 'number' ? (m['exchangeRateUsed'] as number) : 1,
+          pendingDirection,
+          isRecurring,
+          recurringFrequency,
+        }
+      })
 
     if (sanitized.length === 0) {
       return Response.json({ error: 'No hay movimientos válidos' }, { status: 400 })
@@ -106,31 +125,49 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Error al guardar la entrada' }, { status: 500 })
     }
 
-    // 5. Guardar movements (el trigger auto-incrementa movements_today)
-    const movementRows = sanitized.map(m => ({
-      entry_id: entryRow.id as string,
-      user_id: user.id,
-      type: m.type,
-      amount: m.amount,
-      description: m.description,
-      category: m.category,
-      movement_date: m.movementDate,
-      is_investment: m.isInvestment,
-      original_amount: m.originalAmount,
-      original_currency: m.originalCurrency,
-      exchange_rate_used: m.exchangeRateUsed,
-    }))
+    // 5. Guardar movements + crear recurrentes
+    //
+    // Sprint 3: si un movimiento tiene `isRecurring=true`, NO insertamos un
+    // row directo en `movements` — en su lugar creamos un `recurring_movements`
+    // que automáticamente materializa el primer pendiente vía
+    // `materializeNextPending`. Sin esto tendríamos duplicados (el row directo
+    // + el primer pendiente del template).
+    const nonRecurring = sanitized.filter(s => !s.isRecurring)
+    const recurringOnes = sanitized.filter(s => s.isRecurring && s.recurringFrequency !== null)
 
-    const { data: savedMovements, error: movError } = await supabase
-      .from('movements')
-      .insert(movementRows)
-      .select('id, type, amount, description, category, movement_date, is_investment')
+    let savedMovements: Array<Record<string, unknown>> = []
+    let movError: { code?: string; message?: string } | null = null
 
-    if (movError || !savedMovements) {
+    if (nonRecurring.length > 0) {
+      const movementRows = nonRecurring.map(m => ({
+        entry_id: entryRow.id as string,
+        user_id: user.id,
+        type: m.type,
+        amount: m.amount,
+        description: m.description,
+        category: m.category,
+        movement_date: m.movementDate,
+        is_investment: m.isInvestment,
+        original_amount: m.originalAmount,
+        original_currency: m.originalCurrency,
+        exchange_rate_used: m.exchangeRateUsed,
+        pending_direction: m.pendingDirection,
+      }))
+
+      const { data, error } = await supabase
+        .from('movements')
+        .insert(movementRows)
+        .select('id, type, amount, description, category, movement_date, is_investment')
+
+      savedMovements = (data ?? []) as Array<Record<string, unknown>>
+      movError = error
+    }
+
+    if (movError) {
       // El trigger BEFORE INSERT puede lanzar free_plan_limit_exceeded (P0001)
       // si una carrera concurrente pasó nuestro check anterior y la DB ya está
       // en el límite. Devolvemos el mismo 429 para que el cliente reaccione igual.
-      if (movError?.message?.includes('free_plan_limit_exceeded')) {
+      if (movError.message?.includes('free_plan_limit_exceeded')) {
         return Response.json(
           {
             error: 'LIMIT_EXCEEDED',
@@ -143,26 +180,64 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Error al guardar los movimientos' }, { status: 500 })
     }
 
-    // 6. Audit trail: loguear evento 'created' por cada movimiento.
-    // Fail-soft — el audit es bonus, no bloquea la respuesta. Sirve para
-    // reconstruir un mov desde su historia: created → edited+ → paid (si pendiente).
-    const eventRows = savedMovements.map(m => ({
-      movement_id: m['id'] as string,
-      user_id: user.id,
-      event_type: 'created',
-      payload: {
-        type: m['type'],
-        amount: Number(m['amount']),
-        category: m['category'],
-        movement_date: m['movement_date'],
-        is_investment: (m['is_investment'] as boolean) ?? false,
-        input_source: 'text', // entries.input_source — los movs heredan el del entry
-      },
-    }))
-    const { error: eventErr } = await supabase
-      .from('movement_events')
-      .insert(eventRows)
-    if (eventErr) console.error('[confirm] events insert failed', eventErr)
+    // Crear recurrentes — cada uno materializa su primer pendiente.
+    // Fail-soft: si un recurrente individual falla, los demás siguen.
+    for (const r of recurringOnes) {
+      // Si el LLM marcó type='pendiente', usamos pending_direction como tipo
+      // del template (ingreso o gasto). Ingreso/gasto directo se respetan tal cual.
+      const recType: 'ingreso' | 'gasto' =
+        r.type === 'pendiente'
+          ? (r.pendingDirection === 'ingreso' ? 'ingreso' : 'gasto')
+          : (r.type === 'ingreso' ? 'ingreso' : 'gasto')
+
+      const { data: rec, error: recErr } = await supabase
+        .from('recurring_movements')
+        .insert({
+          user_id: user.id,
+          type: recType,
+          amount: r.amount,
+          description: r.description,
+          category: r.category,
+          frequency: r.recurringFrequency,
+          next_due_date: r.movementDate,
+          is_active: true,
+        })
+        .select('id')
+        .single()
+
+      if (recErr || !rec) {
+        console.error('[confirm] recurring insert failed', recErr)
+        continue
+      }
+      // Materializa el primer pendiente. Si falla (ej. trigger free_plan_limit
+      // en el insert del pendiente), devolvemos null y el template queda
+      // como huérfano — el user lo verá en /pendientes tab Recurrentes y
+      // puede borrar/editar.
+      await materializeNextPending(supabase, rec.id as string)
+    }
+
+    // 6. Audit trail: loguear evento 'created' por cada movimiento NO recurrente.
+    // Los recurrentes loguean su propio evento 'recurring_materialized' adentro
+    // del helper. Fail-soft.
+    if (savedMovements.length > 0) {
+      const eventRows = savedMovements.map(m => ({
+        movement_id: m['id'] as string,
+        user_id: user.id,
+        event_type: 'created',
+        payload: {
+          type: m['type'],
+          amount: Number(m['amount']),
+          category: m['category'],
+          movement_date: m['movement_date'],
+          is_investment: (m['is_investment'] as boolean) ?? false,
+          input_source: 'text',
+        },
+      }))
+      const { error: eventErr } = await supabase
+        .from('movement_events')
+        .insert(eventRows)
+      if (eventErr) console.error('[confirm] events insert failed', eventErr)
+    }
 
     // 7. Devolver la entry completa
     const entry: Entry = {

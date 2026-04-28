@@ -18,7 +18,9 @@
 import { useState } from 'react'
 import { AppHeader } from '@/components/app-header'
 import { usePendings } from '@/hooks/use-pendings'
+import { useRecurring } from '@/hooks/use-recurring'
 import { PendingRow } from '@/components/pendientes/pending-row'
+import { RecurringRow } from '@/components/pendientes/recurring-row'
 
 type Tab = 'pendientes' | 'recurrentes'
 
@@ -82,7 +84,7 @@ export default function PendientesPage() {
           />
         )}
 
-        {tab === 'recurrentes' && <RecurrentesTabPlaceholder />}
+        {tab === 'recurrentes' && <RecurrentesTab />}
       </main>
     </div>
   )
@@ -204,20 +206,73 @@ function Section({
   )
 }
 
-function RecurrentesTabPlaceholder() {
+function RecurrentesTab() {
+  const { recurring, loading, update, remove } = useRecurring()
+
+  if (loading) {
+    return <p className="text-sm" style={{ color: 'var(--brand-mid)' }}>Cargando...</p>
+  }
+
+  if (recurring.length === 0) {
+    return (
+      <div
+        className="rounded-xl px-4 py-8 text-center"
+        style={{
+          background: 'rgba(255, 255, 255, 0.6)',
+          border: '1px dashed var(--brand-border)',
+          color: 'var(--brand-mid)',
+        }}
+      >
+        <p className="text-sm font-medium" style={{ color: 'var(--brand)' }}>Sin recurrentes</p>
+        <p className="text-xs mt-1.5 leading-relaxed" style={{ opacity: 0.9, maxWidth: 340, margin: '6px auto 0' }}>
+          Cuando registres algo y digas <i>&ldquo;cada mes&rdquo;</i>, <i>&ldquo;semanal&rdquo;</i>, etc., Fiza lo detecta y aparece aquí. Cada pago activo se materializa como pendiente cuando el anterior se paga.
+        </p>
+      </div>
+    )
+  }
+
+  const active = recurring.filter(r => r.isActive)
+  const paused = recurring.filter(r => !r.isActive)
+
   return (
-    <div
-      className="rounded-xl px-4 py-8 text-center"
-      style={{
-        background: 'rgba(255, 255, 255, 0.6)',
-        border: '1px dashed var(--brand-border)',
-        color: 'var(--brand-mid)',
-      }}
-    >
-      <p className="text-sm font-medium" style={{ color: 'var(--brand)' }}>Próximamente</p>
-      <p className="text-xs mt-1.5 leading-relaxed" style={{ opacity: 0.9, maxWidth: 320, margin: '6px auto 0' }}>
-        Vas a poder marcar movimientos como recurrentes — renta, suscripciones, salario — y se van a generar como pendientes cada semana, mes o año automáticamente.
-      </p>
+    <div className="flex flex-col gap-5">
+      {active.length > 0 && (
+        <RecurringSection title="Activos" count={active.length}>
+          {active.map(r => (
+            <RecurringRow key={r.id} rec={r} onUpdate={update} onDelete={remove} />
+          ))}
+        </RecurringSection>
+      )}
+      {paused.length > 0 && (
+        <RecurringSection title="Pausados" count={paused.length}>
+          {paused.map(r => (
+            <RecurringRow key={r.id} rec={r} onUpdate={update} onDelete={remove} />
+          ))}
+        </RecurringSection>
+      )}
+    </div>
+  )
+}
+
+function RecurringSection({
+  title, count, children,
+}: {
+  title: string; count: number; children: React.ReactNode
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between px-1">
+        <h2
+          className="text-xs font-bold uppercase"
+          style={{ letterSpacing: '0.08em', color: 'var(--brand-mid)' }}
+        >
+          {title}
+        </h2>
+        <span className="text-xs" style={{ color: 'var(--brand-mid)' }}>
+          {count}
+        </span>
+      </div>
+      <div className="flex flex-col gap-1.5">{children}</div>
     </div>
   )
 }
