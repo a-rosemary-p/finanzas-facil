@@ -71,7 +71,10 @@ export function PendingRow({ mov, overdue, onMarkAsPaid, onUpdate, onDelete }: P
   }
 
   const dueLabel = formatDueLabel(mov.movementDate)
-  const bgTint = overdue ? 'rgba(208, 72, 26, 0.04)' : 'white'
+  // Bg blanco para ambos (vencidos y próximos). El border rojo es la única
+  // diferencia visual entre vencido y no vencido — preferencia del user
+  // (antes había un tint rojo muy tenue que era más ruido que señal).
+  const bgTint = 'white'
   const borderColor = overdue ? 'var(--expense-border)' : 'var(--brand-border)'
 
   if (!editing) {
