@@ -138,6 +138,8 @@ export async function PATCH(
     category: data['category'] as Movement['category'],
     movementDate: data['movement_date'] as string,
     isInvestment: (data['is_investment'] as boolean) ?? false,
+    paidAt: (data['paid_at'] as string | null) ?? null,
+    originalType: (data['original_type'] as Movement['type'] | null) ?? null,
   }
 
   return Response.json({ movement })

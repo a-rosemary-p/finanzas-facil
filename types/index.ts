@@ -90,6 +90,15 @@ export interface Movement {
   category: Category
   movementDate: string   // YYYY-MM-DD
   isInvestment: boolean
+  /**
+   * Audit trail (v0.27 sprint 1):
+   * - `paidAt`: ISO timestamp cuando un pendiente fue marcado como pagado.
+   *   Solo está presente si el movimiento tuvo origen en un pendiente.
+   * - `originalType`: tipo del movimiento al crearse. Útil para distinguir
+   *   "este gasto fue un pendiente que pagué" vs "gasto registrado directo".
+   */
+  paidAt?: string | null
+  originalType?: MovementType | null
 }
 
 // Movimiento pendiente de confirmación (antes de guardar en DB)

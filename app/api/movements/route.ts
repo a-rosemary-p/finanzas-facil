@@ -44,7 +44,7 @@ export async function GET(request: Request) {
   if (sort === 'recent') {
     const { data: rows } = await supabase
       .from('movements')
-      .select('id, type, amount, description, category, movement_date, is_investment, created_at')
+      .select('id, type, amount, description, category, movement_date, is_investment, paid_at, original_type, created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .order('id',         { ascending: false })  // tie-break determinista
@@ -58,6 +58,8 @@ export async function GET(request: Request) {
       category:     r['category']      as string,
       movementDate: r['movement_date'] as string,
       isInvestment: (r['is_investment'] as boolean) ?? false,
+      paidAt:       (r['paid_at']       as string | null) ?? null,
+      originalType: (r['original_type'] as string | null) ?? null,
     }))
 
     return Response.json({ movements, sort: 'recent' })
@@ -111,7 +113,7 @@ export async function GET(request: Request) {
   // ── Paginated movements query ─────────────────────────────────────────────
   let query = supabase
     .from('movements')
-    .select('id, type, amount, description, category, movement_date, is_investment', { count: 'exact' })
+    .select('id, type, amount, description, category, movement_date, is_investment, paid_at, original_type', { count: 'exact' })
     .gte('movement_date', start)
     .lte('movement_date', end)
 
@@ -134,6 +136,8 @@ export async function GET(request: Request) {
     category:     r['category']      as string,
     movementDate: r['movement_date'] as string,
     isInvestment: (r['is_investment'] as boolean) ?? false,
+    paidAt:       (r['paid_at']       as string | null) ?? null,
+    originalType: (r['original_type'] as string | null) ?? null,
   }))
 
   return Response.json({

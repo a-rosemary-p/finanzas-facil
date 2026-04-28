@@ -143,7 +143,28 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Error al guardar los movimientos' }, { status: 500 })
     }
 
-    // 6. Devolver la entry completa
+    // 6. Audit trail: loguear evento 'created' por cada movimiento.
+    // Fail-soft — el audit es bonus, no bloquea la respuesta. Sirve para
+    // reconstruir un mov desde su historia: created → edited+ → paid (si pendiente).
+    const eventRows = savedMovements.map(m => ({
+      movement_id: m['id'] as string,
+      user_id: user.id,
+      event_type: 'created',
+      payload: {
+        type: m['type'],
+        amount: Number(m['amount']),
+        category: m['category'],
+        movement_date: m['movement_date'],
+        is_investment: (m['is_investment'] as boolean) ?? false,
+        input_source: 'text', // entries.input_source — los movs heredan el del entry
+      },
+    }))
+    const { error: eventErr } = await supabase
+      .from('movement_events')
+      .insert(eventRows)
+    if (eventErr) console.error('[confirm] events insert failed', eventErr)
+
+    // 7. Devolver la entry completa
     const entry: Entry = {
       id: entryRow.id as string,
       rawText: entryRow.raw_text as string,

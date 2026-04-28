@@ -181,7 +181,17 @@ export function MovementCard({ movement, onUpdated, onDeleted, onMarkAsPaid, hid
           {movement.description}
         </p>
         {!hideDate && (
-          <p className="text-xs mt-0.5" style={{ color: 'var(--brand-mid)' }}>{formatEntryDate(movement.movementDate)}</p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--brand-mid)' }}>
+            {formatEntryDate(movement.movementDate)}
+            {/* Audit trail (v0.27 sprint 1b): si el movimiento nació como
+             * pendiente y fue pagado, lo señalamos sutilmente. paidAt es el
+             * ISO timestamp del momento en que se marcó como pagado. */}
+            {movement.paidAt && movement.originalType === 'pendiente' && (
+              <span className="ml-1.5 italic" style={{ color: 'var(--brand-muted)' }}>
+                · era pendiente
+              </span>
+            )}
+          </p>
         )}
       </div>
 

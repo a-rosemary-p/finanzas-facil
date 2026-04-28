@@ -29,7 +29,7 @@ export function usePendings() {
       const supabase = createClient()
       const { data, error: err } = await supabase
         .from('movements')
-        .select('id, type, amount, description, category, movement_date, is_investment')
+        .select('id, type, amount, description, category, movement_date, is_investment, paid_at, original_type')
         .eq('type', 'pendiente')
         .order('movement_date', { ascending: true })
 
@@ -46,6 +46,8 @@ export function usePendings() {
             category: r.category as Movement['category'],
             movementDate: r.movement_date as string,
             isInvestment: (r.is_investment as boolean) ?? false,
+            paidAt: (r.paid_at as string | null) ?? null,
+            originalType: (r.original_type as Movement['type'] | null) ?? null,
           }))
         )
       }
