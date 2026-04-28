@@ -52,17 +52,82 @@ export async function PATCH(
     return Response.json({ error: 'Nada que actualizar' }, { status: 400 })
   }
 
+  // ── Audit trail (v0.27 sprint 1) ────────────────────────────────────────
+  // Antes de mutar, leemos los valores actuales para poder loguear "prev_*"
+  // en movement_events. Sin esto solo sabríamos el estado final.
+  const { data: before } = await supabase
+    .from('movements')
+    .select('id, type, amount, description, category, movement_date, is_investment, paid_at, original_type')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single()
+
+  // Caso especial: pagar un pendiente. Detectamos cambio type=pendiente→gasto
+  // y agregamos paid_at + original_type al UPDATE para preservar la señal.
+  // (También se loguea como evento 'paid' abajo.)
+  const isPaying =
+    before?.type === 'pendiente' &&
+    patch['type'] === 'gasto'
+  if (isPaying) {
+    patch['paid_at'] = new Date().toISOString()
+    patch['original_type'] = 'pendiente'
+  }
+
   const { data, error } = await supabase
     .from('movements')
     .update(patch)
     .eq('id', id)
     .eq('user_id', user.id)
-    .select('id, type, amount, description, category, movement_date, is_investment')
+    .select('id, type, amount, description, category, movement_date, is_investment, paid_at, original_type')
     .single()
 
   if (error || !data) {
     console.error('[PATCH /api/movements/:id]', error)
     return Response.json({ error: 'No se pudo actualizar' }, { status: 500 })
+  }
+
+  // Loguear evento. Fail-soft: si falla, no rompemos el update — el audit es
+  // bonus, no crítico. Si vamos a depender de este audit para algo crítico
+  // en el futuro, considerar trigger DB en lugar de inserción manual.
+  const eventType: 'paid' | 'edited' = isPaying ? 'paid' : 'edited'
+  const payload: Record<string, unknown> = {}
+  if (before) {
+    if (patch['type'] !== undefined && before.type !== patch['type']) {
+      payload['prev_type'] = before.type
+      payload['new_type'] = patch['type']
+    }
+    if (patch['amount'] !== undefined && Number(before.amount) !== patch['amount']) {
+      payload['prev_amount'] = Number(before.amount)
+      payload['new_amount'] = patch['amount']
+    }
+    if (patch['description'] !== undefined && before.description !== patch['description']) {
+      payload['prev_description'] = before.description
+      payload['new_description'] = patch['description']
+    }
+    if (patch['category'] !== undefined && before.category !== patch['category']) {
+      payload['prev_category'] = before.category
+      payload['new_category'] = patch['category']
+    }
+    if (patch['movement_date'] !== undefined && before.movement_date !== patch['movement_date']) {
+      payload['prev_movement_date'] = before.movement_date
+      payload['new_movement_date'] = patch['movement_date']
+    }
+    if (patch['is_investment'] !== undefined && before.is_investment !== patch['is_investment']) {
+      payload['prev_is_investment'] = before.is_investment
+      payload['new_is_investment'] = patch['is_investment']
+    }
+  }
+  // Solo logueamos si algo de verdad cambió.
+  if (Object.keys(payload).length > 0) {
+    const { error: evtErr } = await supabase
+      .from('movement_events')
+      .insert({
+        movement_id: id,
+        user_id: user.id,
+        event_type: eventType,
+        payload,
+      })
+    if (evtErr) console.error('[PATCH /api/movements/:id] event insert failed', evtErr)
   }
 
   const movement: Movement = {

@@ -233,13 +233,13 @@ function RegistrosInner() {
             </div>
           )}
 
-          {/* Banner Free */}
+          {/* Banner Base (= plan='free' en DB) */}
           {profile?.plan === 'free' && (
             <div className="mx-3.5 mt-2 bg-white rounded-xl p-4 flex flex-col gap-2"
               style={{ border: '1px solid var(--brand-border)' }}
             >
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium" style={{ color: 'var(--brand)' }}>Plan Free</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--brand)' }}>Plan Base</p>
                 <p className="text-sm" style={{ color: 'var(--brand-mid)' }}>{profile.movementsToday}/10 hoy</p>
               </div>
               <div className="w-full rounded-full h-1.5" style={{ background: 'var(--brand-border)' }}>

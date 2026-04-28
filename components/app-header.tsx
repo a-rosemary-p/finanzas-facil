@@ -23,6 +23,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/use-auth'
+import { usePendings } from '@/hooks/use-pendings'
 import { IconList, IconLogout } from '@/components/icons'
 import { WaveRule } from '@/components/ui/wave'
 
@@ -32,14 +33,18 @@ interface AppHeaderProps {
 }
 
 const MENU_ITEMS: Array<{ label: string; href: string }> = [
-  { label: 'Registros', href: '/registros' },
-  { label: 'Perfil', href: '/perfil' },
-  { label: 'Ajustes', href: '/ajustes' },
-  { label: 'Reportes', href: '/reportes' },
+  { label: 'Registros',  href: '/registros'  },
+  { label: 'Pendientes', href: '/pendientes' },
+  { label: 'Reportes',   href: '/reportes'   },
+  { label: 'Perfil',     href: '/perfil'     },
+  { label: 'Ajustes',    href: '/ajustes'    },
 ]
 
 export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
   const { profile, logout } = useAuth()
+  // Notification dot: si hay pendientes vencidos. Hook ya hace su propio fetch
+  // a Supabase con RLS — barato y nos da el contador siempre vigente.
+  const { overdueCount } = usePendings()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -76,18 +81,47 @@ export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
       </Link>
 
       <div className="flex items-center gap-3">
-        {/* Plan badge */}
+        {/* Plan badge — "Base" en lugar de "Free" desde abr 2026 (DB sigue 'free').
+         * El dot rojo a la derecha del badge se enciende si hay pendientes
+         * vencidos. Indicador visible desde cualquier página de la app. */}
         {!hidePlanBadge && profile && (
-          <span
-            className="text-sm font-medium px-3 py-2 rounded-full min-h-[44px] flex items-center"
-            style={
-              isPro
-                ? { background: 'var(--brand)', color: '#fff', border: '1px solid var(--brand)' }
-                : { background: 'var(--brand-lime)', color: 'var(--brand)', border: '1px solid var(--brand-light)' }
-            }
-          >
-            {isPro ? 'Pro' : 'Free'}
-          </span>
+          <Link href="/pendientes" className="relative inline-flex" aria-label="Plan y pendientes">
+            <span
+              className="text-sm font-medium px-3 py-2 rounded-full min-h-[44px] flex items-center"
+              style={
+                isPro
+                  ? { background: 'var(--brand)', color: '#fff', border: '1px solid var(--brand)' }
+                  : { background: 'var(--brand-lime)', color: 'var(--brand)', border: '1px solid var(--brand-light)' }
+              }
+            >
+              {isPro ? 'Pro' : 'Base'}
+            </span>
+            {overdueCount > 0 && (
+              <span
+                aria-label={`${overdueCount} pendientes vencidos`}
+                style={{
+                  position: 'absolute',
+                  top: -2,
+                  right: -2,
+                  background: 'var(--danger)',
+                  color: '#fff',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  minWidth: 18,
+                  height: 18,
+                  padding: '0 5px',
+                  borderRadius: 9,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '2px solid #fff',
+                  lineHeight: 1,
+                }}
+              >
+                {overdueCount > 9 ? '9+' : overdueCount}
+              </span>
+            )}
+          </Link>
         )}
 
         {/* Menú hamburger */}
@@ -113,18 +147,42 @@ export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
               style={{ border: '1px solid var(--brand-border)', top: '100%', zIndex: 50 }}
               role="menu"
             >
-              {MENU_ITEMS.map(item => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors hover:bg-[var(--brand-chip)] min-h-[48px]"
-                  style={{ color: 'var(--brand)' }}
-                  role="menuitem"
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {MENU_ITEMS.map(item => {
+                const showDot = item.href === '/pendientes' && overdueCount > 0
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors hover:bg-[var(--brand-chip)] min-h-[48px]"
+                    style={{ color: 'var(--brand)' }}
+                    role="menuitem"
+                  >
+                    <span className="flex-1">{item.label}</span>
+                    {showDot && (
+                      <span
+                        aria-label={`${overdueCount} vencidos`}
+                        style={{
+                          background: 'var(--danger)',
+                          color: '#fff',
+                          fontSize: 10,
+                          fontWeight: 700,
+                          minWidth: 20,
+                          height: 18,
+                          padding: '0 6px',
+                          borderRadius: 9,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          lineHeight: 1,
+                        }}
+                      >
+                        {overdueCount > 9 ? '9+' : overdueCount}
+                      </span>
+                    )}
+                  </Link>
+                )
+              })}
               <WaveRule />
               <button
                 type="button"

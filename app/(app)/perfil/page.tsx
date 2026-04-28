@@ -234,7 +234,7 @@ export default function PerfilPage() {
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>Plan</p>
                   <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--brand)' }}>
-                    {profile.plan === 'pro' ? 'Pro ✓' : 'Free'}
+                    {profile.plan === 'pro' ? 'Pro ✓' : 'Base'}
                   </p>
                 </div>
                 {profile.plan === 'free' && (

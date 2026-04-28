@@ -18,9 +18,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
-import { formatCurrency } from '@/lib/utils'
-import { MOVEMENT_TYPE_CONFIG } from '@/lib/constants'
 import { IconArrowRight } from '@/components/icons'
+import { MovementCard } from '@/components/entries/entry-card'
 import type { Movement } from '@/types'
 
 interface Props {
@@ -81,7 +80,13 @@ export function RecentMovements({ refreshKey = 0 }: Props) {
       ) : (
         <div className="flex flex-col gap-1.5">
           {visible.map(m => (
-            <RecentRow key={m.id} mov={m} />
+            <MovementCard
+              key={m.id}
+              movement={m}
+              onUpdated={updated => setMovements(prev => prev.map(x => x.id === updated.id ? updated : x))}
+              onDeleted={id => setMovements(prev => prev.filter(x => x.id !== id))}
+              hideDate={false}
+            />
           ))}
         </div>
       )}
@@ -121,62 +126,3 @@ export function RecentMovements({ refreshKey = 0 }: Props) {
   )
 }
 
-function RecentRow({ mov }: { mov: Movement }) {
-  const cfg = MOVEMENT_TYPE_CONFIG[mov.type]
-  const sign = mov.type === 'ingreso' ? '+' : mov.type === 'gasto' ? '−' : ''
-
-  return (
-    <div
-      className="flex items-center gap-2.5 rounded-xl bg-white"
-      style={{
-        border: '1px solid var(--brand-border)',
-        boxShadow: 'var(--sh-1)',
-        padding: '10px 12px',
-      }}
-    >
-      <span
-        className="text-[9px] font-bold uppercase rounded-md flex-shrink-0"
-        style={{
-          letterSpacing: '0.1em',
-          padding: '4px 7px',
-          background: cfg.bg,
-          color: cfg.color,
-          border: `1px solid ${cfg.border}`,
-        }}
-      >
-        {cfg.label}
-      </span>
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium truncate" style={{ color: 'var(--ink-900)' }}>
-          {mov.description}
-        </div>
-        <div className="text-[11px] mt-0.5" style={{ color: 'var(--ink-300)' }}>
-          {formatRelative(mov.movementDate)}
-        </div>
-      </div>
-      <span
-        className="text-[15px] font-bold tabular-nums flex-shrink-0"
-        style={{ color: cfg.color }}
-      >
-        {sign}{formatCurrency(mov.amount).replace('$', '$')}
-      </span>
-    </div>
-  )
-}
-
-/** "Hoy", "Ayer", o "12 abr" — versión compacta para la fila. */
-function formatRelative(ymd: string): string {
-  const today = new Date()
-  const todayYMD = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-  if (ymd === todayYMD) return 'Hoy'
-
-  const y = today.getFullYear(); const m = today.getMonth(); const d = today.getDate()
-  const yest = new Date(y, m, d - 1)
-  const yestYMD = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, '0')}-${String(yest.getDate()).padStart(2, '0')}`
-  if (ymd === yestYMD) return 'Ayer'
-
-  const [yy, mm, dd] = ymd.split('-').map(Number)
-  if (!yy || !mm || !dd) return ymd
-  const date = new Date(yy, mm - 1, dd)
-  return date.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })
-}

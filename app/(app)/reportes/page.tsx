@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import { useAuth } from '@/hooks/use-auth'
 import { AppHeader } from '@/components/app-header'
 import { formatCurrency } from '@/lib/utils'
-import { MOVEMENT_TYPE_CONFIG } from '@/lib/constants'
+import { MovementCard } from '@/components/entries/entry-card'
 import { CompareView } from '@/components/reports/compare-view'
 import {
   type PeriodMode, type PeriodSelection,
@@ -308,7 +308,7 @@ export default function ReportesPage() {
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
             <div className="text-xs leading-relaxed" style={{ color: 'var(--pending-text)' }}>
-              <strong>Plan Free:</strong> los reportes están disponibles solo para los últimos 3 meses. Actualiza a Pro para acceder a todo tu historial.
+              <strong>Plan Base:</strong> los reportes están disponibles solo para los últimos 3 meses. Actualiza a Pro para acceder a todo tu historial.
             </div>
           </div>
         )}
@@ -419,7 +419,9 @@ export default function ReportesPage() {
                   </div>
                 ) : null}
 
-                {/* Movement preview list */}
+                {/* Movement list — `MovementCard` da modo edit inline (botón
+                 * lápiz). v0.27 perdió este botón al usar un <div> simple —
+                 * regresa en sprint 1a. */}
                 {movements.length > 0 && (
                   <section className="flex flex-col gap-2">
                     <h3 className="text-xs font-semibold uppercase tracking-wide px-1" style={{ color: 'var(--brand-muted)' }}>
@@ -427,35 +429,20 @@ export default function ReportesPage() {
                     </h3>
                     <div className="flex flex-col gap-1.5">
                       {movements.map(m => {
-                        const cfg = MOVEMENT_TYPE_CONFIG[m.type]
-                        // Si excluimos inversiones del total, las marcamos visualmente para
-                        // que el usuario entienda por qué este monto no suma al total.
+                        // Si excluimos inversiones del total, dimmamos el card.
                         const dimmed = m.isInvestment && !includeInvestments
                         return (
-                          <div key={m.id} className="bg-white rounded-xl px-3.5 py-2.5 flex items-center gap-3 shadow-sm"
-                            style={{
-                              border: '1px solid var(--brand-border)',
-                              opacity: dimmed ? 0.65 : 1,
-                            }}>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
-                              style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
-                              {cfg.label}
-                            </span>
-                            <p className="flex-1 text-sm truncate flex items-center gap-1.5" style={{ color: 'var(--brand)' }}>
-                              <span className="truncate">{m.description}</span>
-                              {m.isInvestment && (
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                  strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
-                                  style={{ color: 'var(--investment-text, #B89010)', flexShrink: 0 }}
-                                  aria-label="Inversión">
-                                  <polyline points="3 17 9 11 13 15 21 7" />
-                                  <polyline points="14 7 21 7 21 14" />
-                                </svg>
-                              )}
-                            </p>
-                            <span className="text-sm font-bold shrink-0" style={{ color: cfg.color }}>
-                              {cfg.sign}{formatCurrency(m.amount)}
-                            </span>
+                          <div key={m.id} style={{ opacity: dimmed ? 0.65 : 1 }}>
+                            <MovementCard
+                              movement={m}
+                              onUpdated={updated =>
+                                setMovements(prev => prev.map(x => x.id === updated.id ? updated : x))
+                              }
+                              onDeleted={id =>
+                                setMovements(prev => prev.filter(x => x.id !== id))
+                              }
+                              hideDate={false}
+                            />
                           </div>
                         )
                       })}
