@@ -33,7 +33,8 @@ const securityHeaders = [
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   {
     key: 'Permissions-Policy',
-    // Microphone lo usa Web Speech API en EntryForm; cámara/geo no se usan.
+    // Microphone lo usa MediaRecorder en InputCard (vía useRecorder hook
+    // interno) — habilitado por default. cámara y geo no se usan.
     value: 'camera=(), geolocation=(), browsing-topics=(), interest-cohort=()',
   },
   { key: 'X-DNS-Prefetch-Control', value: 'on' },

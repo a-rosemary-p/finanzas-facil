@@ -3,18 +3,17 @@
 /**
  * Hook focalizado para la página /pendientes y el banner notification dot.
  *
- * Antes vivía mezclado en `useEntries` (que maneja TODO: filtros de período,
- * paginación, métricas, etc.). Después del rediseño v0.27 useEntries quedó
- * semi-orphaned y solo `loadPendings` + `markAsPaid` siguen siendo útiles —
- * los extraemos aquí para que la página /pendientes no traiga toda la
- * maquinaria de paginación/filtros que no usa.
- *
- * Acceso a Supabase: directo desde el cliente (no API route) porque pendientes
- * no tienen enforcement de plan. RLS hace el filtro por user_id.
+ * Acceso a Supabase: SELECT directo desde el cliente (no via API route)
+ * porque listar pendientes no tiene enforcement de plan; RLS hace el filtro
+ * por user_id. Las mutaciones (markAsPaid / updatePending / deletePending)
+ * sí van por /api/movements/[id] PATCH/DELETE para que el server registre
+ * audit events y dispare la materialización del siguiente recurrente cuando
+ * aplica.
  */
 
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import type { Movement } from '@/types'
 
 export function usePendings() {
@@ -79,7 +78,7 @@ export function usePendings() {
     setPendings(p => p.filter(m => m.id !== id))
 
     try {
-      const res = await fetch(`/api/movements/${id}`, {
+      const res = await fetchWithAuthRetry(`/api/movements/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: targetType }),
@@ -104,7 +103,7 @@ export function usePendings() {
     setPendings(p => p.map(m => (m.id === id ? { ...m, ...patch } : m)))
 
     try {
-      const res = await fetch(`/api/movements/${id}`, {
+      const res = await fetchWithAuthRetry(`/api/movements/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
@@ -129,7 +128,7 @@ export function usePendings() {
     setPendings(p => p.filter(m => m.id !== id))
 
     try {
-      const res = await fetch(`/api/movements/${id}`, { method: 'DELETE' })
+      const res = await fetchWithAuthRetry(`/api/movements/${id}`, { method: 'DELETE' })
       if (!res.ok) {
         setPendings(prev)
         return false

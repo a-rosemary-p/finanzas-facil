@@ -15,6 +15,7 @@ import {
 } from '@/lib/periods'
 import type { Movement } from '@/types'
 import { startProCheckout } from '@/lib/upgrade-to-pro'
+import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 
 // react-pdf solo client-side
 const PdfDownloadButton = dynamic(
@@ -88,7 +89,7 @@ export default function ReportesPage() {
       const query = (plan === 'free' && p.mode === 'month')
         ? `month=${r.start.slice(0, 7)}`
         : `from=${r.start}&to=${r.end}`
-      const res = await fetch(`/api/reports/movements?${query}`)
+      const res = await fetchWithAuthRetry(`/api/reports/movements?${query}`)
       if (!res.ok) {
         setMovements([])
         setBlocked(false)
@@ -419,9 +420,8 @@ export default function ReportesPage() {
                   </div>
                 ) : null}
 
-                {/* Movement list — `MovementCard` da modo edit inline (botón
-                 * lápiz). v0.27 perdió este botón al usar un <div> simple —
-                 * regresa en sprint 1a. */}
+                {/* Movement list — `MovementCard` da modo edit inline (lápiz),
+                 * borrar con confirm y marcar pendiente como pagado. */}
                 {movements.length > 0 && (
                   <section className="flex flex-col gap-2">
                     <h3 className="text-xs font-semibold uppercase tracking-wide px-1" style={{ color: 'var(--brand-muted)' }}>
