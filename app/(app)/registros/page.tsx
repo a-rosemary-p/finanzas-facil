@@ -41,6 +41,7 @@ import { AppHeader } from '@/components/app-header'
 import { MetricsCard } from '@/components/registros/metrics-card'
 import { InputCard } from '@/components/registros/input-card'
 import { RecentMovements } from '@/components/registros/recent-movements'
+import { Onboarding, type OnboardingHighlight } from '@/components/onboarding/onboarding'
 import type { RegistrosPeriod } from '@/components/registros/period-dropdown'
 import type { Entry, PendingMovement } from '@/types'
 
@@ -74,6 +75,18 @@ function RegistrosInner() {
   const [upgradedBanner, setUpgradedBanner] = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
+
+  // Onboarding inline: trigger en `total_movements === 0 && !onboardedAt`.
+  // Se cierra explícitamente cuando el user termina o salta — `onboardedAt`
+  // queda seteado en DB para no volver a aparecer.
+  const [onboardingHighlight, setOnboardingHighlight] = useState<OnboardingHighlight>(null)
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false)
+  const showOnboarding =
+    !!profile &&
+    profile.totalMovements === 0 &&
+    !profile.onboardedAt &&
+    !onboardingDismissed &&
+    mode === 'dashboard' // No lo mostramos sobre el ConfirmationScreen real
 
   // Insight: fire-and-forget; no se loguea error si falla.
   useEffect(() => {
@@ -183,7 +196,10 @@ function RegistrosInner() {
 
           {/* InputCard */}
           <div className="px-3.5 mb-2.5">
-            <InputCard onMovementsExtracted={handleMovementsExtracted} />
+            <InputCard
+              onMovementsExtracted={handleMovementsExtracted}
+              onboardingHighlight={onboardingHighlight}
+            />
           </div>
 
           {/* Insight chip */}
@@ -300,6 +316,25 @@ function RegistrosInner() {
             </a>
           </div>
         </main>
+      )}
+
+      {/* Onboarding inline (primera vez del user). Renderizado después del
+       * <main> para que sus elementos fixed/zIndex queden encima sin conflictos
+       * de stacking context. Cuando el user salta/termina, marca onboarded_at
+       * via /api/onboarding/complete y refrescamos el profile. */}
+      {showOnboarding && (
+        <Onboarding
+          displayName={profile?.displayName ?? ''}
+          onHighlightChange={setOnboardingHighlight}
+          onComplete={() => {
+            setOnboardingDismissed(true)
+            setOnboardingHighlight(null)
+            // Sin await — visual cierra inmediato. El profile se refresca
+            // en el próximo mount; en este sesión, onboardingDismissed local
+            // mantiene la página normal.
+            void refreshProfile()
+          }}
+        />
       )}
     </div>
   )

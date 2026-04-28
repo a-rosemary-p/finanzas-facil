@@ -43,11 +43,13 @@ interface PendingData {
 
 interface Props {
   onMovementsExtracted: (data: PendingData) => void
+  /** Onboarding: cuál botón resaltar con halo (foto/dictar/escribir) o null. */
+  onboardingHighlight?: 'foto' | 'dictar' | 'escribir' | null
 }
 
 type Mode = 'foto' | 'dictar' | 'escribir' | null
 
-export function InputCard({ onMovementsExtracted }: Props) {
+export function InputCard({ onMovementsExtracted, onboardingHighlight = null }: Props) {
   const [mode, setMode] = useState<Mode>(null)
   const [text, setText] = useState('')
   const [fecha, setFecha] = useState(getTodayString())
@@ -225,6 +227,8 @@ export function InputCard({ onMovementsExtracted }: Props) {
           hint={photoLoading ? '' : 'Recibos y facturas'}
           active={photoLoading}
           disabled={busy && !photoLoading}
+          highlighted={onboardingHighlight === 'foto'}
+          dimmed={onboardingHighlight !== null && onboardingHighlight !== 'foto'}
           onClick={openPhotoPicker}
         />
         <CaptureButton
@@ -244,6 +248,8 @@ export function InputCard({ onMovementsExtracted }: Props) {
           hint={recorder.isRecording || transcribing ? '' : 'Cuéntame qué pasó'}
           active={recorder.isRecording || transcribing}
           disabled={(busy && !recorder.isRecording && !transcribing) || !recorder.supported}
+          highlighted={onboardingHighlight === 'dictar'}
+          dimmed={onboardingHighlight !== null && onboardingHighlight !== 'dictar'}
           onClick={toggleRecording}
         />
         <CaptureButton
@@ -253,6 +259,8 @@ export function InputCard({ onMovementsExtracted }: Props) {
           hint="Texto libre"
           active={escribirOpen}
           disabled={busy}
+          highlighted={onboardingHighlight === 'escribir'}
+          dimmed={onboardingHighlight !== null && onboardingHighlight !== 'escribir'}
           onClick={() => setMode(m => m === 'escribir' ? null : 'escribir')}
         />
       </div>
@@ -370,10 +378,17 @@ interface CaptureButtonProps {
   hint: string
   active: boolean
   disabled?: boolean
+  /** Onboarding: aplica halo pulsante via la clase global `fz-onboarding-halo`. */
+  highlighted?: boolean
+  /** Onboarding: este botón NO es el target — se ve atenuado bajo el backdrop. */
+  dimmed?: boolean
   onClick: () => void
 }
 
-function CaptureButton({ variant, icon, label, hint, active, disabled, onClick }: CaptureButtonProps) {
+function CaptureButton({
+  variant, icon, label, hint, active, disabled,
+  highlighted = false, dimmed = false, onClick,
+}: CaptureButtonProps) {
   const filled = variant === 'filled'
 
   // Salvia (#8AAB94) ya existe como `--brand-muted`. Activo oscurece a `--brand-mid`.
@@ -392,21 +407,30 @@ function CaptureButton({ variant, icon, label, hint, active, disabled, onClick }
   const border = filled ? 'none' : '2px solid var(--brand-muted)'
   const shadow = filled ? '0 4px 12px rgba(107,140,120,0.28)' : 'none'
 
+  // Onboarding visual: el botón highlighted se levanta sobre el backdrop con
+  // halo pulsante. Los demás se atenúan (opacity baja) para guiar la mirada.
+  const className = [
+    'flex flex-col items-center justify-center transition-all disabled:opacity-50',
+    highlighted ? 'fz-onboarding-halo' : '',
+  ].filter(Boolean).join(' ')
+
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex flex-col items-center justify-center transition-all disabled:opacity-50"
+      className={className}
       style={{
         height: 90,
         borderRadius: 16,
         background: bg,
         color: fg,
         border,
-        boxShadow: shadow,
+        boxShadow: highlighted ? undefined : shadow,
         gap: 4,
         padding: '8px 4px',
+        opacity: dimmed ? 0.35 : undefined,
+        transition: 'opacity 0.25s, box-shadow 0.25s',
       }}
     >
       {icon}

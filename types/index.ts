@@ -59,6 +59,9 @@ export interface Profile {
   mostrarInversiones?: boolean
   mostrarPendientes?: boolean
   trialUsed: boolean  // true una vez que el usuario activó el trial por primera vez
+  /** Timestamp ISO cuando el user terminó/saltó el onboarding. NULL = no lo
+   * ha visto, dispara el flow inline en /registros. */
+  onboardedAt?: string | null
 }
 
 export interface ProfileUpdate {
