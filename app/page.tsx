@@ -79,23 +79,6 @@ function IconHistory({ size = 20 }: { size?: number }) {
   )
 }
 
-function IconShield({ size = 20 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <path d="M10 2L3 5v4.5c0 4 2.9 7.7 7 9 4.1-1.3 7-5 7-9V5L10 2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M7 10l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  )
-}
-
-function IconCheck({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d="M3 8l4 4 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  )
-}
-
 function IconChevronDown({ open }: { open: boolean }) {
   return (
     <svg
@@ -330,7 +313,6 @@ const STEPS: Array<{
     title: 'Reportes y pendientes automáticos',
     body: 'Genera tu estado de resultados en PDF con un tap. Ve de un vistazo los compromisos que se vencen.',
     Icon: IconFileText,
-    isPro: true,
   },
 ]
 
@@ -369,25 +351,6 @@ const FEATURE_HIGHLIGHTS: Array<{
   },
 ]
 
-const FREE_FEATURES = [
-  '10 movimientos al día',
-  'Texto, voz y foto',
-  'Historial de 30 días',
-  'Dashboard con métricas',
-  'Categorías automáticas',
-]
-
-const PRO_FEATURES = [
-  'Movimientos sin límite',
-  'Texto, voz y foto',
-  'Historial completo',
-  'Filtros avanzados y rangos personalizados',
-  'Reportes PDF mensuales',
-  'Pendientes y vencimientos',
-  'Insights diarios inteligentes',
-  'Todos tus dispositivos',
-]
-
 const CITIES = [
   { city: 'CDMX',        count: 11 },
   { city: 'Guadalajara', count: 24 },
@@ -418,8 +381,8 @@ const FAQ = [
     a: 'Una libreta no clasifica ni calcula sola. Excel requiere formatos y conocimientos técnicos. Fiza entiende lenguaje natural — escribe como le hablarías a alguien, y ella organiza todo.',
   },
   {
-    q: '¿Qué pasa con mis datos si cancelo?',
-    a: 'Tu cuenta continúa en el plan gratuito con acceso a los últimos 30 días. Puedes descargar tus reportes antes de cancelar. No borramos tus datos.',
+    q: '¿Puedo exportar mis datos?',
+    a: 'Sí. Puedes descargar tus reportes y tu información cuando quieras. Si decides dejar de usar fiza, no borramos tus datos sin avisarte primero.',
   },
 ]
 
@@ -484,8 +447,9 @@ export default function HomePage() {
         <nav className="hidden md:flex items-center gap-7" aria-label="Secciones">
           {[
             { href: '#como-funciona', label: 'Cómo funciona' },
-            { href: '#precios',       label: 'Precios' },
             { href: '#para-quien',    label: 'Para quién es' },
+            { href: '#que-hace',      label: 'Qué hace' },
+            { href: '#faq',           label: 'FAQ' },
           ].map(link => (
             <a
               key={link.href}
@@ -647,9 +611,6 @@ export default function HomePage() {
               </div>
             </div>
 
-            <p className="text-xs mt-4" style={{ color: 'rgba(255,255,255,0.5)' }}>
-              Sin tarjeta de crédito · Cancela cuando quieras
-            </p>
           </div>
 
           {/* iPhone mockup — video; falls back to static PNG (with drop-shadow) if decode fails */}
@@ -785,6 +746,7 @@ export default function HomePage() {
 
       {/* ── Features destacados ─────────────────────────────────────────────── */}
       <section
+        id="que-hace"
         className="py-14 px-4"
         style={{ background: 'linear-gradient(145deg, #3d6050 0%, #578466 100%)', position: 'relative', overflow: 'hidden' }}
       >
@@ -835,141 +797,36 @@ export default function HomePage() {
         <WaveDivider fill="var(--paper-2)" />
       </section>
 
-      {/* ── Precios ─────────────────────────────────────────────────────────── */}
-      <section id="precios" className="py-14 px-4" style={{ background: 'var(--paper-2)', position: 'relative', overflow: 'hidden' }}>
-        <div className="max-w-lg mx-auto">
-          <p className="text-center mb-3" style={eyebrowStyle}>Precios</p>
-          <h2 className="text-center mb-2" style={secTitleStyle}>
-            Simple y sin sorpresas
+      {/* ── CTA intermedio ──────────────────────────────────────────────────── */}
+      <section className="py-16 px-4" style={{ background: 'var(--paper-2)', position: 'relative', overflow: 'hidden' }}>
+        <div className="max-w-xl mx-auto text-center">
+          <h2 className="mb-3" style={secTitleStyle}>
+            Empieza ahora — toma menos de un minuto
           </h2>
-          <p className="text-center mb-10" style={{ ...secSubStyle, fontSize: '15px' }}>
-            Empieza gratis, sube cuando lo necesites.
+          <p className="mb-7 mx-auto" style={{ ...secSubStyle, maxWidth: '420px' }}>
+            Cuéntale a fiza lo que pasó hoy en tu negocio. Tus números, ordenados solos.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-            {/* Free */}
-            <div
-              className="rounded-2xl p-6 flex flex-col gap-4"
-              style={{
-                background: 'var(--paper)',
-                border: '1px solid var(--brand-border)',
-                boxShadow: 'var(--sh-1)',
-              }}
-            >
-              <div>
-                <p
-                  className="text-[11px] font-bold tracking-widest mb-2"
-                  style={{ color: 'var(--ink-300)', letterSpacing: '0.14em' }}
-                >
-                  GRATIS
-                </p>
-                <div className="flex items-baseline gap-1">
-                  <span
-                    className="font-bold"
-                    style={{ color: 'var(--brand)', fontSize: '2rem', letterSpacing: '-0.02em' }}
-                  >
-                    $0
-                  </span>
-                  <span style={{ color: 'var(--ink-500)', fontSize: '14px' }}>/mes</span>
-                </div>
-              </div>
-              <ul className="flex flex-col gap-2.5 flex-1">
-                {FREE_FEATURES.map(f => (
-                  <li key={f} className="flex items-start gap-2">
-                    <span style={{ color: 'var(--brand)', marginTop: '2px', flexShrink: 0 }}>
-                      <IconCheck size={15} />
-                    </span>
-                    <span style={{ color: 'var(--ink-700)', fontSize: '14px', lineHeight: 1.4 }}>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href="/login?mode=register"
-                className="w-full py-3 rounded-xl text-sm font-bold text-center text-white min-h-[44px] flex items-center justify-center"
-                style={{
-                  background: 'var(--brand)',
-                  transition: `background var(--dur-fast) var(--ease-standard)`,
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#4A7359' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'var(--brand)' }}
-              >
-                Empieza gratis
-              </Link>
-            </div>
-
-            {/* Pro */}
-            <div
-              className="rounded-2xl p-6 flex flex-col gap-4"
-              style={{
-                background: 'var(--paper)',
-                border: '1px solid var(--brand-border)',
-                boxShadow: 'var(--sh-1)',
-              }}
-            >
-              <div>
-                <p
-                  className="text-[11px] font-bold tracking-widest mb-2"
-                  style={{ color: 'var(--ink-300)', letterSpacing: '0.14em' }}
-                >
-                  PRO
-                </p>
-                <div className="flex items-baseline gap-1">
-                  <span
-                    className="font-bold"
-                    style={{ color: 'var(--brand)', fontSize: '2rem', letterSpacing: '-0.02em' }}
-                  >
-                    $49
-                  </span>
-                  <span style={{ color: 'var(--ink-500)', fontSize: '14px' }}>/mes</span>
-                </div>
-              </div>
-              <ul className="flex flex-col gap-2.5 flex-1">
-                {PRO_FEATURES.map(f => (
-                  <li key={f} className="flex items-start gap-2">
-                    <span style={{ color: 'var(--brand)', marginTop: '2px', flexShrink: 0 }}>
-                      <IconCheck size={15} />
-                    </span>
-                    <span style={{ color: 'var(--ink-700)', fontSize: '14px', lineHeight: 1.4 }}>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href="/login?mode=register"
-                className="w-full py-3 rounded-xl text-sm font-bold text-center text-white min-h-[44px] flex items-center justify-center"
-                style={{
-                  background: 'var(--brand)',
-                  transition: `background var(--dur-fast) var(--ease-standard)`,
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#4A7359' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'var(--brand)' }}
-              >
-                Probar Pro 30 días gratis
-              </Link>
-            </div>
-          </div>
-
-          {/* Guarantee */}
-          <div
-            className="mt-4 rounded-xl p-4 flex items-center gap-3"
+          <Link
+            href="/login?mode=register"
+            className="px-7 py-3.5 rounded-xl font-bold text-base text-center min-h-[52px] inline-flex items-center justify-center gap-2 text-white"
             style={{
-              background: 'var(--paper)',
-              border: '1px solid var(--brand-border)',
-              boxShadow: 'var(--sh-1)',
+              background: 'var(--brand)',
+              boxShadow: 'var(--sh-2)',
+              transition: `transform var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard)`,
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'scale(1.02)'
+              e.currentTarget.style.background = '#4A7359'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'scale(1)'
+              e.currentTarget.style.background = 'var(--brand)'
             }}
           >
-            <span style={{ color: 'var(--brand)', flexShrink: 0 }}>
-              <IconShield size={20} />
-            </span>
-            <p style={{ color: 'var(--ink-700)', fontSize: '13px', lineHeight: 1.55 }}>
-              <span style={{ fontWeight: 700, color: 'var(--ink-900)' }}>Garantía de 30 días.</span>{' '}
-              Si en el primer mes no le encuentras utilidad, te devolvemos tu dinero — sin preguntas.
-            </p>
-          </div>
-
-          <p className="text-xs text-center mt-3" style={{ color: 'var(--ink-300)' }}>
-            Cancela cuando quieras · Sin permanencia · Sin letra chica
-          </p>
+            Probar gratis
+            <span aria-hidden="true">→</span>
+          </Link>
         </div>
         <WaveDivider fill="var(--paper)" />
       </section>
