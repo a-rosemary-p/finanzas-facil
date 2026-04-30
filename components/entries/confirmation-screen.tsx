@@ -10,6 +10,9 @@ interface ConfirmationScreenProps {
   rawText: string
   entryDate: string
   initialMovements: PendingMovement[]
+  /** Cómo se capturó la entry. Se manda al server para persistir input_source
+   *  (entries.input_source + analytics). Default 'text' para retro-compat. */
+  inputSource?: 'text' | 'voice' | 'photo'
   onConfirmed: (entry: Entry) => void
   onCancel: () => void
 }
@@ -38,6 +41,7 @@ export function ConfirmationScreen({
   rawText,
   entryDate,
   initialMovements,
+  inputSource = 'text',
   onConfirmed,
   onCancel,
 }: ConfirmationScreenProps) {
@@ -73,7 +77,7 @@ export function ConfirmationScreen({
       const res = await fetchWithAuthRetry('/api/entry/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rawText, entryDate, movements: valid }),
+        body: JSON.stringify({ rawText, entryDate, movements: valid, inputSource }),
       })
       const data: unknown = await res.json().catch(() => null)
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { translateAuthError } from '@/lib/auth-errors'
 
 export default function ResetPasswordPage() {
   const router = useRouter()
@@ -50,7 +51,9 @@ export default function ResetPasswordPage() {
     const { error: updateError } = await supabase.auth.updateUser({ password })
 
     if (updateError) {
-      setError('No se pudo actualizar la contraseña. Intenta de nuevo.')
+      // Mostramos el motivo real (corta, débil, comprometida, etc.) en lugar
+      // de un genérico que dejaba al user sin saber qué cambiar.
+      setError(translateAuthError(updateError.message, 'reset'))
       setLoading(false)
       return
     }

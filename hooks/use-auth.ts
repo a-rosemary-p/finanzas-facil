@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { TIMEZONE_MAP } from '@/lib/constants'
+import { getAppToday } from '@/lib/cdmx-date'
 import type { Profile, ProfileUpdate, SettingsUpdate } from '@/types'
 
 export function useAuth() {
@@ -19,7 +20,10 @@ export function useAuth() {
       .single()
 
     if (data) {
-      const today = new Date().toISOString().slice(0, 10)
+      // "Hoy" en CDMX, no en UTC ni en la TZ del browser. Si el contador
+      // fue actualizado en un día CDMX distinto al actual, lo tratamos como 0
+      // hasta que el cron de reset (cada hora) actualice la fila.
+      const today = getAppToday()
       const countIsFromToday = data.movements_today_date === today
       const effectiveMovementsToday = countIsFromToday ? (data.movements_today as number) : 0
 

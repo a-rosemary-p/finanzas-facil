@@ -7,6 +7,7 @@ import type { SettingsUpdate } from '@/types'
 import { WaveRule } from '@/components/ui/wave'
 import { AppHeader } from '@/components/app-header'
 import { startProCheckout } from '@/lib/upgrade-to-pro'
+import { translateAuthError } from '@/lib/auth-errors'
 
 type EditingSection = 'cuenta' | 'password' | null
 
@@ -236,7 +237,9 @@ export default function AjustesPage() {
       if (msg === 'wrong_password') {
         setPwError('La contraseña actual no es correcta.')
       } else {
-        setPwError('No se pudo actualizar. Intenta de nuevo.')
+        // Surface el motivo real cuando es un rechazo de Supabase
+        // (corta, débil, comprometida, etc.) en lugar del genérico.
+        setPwError(translateAuthError(msg, 'reset'))
       }
     } finally {
       setSaving(false)

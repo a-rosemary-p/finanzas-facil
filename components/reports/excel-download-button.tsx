@@ -8,6 +8,7 @@
 
 import { useRef, useState } from 'react'
 import { shareOrDownload } from '@/lib/file-share'
+import { track } from '@/lib/analytics'
 import type { Movement } from '@/types'
 
 interface Props {
@@ -156,6 +157,12 @@ export default function ExcelDownloadButton({
       })
 
       if (myId !== reqIdRef.current) return
+      track('report_exported', {
+        format: 'excel',
+        period_slug: periodSlug,
+        period_label: periodLabel,
+        movements_count: movements.length,
+      })
       setState({ kind: 'idle' })
     } catch (err) {
       if (myId !== reqIdRef.current) return

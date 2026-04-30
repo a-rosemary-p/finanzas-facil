@@ -87,10 +87,17 @@ export function Onboarding({ onComplete, onHighlightChange, displayName }: Props
     if (idx < STEP_ORDER.length - 1) setStep(STEP_ORDER[idx + 1])
   }
 
-  async function finish() {
+  async function finish(reason: 'completed' | 'skipped' = 'completed') {
     onHighlightChange(null)
     try {
-      await fetchWithAuthRetry('/api/onboarding/complete', { method: 'POST' })
+      await fetchWithAuthRetry('/api/onboarding/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // Mandamos el motivo al server para que registre el evento de
+        // analytics — necesitamos distinguir completion vs skip para
+        // entender la calidad del onboarding.
+        body: JSON.stringify({ reason, last_step: step }),
+      })
     } catch {
       // Fail-soft: si el POST truena, igual cerramos. Peor caso, le sale el
       // tour de nuevo en próximo load — molesto pero no roto.
@@ -116,7 +123,7 @@ export function Onboarding({ onComplete, onHighlightChange, displayName }: Props
       {/* Skip button — siempre visible, esquina superior derecha */}
       <button
         type="button"
-        onClick={finish}
+        onClick={() => finish('skipped')}
         className="text-xs font-medium px-3 py-2 rounded-lg transition-opacity"
         style={{
           position: 'fixed',
@@ -220,7 +227,7 @@ export function Onboarding({ onComplete, onHighlightChange, displayName }: Props
           <p className="text-sm text-center mb-5" style={{ color: 'var(--ink-700)', lineHeight: 1.5 }}>
             Ahora hazlo tú. Cuéntale a Fiza qué pasó en tu negocio hoy.
           </p>
-          <PrimaryButton onClick={finish}>
+          <PrimaryButton onClick={() => finish('completed')}>
             Empezar
             <IconArrowRight size={18} />
           </PrimaryButton>

@@ -14,6 +14,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
+import { track } from '@/lib/analytics'
+import { getAppToday } from '@/lib/cdmx-date'
 import type { Movement } from '@/types'
 
 export function usePendings() {
@@ -86,6 +88,21 @@ export function usePendings() {
       if (!res.ok) {
         setPendings(prev) // rollback
         return false
+      }
+      // Trackeo: necesitamos saber si se pagó tarde, en fecha o por adelantado.
+      // `target.movementDate` es la fecha de vencimiento. Si <= hoy → vencido o
+      // de hoy mismo. days_until_due > 0 = adelantado, < 0 = atrasado.
+      if (target) {
+        const today = getAppToday()
+        const dueMs = new Date(target.movementDate + 'T00:00:00').getTime()
+        const todayMs = new Date(today + 'T00:00:00').getTime()
+        const daysUntilDue = Math.round((dueMs - todayMs) / (1000 * 60 * 60 * 24))
+        track('pending_paid', {
+          direction: targetType,
+          category: target.category,
+          days_until_due: daysUntilDue,
+          was_overdue: daysUntilDue < 0,
+        })
       }
       return true
     } catch {

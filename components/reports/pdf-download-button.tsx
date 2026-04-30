@@ -16,6 +16,7 @@ import { useRef, useState } from 'react'
 import { pdf } from '@react-pdf/renderer'
 import { MonthlyReportDoc } from './monthly-report'
 import { shareOrDownload } from '@/lib/file-share'
+import { track } from '@/lib/analytics'
 import type { Movement } from '@/types'
 
 interface Props {
@@ -87,6 +88,15 @@ export default function PdfDownloadButton({ periodSlug, periodLabel, movements, 
       })
 
       if (myId !== reqIdRef.current) return
+      // Trackeo después del share/download exitoso. Si el user canceló
+      // el share sheet del OS, igual contamos — la intención de exportar
+      // ya ocurrió, y `shareOrDownload` no lo distingue de éxito.
+      track('report_exported', {
+        format: 'pdf',
+        period_slug: periodSlug,
+        period_label: periodLabel,
+        movements_count: movements.length,
+      })
       setState({ kind: 'idle' })
     } catch (err) {
       if (myId !== reqIdRef.current) return

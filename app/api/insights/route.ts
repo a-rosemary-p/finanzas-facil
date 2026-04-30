@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getAppToday } from '@/lib/cdmx-date'
 
 const WEEKDAYS_ES = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
 
@@ -26,7 +27,7 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: 'No autorizado' }, { status: 401 })
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = getAppToday()
   const ninetyDaysAgo = new Date()
   ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
   const start90 = ninetyDaysAgo.toISOString().slice(0, 10)

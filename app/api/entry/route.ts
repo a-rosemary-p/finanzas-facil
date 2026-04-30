@@ -4,6 +4,7 @@ import { EXTRACTION_SYSTEM_PROMPT } from '@/lib/ai/prompts'
 import { parseGeminiResponse } from '@/lib/ai/parser'
 import { PLANS } from '@/lib/constants'
 import { consumeRateLimit } from '@/lib/rate-limit'
+import { getAppToday } from '@/lib/cdmx-date'
 
 export async function POST(request: Request) {
   try {
@@ -53,8 +54,8 @@ export async function POST(request: Request) {
       .single()
 
     if (profile && profile.plan === 'free') {
-      // Si movements_today_date es de hoy, revisar contador
-      const today = new Date().toISOString().split('T')[0]
+      // Si movements_today_date es de hoy (CDMX), revisar contador.
+      const today = getAppToday()
       const isToday = profile.movements_today_date === today
       const usedToday = isToday ? (profile.movements_today as number) : 0
 

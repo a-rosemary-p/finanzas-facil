@@ -3,44 +3,9 @@
 import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { translateAuthError } from '@/lib/auth-errors'
 
 type Mode = 'login' | 'register' | 'forgot'
-
-// Colapsamos los mensajes de error para evitar enumeración de correos.
-// Las tres respuestas de Supabase — "invalid credentials", "email not confirmed"
-// y "already registered" — respondían de forma distinta, permitiendo a un
-// atacante saber si un correo existe. Ahora usamos un solo mensaje genérico.
-function traducirError(msg: string, mode: 'login' | 'register' | 'forgot'): string {
-  const m = msg.toLowerCase()
-
-  // Errores "neutrales" que no filtran información — los dejamos hablar
-  if (m.includes('password should be at least') || m.includes('password must be')) {
-    return 'La contraseña debe tener al menos 10 caracteres'
-  }
-  if (m.includes('security purposes') || m.includes('over_email_send_rate_limit') || m.includes('email rate limit')) {
-    return 'Demasiados intentos. Espera 60 segundos e intenta de nuevo.'
-  }
-  if (m.includes('rate limit') || m.includes('too many requests') || m.includes('too many')) {
-    return 'Demasiados intentos. Espera un momento.'
-  }
-  if (m.includes('unable to validate email') || m.includes('valid email') || m.includes('invalid email')) {
-    return 'El formato del correo no es válido'
-  }
-  if (m.includes('network') || m.includes('failed to fetch')) {
-    return 'Sin conexión. Revisa tu internet e intenta de nuevo.'
-  }
-  if (m.includes('signup') && m.includes('disabled')) {
-    return 'El registro no está habilitado en este momento.'
-  }
-
-  // Genéricos que colapsan los mensajes sensibles
-  if (mode === 'login') {
-    // invalid credentials | email not confirmed | user not found → mismo mensaje
-    return 'Correo o contraseña incorrectos. Si apenas creaste tu cuenta, revisa tu bandeja para confirmarla.'
-  }
-
-  return 'Ocurrió un error. Intenta de nuevo.'
-}
 
 function LoginInner() {
   const router = useRouter()
@@ -90,7 +55,7 @@ function LoginInner() {
 
     if (mode === 'login') {
       const { error: authError } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
-      if (authError) { setError(traducirError(authError.message, mode)); setLoading(false); return }
+      if (authError) { setError(translateAuthError(authError.message, mode)); setLoading(false); return }
       router.push('/registros'); router.refresh()
     } else {
       const { error: authError } = await supabase.auth.signUp({
@@ -100,7 +65,7 @@ function LoginInner() {
           data: { display_name: nombre.trim() },
         },
       })
-      if (authError) { setError(traducirError(authError.message, mode)); setLoading(false); return }
+      if (authError) { setError(translateAuthError(authError.message, mode)); setLoading(false); return }
       setRegistered(true); setLoading(false)
     }
   }

@@ -51,6 +51,8 @@ interface PendingData {
   rawText: string
   entryDate: string
   movements: PendingMovement[]
+  /** Cómo se capturó la entry — usado por confirm para persistir input_source. */
+  inputSource: 'text' | 'voice' | 'photo'
 }
 
 function getFechaFormateada(): string {
@@ -155,6 +157,7 @@ function RegistrosInner() {
             rawText={pendingData.rawText}
             entryDate={pendingData.entryDate}
             initialMovements={pendingData.movements}
+            inputSource={pendingData.inputSource}
             onConfirmed={handleConfirmed}
             onCancel={handleCancel}
           />

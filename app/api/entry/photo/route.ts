@@ -4,6 +4,8 @@ import { OCR_TRANSCRIPTION_PROMPT, PHOTO_EXTRACTION_PROMPT, EXTRACTION_SYSTEM_PR
 import { parseGeminiResponse } from '@/lib/ai/parser'
 import { PLANS, PHOTO_LIMITS, OCR_MIN_TEXT_LENGTH } from '@/lib/constants'
 import { consumeRateLimit } from '@/lib/rate-limit'
+import { getAppToday } from '@/lib/cdmx-date'
+import { trackServer } from '@/lib/analytics-server'
 import type { PendingMovement } from '@/types'
 
 // Vercel Pro permite hasta 60s — el pipeline OCR+parse puede tardar ~25s en imágenes complejas
@@ -72,7 +74,7 @@ export async function POST(request: Request) {
       .single()
 
     if (profile?.plan === 'free') {
-      const today = new Date().toISOString().split('T')[0]
+      const today = getAppToday()
       const isToday = profile.movements_today_date === today
       const usedToday = isToday ? (profile.movements_today as number) : 0
 

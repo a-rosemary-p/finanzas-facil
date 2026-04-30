@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { PLANS } from '@/lib/constants'
 import { CATEGORIES, MOVEMENT_TYPES } from '@/lib/constants'
 import { materializeNextPending } from '@/lib/recurring/materialize'
+import { getAppToday } from '@/lib/cdmx-date'
+import { trackServer } from '@/lib/analytics-server'
 import type { Entry, Movement } from '@/types'
 
 export async function POST(request: Request) {
@@ -22,7 +24,14 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Body inválido' }, { status: 400 })
     }
 
-    const { rawText, entryDate, movements } = body as Record<string, unknown>
+    const { rawText, entryDate, movements, inputSource } = body as Record<string, unknown>
+
+    // Whitelist estricta. 'text' es el default histórico — si el cliente no
+    // manda nada, asumimos texto (compat con onboarding y otros callers viejos).
+    const safeInputSource: 'text' | 'voice' | 'photo' =
+      inputSource === 'voice' ? 'voice'
+      : inputSource === 'photo' ? 'photo'
+      : 'text'
 
     if (typeof rawText !== 'string' || rawText.trim().length === 0) {
       return Response.json({ error: 'Texto original requerido' }, { status: 400 })
@@ -91,12 +100,19 @@ export async function POST(request: Request) {
       .single()
 
     if (profile && profile.plan === 'free') {
-      const today = new Date().toISOString().split('T')[0]
+      const today = getAppToday()
       const isToday = profile.movements_today_date === today
       const usedToday = isToday ? (profile.movements_today as number) : 0
       const remaining = PLANS.FREE.maxMovementsPerDay - usedToday
 
       if (sanitized.length > remaining) {
+        // Señal fuerte de intent Pro — alguien tratando de meter más
+        // movimientos de los permitidos por el plan Free.
+        await trackServer(supabase, user.id, 'free_limit_blocked', {
+          attempted: sanitized.length,
+          remaining,
+          input_source: safeInputSource,
+        })
         return Response.json(
           {
             error: 'LIMIT_EXCEEDED',
@@ -115,7 +131,7 @@ export async function POST(request: Request) {
         user_id: user.id,
         raw_text: rawText.trim(),
         entry_date: entryDate,
-        input_source: 'text',
+        input_source: safeInputSource,
       })
       .select('id, raw_text, entry_date, created_at')
       .single()
@@ -230,13 +246,30 @@ export async function POST(request: Request) {
           category: m['category'],
           movement_date: m['movement_date'],
           is_investment: (m['is_investment'] as boolean) ?? false,
-          input_source: 'text',
+          input_source: safeInputSource,
         },
       }))
       const { error: eventErr } = await supabase
         .from('movement_events')
         .insert(eventRows)
       if (eventErr) console.error('[confirm] events insert failed', eventErr)
+    }
+
+    // 6.5. Analytics — un solo evento por entry (no uno por movimiento).
+    // Esto da: "cuántas entries por usuario", "qué método usan", "cuántos
+    // movimientos en promedio por entry". Fail-soft.
+    await trackServer(supabase, user.id, 'entry_created', {
+      input_source: safeInputSource,
+      movements_count: savedMovements.length,
+      recurring_count: recurringOnes.length,
+      had_pendiente: sanitized.some(s => s.type === 'pendiente'),
+    })
+    for (const r of recurringOnes) {
+      await trackServer(supabase, user.id, 'recurring_created', {
+        type: r.type,
+        frequency: r.recurringFrequency,
+        category: r.category,
+      })
     }
 
     // 7. Devolver la entry completa

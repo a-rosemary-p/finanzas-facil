@@ -39,6 +39,7 @@ interface PendingData {
   rawText: string
   entryDate: string
   movements: PendingMovement[]
+  inputSource: 'text' | 'voice' | 'photo'
 }
 
 interface Props {
@@ -103,6 +104,7 @@ export function InputCard({ onMovementsExtracted, onboardingHighlight = null }: 
         rawText: 'Imagen analizada con IA',
         entryDate: getTodayString(),
         movements: data.movements ?? [],
+        inputSource: 'photo',
       })
     } catch {
       setError('No pudimos conectar con el servidor. Intenta de nuevo.')
@@ -133,7 +135,7 @@ export function InputCard({ onMovementsExtracted, onboardingHighlight = null }: 
         return
       }
       setTranscribing(false) // recorder ya completó la transcripción
-      await submitText(transcript, getTodayString())
+      await submitText(transcript, getTodayString(), 'voice')
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -147,8 +149,12 @@ export function InputCard({ onMovementsExtracted, onboardingHighlight = null }: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // ── ESCRIBIR ─────────────────────────────────────────────────────────────
-  async function submitText(rawText: string, entryDate: string) {
+  // ── ESCRIBIR / DICTAR (mismo pipeline) ───────────────────────────────────
+  async function submitText(
+    rawText: string,
+    entryDate: string,
+    inputSource: 'text' | 'voice' = 'text',
+  ) {
     setSubmitting(true)
     try {
       const res = await fetchWithAuthRetry('/api/entry', {
@@ -170,6 +176,7 @@ export function InputCard({ onMovementsExtracted, onboardingHighlight = null }: 
         rawText: rawText.trim(),
         entryDate,
         movements: data.movements ?? [],
+        inputSource,
       })
       setText('')
     } catch {
