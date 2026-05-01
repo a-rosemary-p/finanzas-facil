@@ -25,7 +25,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import { getTodayString } from '@/lib/utils'
-import { processImage } from '@/lib/image-utils'
+import { processImage, readAsBase64 } from '@/lib/image-utils'
 import { PHOTO_LIMITS } from '@/lib/constants'
 import {
   IconChatText, IconCamera, IconMicrophone, IconPencil,
@@ -79,17 +79,27 @@ export function InputCard({ onMovementsExtracted, onboardingHighlight = null }: 
     if (!file) return
 
     if (!PHOTO_LIMITS.acceptedFormats.includes(file.type as typeof PHOTO_LIMITS.acceptedFormats[number])) {
-      setError('Formato no soportado. Usa JPG, PNG o WebP.')
+      setError('Formato no soportado. Usa JPG, PNG, WebP o PDF.')
       return
     }
-    if (file.size > PHOTO_LIMITS.maxFileSizeMB * 1024 * 1024 * 3) {
-      setError('La imagen es demasiado grande.')
+    const isPdf = file.type === 'application/pdf'
+    const sizeLimitMB = isPdf ? PHOTO_LIMITS.pdfMaxFileSizeMB : PHOTO_LIMITS.maxFileSizeMB
+    if (file.size > sizeLimitMB * 1024 * 1024 * 3) {
+      setError(isPdf
+        ? `El PDF es demasiado grande (máx. ${sizeLimitMB} MB).`
+        : `La imagen es demasiado grande (máx. ${sizeLimitMB} MB).`)
       return
     }
 
     setPhotoLoading(true)
     try {
-      const { base64, mimeType } = await processImage(file)
+      // PDFs van tal cual (no podemos rasterizar via canvas y el PDF es lo que
+      // vamos a mandar a OpenAI). Imágenes se redimensionan + comprimen en
+      // cliente para reducir el payload y mejorar el OCR.
+      const { base64, mimeType } = isPdf
+        ? await readAsBase64(file)
+        : await processImage(file)
+
       const res = await fetchWithAuthRetry('/api/entry/photo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -97,11 +107,11 @@ export function InputCard({ onMovementsExtracted, onboardingHighlight = null }: 
       })
       const data = await res.json() as { movements?: PendingMovement[]; error?: string; message?: string }
       if (!res.ok) {
-        setError(data.message || data.error || 'Error al analizar la imagen.')
+        setError(data.message || data.error || (isPdf ? 'Error al analizar el PDF.' : 'Error al analizar la imagen.'))
         return
       }
       onMovementsExtracted({
-        rawText: 'Imagen analizada con IA',
+        rawText: isPdf ? 'PDF analizado con IA' : 'Imagen analizada con IA',
         entryDate: getTodayString(),
         movements: data.movements ?? [],
         inputSource: 'photo',
@@ -212,7 +222,7 @@ export function InputCard({ onMovementsExtracted, onboardingHighlight = null }: 
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/jpeg,image/png,image/webp,application/pdf"
         className="hidden"
         onChange={handlePhotoChange}
       />
@@ -220,8 +230,8 @@ export function InputCard({ onMovementsExtracted, onboardingHighlight = null }: 
         <CaptureButton
           variant="filled"
           icon={photoLoading ? <Spinner size={28} /> : <IconCamera size={28} />}
-          label={photoLoading ? 'Analizando…' : 'Foto'}
-          hint={photoLoading ? '' : 'Recibos y facturas'}
+          label={photoLoading ? 'Analizando…' : 'Foto / PDF'}
+          hint={photoLoading ? '' : 'Recibos, facturas, estados'}
           active={photoLoading}
           disabled={busy && !photoLoading}
           highlighted={onboardingHighlight === 'foto'}

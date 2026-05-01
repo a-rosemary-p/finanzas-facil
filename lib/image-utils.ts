@@ -18,6 +18,21 @@ function applyContrastBoost(ctx: CanvasRenderingContext2D, width: number, height
   ctx.putImageData(imageData, 0, 0)
 }
 
+// Lee un archivo como base64 sin tocarlo. Usado para PDFs — no podemos
+// rasterizar via canvas y el PDF mismo es lo que mandamos a OpenAI.
+export async function readAsBase64(file: File): Promise<{ base64: string; mimeType: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = reject
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string
+      const base64 = dataUrl.split(',')[1] ?? ''
+      resolve({ base64, mimeType: file.type })
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
 // Redimensiona, aplica boost de contraste y comprime una imagen en el cliente
 // antes de enviarla al servidor para el pipeline OCR+LLM.
 export async function processImage(file: File): Promise<{ base64: string; mimeType: string }> {

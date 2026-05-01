@@ -112,8 +112,9 @@ export const TIMEZONE_MAP: Record<string, string> = {
 }
 
 export const PHOTO_LIMITS = {
-  maxFileSizeMB: 5,
-  acceptedFormats: ['image/jpeg', 'image/png', 'image/webp'],
+  maxFileSizeMB: 5,                       // imágenes
+  pdfMaxFileSizeMB: 10,                   // PDFs (multi-página puede pesar más)
+  acceptedFormats: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
   maxDimensionPx: 2048,
   compressionQuality: 0.8,
 } as const

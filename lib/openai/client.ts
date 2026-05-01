@@ -126,3 +126,42 @@ export async function extractFromImage(
     return res.choices[0]?.message?.content ?? ''
   })
 }
+
+// ─── Extracción desde PDF ─────────────────────────────────────────────────────
+// OpenAI gpt-4o acepta PDFs como input nativo (file content type) — maneja
+// internamente texto + imágenes/escaneos y devuelve directo el JSON estructurado.
+// No tiene sentido el pipeline de 2 pasos (OCR → texto) porque el modelo ya hace
+// las dos cosas en una sola llamada para PDFs.
+//
+// Costo: cada página del PDF se procesa equivalente a una imagen detail:high.
+// Para tickets/facturas (1-3 páginas) es comparable al costo de una foto.
+export async function extractFromPdf(
+  prompt: string,
+  base64: string,
+  filename: string
+): Promise<string> {
+  const client = getClient()
+  return withRetry(async () => {
+    const res = await client.chat.completions.create({
+      model: VISION_MODEL,
+      response_format: { type: 'json_object' },
+      temperature: 0.1,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            {
+              type: 'file',
+              file: {
+                file_data: `data:application/pdf;base64,${base64}`,
+                filename,
+              },
+            },
+          ],
+        },
+      ],
+    })
+    return res.choices[0]?.message?.content ?? ''
+  })
+}

@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { extractTextFromImage, extractFromText, extractFromImage } from '@/lib/openai/client'
+import { extractTextFromImage, extractFromText, extractFromImage, extractFromPdf } from '@/lib/openai/client'
 import { OCR_TRANSCRIPTION_PROMPT, PHOTO_EXTRACTION_PROMPT, EXTRACTION_SYSTEM_PROMPT } from '@/lib/ai/prompts'
 import { parseGeminiResponse } from '@/lib/ai/parser'
 import { PLANS, PHOTO_LIMITS, OCR_MIN_TEXT_LENGTH } from '@/lib/constants'
@@ -32,11 +32,11 @@ export async function POST(request: Request) {
     }
 
     // 1.5. Early Content-Length guard — rechazamos payloads enormes ANTES de
-    // bufferear el body completo. Límite: 5 MB de imagen ≈ ~6.85 MB en base64;
-    // dejamos 7 MB de holgura para JSON overhead.
+    // bufferear el body completo. PDFs van hasta 10 MB → ~13.7 MB en base64;
+    // dejamos 14 MB de holgura para JSON overhead.
     const contentLength = Number(request.headers.get('content-length') ?? 0)
-    if (contentLength > 7 * 1024 * 1024) {
-      return Response.json({ error: 'La imagen es demasiado grande (máx. 5 MB)' }, { status: 413 })
+    if (contentLength > 14 * 1024 * 1024) {
+      return Response.json({ error: 'El archivo es demasiado grande.' }, { status: 413 })
     }
 
     // 2. Validar input
@@ -47,18 +47,25 @@ export async function POST(request: Request) {
     const { base64, mimeType, fechaMovimiento } = body as Record<string, unknown>
 
     if (typeof base64 !== 'string' || base64.length === 0) {
-      return Response.json({ error: 'Imagen no válida' }, { status: 400 })
-    }
-
-    // Validar tamaño (base64 ~= 1.37x tamaño real)
-    const approxSizeMB = (base64.length * 3) / (4 * 1024 * 1024)
-    if (approxSizeMB > PHOTO_LIMITS.maxFileSizeMB) {
-      return Response.json({ error: 'La imagen es demasiado grande (máx. 5 MB)' }, { status: 400 })
+      return Response.json({ error: 'Archivo no válido' }, { status: 400 })
     }
 
     const validMime = (PHOTO_LIMITS.acceptedFormats as readonly string[]).includes(mimeType as string)
     if (!validMime) {
-      return Response.json({ error: 'Formato de imagen no soportado' }, { status: 400 })
+      return Response.json({ error: 'Formato no soportado. Usa JPG, PNG, WebP o PDF.' }, { status: 400 })
+    }
+
+    const isPdf = mimeType === 'application/pdf'
+
+    // Validar tamaño (base64 ~= 1.37x tamaño real). Límites distintos:
+    // PDFs hasta 10 MB (multi-página); imágenes hasta 5 MB.
+    const approxSizeMB = (base64.length * 3) / (4 * 1024 * 1024)
+    const limitMB = isPdf ? PHOTO_LIMITS.pdfMaxFileSizeMB : PHOTO_LIMITS.maxFileSizeMB
+    if (approxSizeMB > limitMB) {
+      return Response.json(
+        { error: `El archivo es demasiado grande (máx. ${limitMB} MB).` },
+        { status: 400 }
+      )
     }
 
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/
@@ -95,56 +102,64 @@ export async function POST(request: Request) {
 
     // ─── Pipeline OCR + LLM ──────────────────────────────────────────────────────
     //
-    // Paso 1: Transcripción OCR
-    //   gpt-4o con detail:high → extrae texto crudo sin interpretar
+    // Para imágenes (jpg/png/webp): pipeline de 2 pasos
+    //   Paso 1: gpt-4o con detail:high → texto crudo sin interpretar
+    //   Paso 2a (happy path): gpt-4.1-mini parsea el texto a JSON (más barato)
+    //   Paso 2b (fallback): si OCR falló, gpt-4o vision directa con prompt de extracción
     //
-    // Paso 2a (happy path): si OCR extrajo suficiente texto
-    //   gpt-4.1-mini (texto puro, sin visión) → más rápido y barato
-    //
-    // Paso 2b (fallback): si OCR falló (imagen borrosa, sin texto, etc.)
-    //   gpt-4o vision con detail:high + prompt completo → misma calidad pero más caro
+    // Para PDFs: una sola llamada con extractFromPdf
+    //   gpt-4o acepta PDFs como input nativo y maneja texto + escaneos internamente.
+    //   No tiene sentido el pipeline OCR-first porque el modelo ya hace ambos
+    //   internamente en una sola pasada. El input nativo cuesta lo mismo que una
+    //   imagen detail:high por página (la mayoría de tickets/facturas son 1-3 págs).
     // ─────────────────────────────────────────────────────────────────────────────
 
     let movements: PendingMovement[] = []
 
-    // Paso 1: OCR
-    let ocrText = ''
-    try {
-      ocrText = await extractTextFromImage(OCR_TRANSCRIPTION_PROMPT, b64, mime)
-    } catch {
-      // Si OCR falla, continuamos directo al fallback de visión
-      ocrText = ''
-    }
-
-    const ocrSucceeded =
-      ocrText.length >= OCR_MIN_TEXT_LENGTH &&
-      !ocrText.includes('[SIN TEXTO]')
-
-    if (ocrSucceeded) {
-      // Paso 2a: texto extraído → modelo de texto (sin visión)
-      const userContent = [
-        `Fecha base: ${fecha}`,
-        '',
-        'Texto extraído de la imagen:',
-        ocrText,
-      ].join('\n')
-
-      const raw = await extractFromText(EXTRACTION_SYSTEM_PROMPT, userContent)
-      movements = parseGeminiResponse(raw, fecha)
-    }
-
-    // Si el OCR falló o no se encontraron movimientos → fallback visión directa
-    if (movements.length === 0) {
+    if (isPdf) {
+      // ── Path PDF: extracción en una sola llamada ───────────────────────────
       const prompt = `${PHOTO_EXTRACTION_PROMPT}\n\nFecha base: ${fecha}`
-      const raw = await extractFromImage(prompt, b64, mime)
+      const raw = await extractFromPdf(prompt, b64, 'documento.pdf')
       movements = parseGeminiResponse(raw, fecha)
+    } else {
+      // ── Path imagen: OCR → texto → JSON, con fallback a visión directa ─────
+      let ocrText = ''
+      try {
+        ocrText = await extractTextFromImage(OCR_TRANSCRIPTION_PROMPT, b64, mime)
+      } catch {
+        // Si OCR falla, continuamos directo al fallback de visión
+        ocrText = ''
+      }
+
+      const ocrSucceeded =
+        ocrText.length >= OCR_MIN_TEXT_LENGTH &&
+        !ocrText.includes('[SIN TEXTO]')
+
+      if (ocrSucceeded) {
+        const userContent = [
+          `Fecha base: ${fecha}`,
+          '',
+          'Texto extraído de la imagen:',
+          ocrText,
+        ].join('\n')
+
+        const raw = await extractFromText(EXTRACTION_SYSTEM_PROMPT, userContent)
+        movements = parseGeminiResponse(raw, fecha)
+      }
+
+      // Si el OCR falló o no se encontraron movimientos → fallback visión directa
+      if (movements.length === 0) {
+        const prompt = `${PHOTO_EXTRACTION_PROMPT}\n\nFecha base: ${fecha}`
+        const raw = await extractFromImage(prompt, b64, mime)
+        movements = parseGeminiResponse(raw, fecha)
+      }
     }
 
     if (movements.length === 0) {
-      return Response.json(
-        { error: 'No encontré movimientos financieros en la imagen. Intenta con otra foto más clara.' },
-        { status: 422 }
-      )
+      const detail = isPdf
+        ? 'No encontré movimientos financieros en el PDF. Intenta con otro documento.'
+        : 'No encontré movimientos financieros en la imagen. Intenta con otra foto más clara.'
+      return Response.json({ error: detail }, { status: 422 })
     }
 
     return Response.json({ movements })
