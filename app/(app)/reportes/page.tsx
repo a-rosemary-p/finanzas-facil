@@ -21,9 +21,8 @@ import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 const PdfDownloadButton = dynamic(
   () => import('@/components/reports/pdf-download-button'),
   { ssr: false, loading: () => (
-    <div className="w-full py-3.5 rounded-xl flex items-center justify-center"
-      style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}>
-      <p className="text-sm" style={{ color: 'var(--brand-mid)' }}>Preparando PDF...</p>
+    <div className="w-full py-3.5 rounded-xl flex items-center justify-center bg-brand-chip border border-brand-border">
+      <p className="text-sm text-brand-mid">Preparando PDF...</p>
     </div>
   )}
 )
@@ -32,9 +31,8 @@ const PdfDownloadButton = dynamic(
 const TrendView = dynamic(
   () => import('@/components/reports/trend-view'),
   { ssr: false, loading: () => (
-    <div className="bg-white rounded-2xl shadow-sm p-8 text-center"
-      style={{ border: '1px solid var(--brand-border)' }}>
-      <p className="text-sm" style={{ color: 'var(--brand-mid)' }}>Cargando gráfica...</p>
+    <div className="bg-white rounded-2xl shadow-sm p-8 text-center border border-brand-border">
+      <p className="text-sm text-brand-mid">Cargando gráfica...</p>
     </div>
   )}
 )
@@ -155,28 +153,25 @@ export default function ReportesPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-sm" style={{ color: 'var(--brand-mid)' }}>Cargando...</p>
+        <p className="text-sm text-brand-mid">Cargando...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(115deg, #BFDACB 25%, #E8F0B9 75%)' }}>
+    <div className="min-h-screen fz-page-gradient">
       <AppHeader />
 
-      <main className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-5"
-        style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}
-      >
+      <main className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-5 fz-pad-safe-bottom">
         {/* ── Title ── */}
         <div>
-          <h1 className="font-bold text-lg" style={{ color: 'var(--brand)' }}>Reportes</h1>
-          <p className="text-sm" style={{ color: 'var(--brand-mid)' }}>Resumen, comparación y tendencia de tu negocio</p>
+          <h1 className="font-bold text-lg text-brand">Reportes</h1>
+          <p className="text-sm text-brand-mid">Resumen, comparación y tendencia de tu negocio</p>
         </div>
 
         {/* ── Tabs ── */}
         <div
-          className="flex gap-1 p-1 rounded-xl"
-          style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}
+          className="flex gap-1 p-1 rounded-xl bg-brand-chip border border-brand-border"
           role="tablist"
         >
           {([
@@ -189,11 +184,10 @@ export default function ReportesPage() {
               <button
                 key={t.id} role="tab" aria-selected={active}
                 onClick={() => setTab(t.id)}
-                className="flex-1 text-xs font-bold rounded-lg min-h-[36px] px-2 transition-colors"
-                style={{
-                  background: active ? 'var(--brand)' : 'transparent',
-                  color: active ? '#fff' : 'var(--brand-mid)',
-                }}
+                className={[
+                  'flex-1 text-xs font-bold rounded-lg min-h-[36px] px-2 transition-colors',
+                  active ? 'bg-brand text-white' : 'bg-transparent text-brand-mid',
+                ].join(' ')}
               >
                 {t.label}
               </button>
@@ -207,16 +201,12 @@ export default function ReportesPage() {
         {tab === 'periodo' && (
         <div className="flex flex-col gap-2">
           {/* Selector adaptado al modo activo */}
-          <div
-            className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center justify-between"
-            style={{ border: '1px solid var(--brand-border)' }}
-          >
+          <div className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center justify-between border border-brand-border">
             <button
               type="button"
               onClick={() => changePeriod(prevPeriod(period))}
               disabled={atFreeEarliest}
-              className="p-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center disabled:opacity-30"
-              style={{ color: 'var(--brand-mid)', background: 'var(--brand-chip)' }}
+              className="p-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center disabled:opacity-30 text-brand-mid bg-brand-chip"
               aria-label="Período anterior"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -224,7 +214,7 @@ export default function ReportesPage() {
               </svg>
             </button>
 
-            <span className="font-bold text-sm sm:text-base text-center px-2" style={{ color: 'var(--brand)' }}>
+            <span className="font-bold text-sm sm:text-base text-center px-2 text-brand">
               {label}
             </span>
 
@@ -232,8 +222,7 @@ export default function ReportesPage() {
               type="button"
               onClick={() => changePeriod(nextPeriod(period))}
               disabled={atFuture}
-              className="p-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center disabled:opacity-30"
-              style={{ color: 'var(--brand-mid)', background: 'var(--brand-chip)' }}
+              className="p-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center disabled:opacity-30 text-brand-mid bg-brand-chip"
               aria-label="Período siguiente"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -242,11 +231,8 @@ export default function ReportesPage() {
             </button>
           </div>
 
-          {/* Pills de modo de período. Free ve los demás ghosted con candado para
-              que sepa que existen como feature Pro. */}
-          <div className="flex gap-1 p-1 rounded-xl"
-            style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}
-          >
+          {/* Pills de modo de período. Free ve los demás ghosted con candado. */}
+          <div className="flex gap-1 p-1 rounded-xl bg-brand-chip border border-brand-border">
             {(Object.keys(PERIOD_MODE_LABELS) as PeriodMode[]).map(mode => {
               const active = period.mode === mode
               const accessible = plan === 'pro' || mode === 'month'
@@ -256,13 +242,11 @@ export default function ReportesPage() {
                   onClick={accessible ? () => changeMode(mode) : undefined}
                   disabled={!accessible}
                   aria-label={accessible ? PERIOD_MODE_LABELS[mode] : `${PERIOD_MODE_LABELS[mode]} (Pro)`}
-                  className="flex-1 text-[11px] font-semibold rounded-lg min-h-[32px] px-1.5 transition-colors flex items-center justify-center gap-1"
-                  style={{
-                    background: active ? 'var(--brand)' : 'transparent',
-                    color: active ? '#fff' : 'var(--brand-mid)',
-                    opacity: accessible ? 1 : 0.45,
-                    cursor: accessible ? 'pointer' : 'not-allowed',
-                  }}
+                  className={[
+                    'flex-1 text-[11px] font-semibold rounded-lg min-h-[32px] px-1.5 transition-colors flex items-center justify-center gap-1',
+                    active ? 'bg-brand text-white' : 'bg-transparent text-brand-mid',
+                    accessible ? 'cursor-pointer' : 'cursor-not-allowed opacity-45',
+                  ].join(' ')}
                 >
                   {!accessible && (
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -279,8 +263,7 @@ export default function ReportesPage() {
 
           {/* Hint visible para Free en el mes más viejo */}
           {atFreeEarliest && plan === 'free' && (
-            <div className="flex items-center justify-center gap-1.5 text-[11px] px-2"
-              style={{ color: 'var(--brand-mid)' }}>
+            <div className="flex items-center justify-center gap-1.5 text-[11px] px-2 text-brand-mid">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="11" width="18" height="11" rx="2" />
                 <path d="M7 11V7a5 5 0 0110 0v4" />
@@ -289,8 +272,7 @@ export default function ReportesPage() {
               <button
                 type="button"
                 onClick={() => { void startProCheckout() }}
-                className="font-bold underline"
-                style={{ color: 'var(--brand)', background: 'transparent', padding: 0 }}
+                className="font-bold underline text-brand bg-transparent p-0"
               >
                 Activa Pro
               </button>
@@ -301,14 +283,13 @@ export default function ReportesPage() {
 
         {/* ── Banner para mes bloqueado por cap (defense in depth) ── */}
         {blocked && plan === 'free' && (
-          <div className="rounded-xl px-4 py-3 flex items-start gap-3"
-            style={{ background: 'var(--pending-bg)', border: '1px solid var(--pending-border)' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--pending-text)', flexShrink: 0, marginTop: '2px' }}>
+          <div className="rounded-xl px-4 py-3 flex items-start gap-3 bg-pending-bg border border-pending-border">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-pending-text shrink-0 mt-0.5">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            <div className="text-xs leading-relaxed" style={{ color: 'var(--pending-text)' }}>
+            <div className="text-xs leading-relaxed text-pending-text">
               <strong>Plan Base:</strong> los reportes están disponibles solo para los últimos 3 meses. Actualiza a Pro para acceder a todo tu historial.
             </div>
           </div>
@@ -318,42 +299,49 @@ export default function ReportesPage() {
         {tab === 'periodo' && (
           <>
             {loading ? (
-              <p className="text-sm text-center py-8" style={{ color: 'var(--brand-mid)' }}>Cargando movimientos...</p>
+              <p className="text-sm text-center py-8 text-brand-mid">Cargando movimientos...</p>
             ) : (
               <>
-                {/* Summary */}
+                {/* Summary cards — variants: ingreso (income), gasto (expense),
+                    neto (income si >= 0, expense si < 0). Usan las clases de variant. */}
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { label: 'Ingresos', value: income, color: '#578466', bg: '#DAE68F', border: '#92C3A5', sign: '+' },
-                    { label: 'Gastos', value: expenses, color: '#D0481A', bg: '#FAD5BF', border: '#F79366', sign: '−' },
-                    { label: 'Neto', value: Math.abs(net), color: net >= 0 ? '#578466' : '#D0481A', bg: net >= 0 ? '#DAE68F' : '#FAD5BF', border: net >= 0 ? '#92C3A5' : '#F79366', sign: net >= 0 ? '+' : '−' },
-                  ].map(c => (
-                    <div key={c.label} className="rounded-xl p-3 flex flex-col gap-1"
-                      style={{ background: c.bg, border: `1px solid ${c.border}` }}>
-                      <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: c.color }}>{c.label}</p>
-                      <p className="text-sm font-bold leading-tight" style={{ color: c.color }}>
-                        {c.sign}{formatCurrency(c.value)}
-                      </p>
-                    </div>
-                  ))}
+                    { label: 'Ingresos', value: income,           variant: 'income'  as const, sign: '+' },
+                    { label: 'Gastos',   value: expenses,         variant: 'expense' as const, sign: '−' },
+                    {
+                      label: 'Neto',
+                      value: Math.abs(net),
+                      variant: (net >= 0 ? 'income' : 'expense') as 'income' | 'expense',
+                      sign: net >= 0 ? '+' : '−',
+                    },
+                  ].map(c => {
+                    const cls = c.variant === 'income'
+                      ? 'bg-income-bg border-income-border text-income-text'
+                      : 'bg-expense-bg border-expense-border text-expense-text'
+                    return (
+                      <div key={c.label} className={`rounded-xl p-3 flex flex-col gap-1 border ${cls}`}>
+                        <p className="text-[10px] font-semibold uppercase tracking-wide">{c.label}</p>
+                        <p className="text-sm font-bold leading-tight">
+                          {c.sign}{formatCurrency(c.value)}
+                        </p>
+                      </div>
+                    )
+                  })}
                 </div>
 
-                {/* Toggle de inversiones — solo aparece si hay inversiones en este período.
-                    Aclara al usuario por qué hay movimientos que no suman al total. */}
+                {/* Toggle de inversiones — visible solo si hay inversiones */}
                 {investmentCount > 0 && (
-                  <label className="flex items-center justify-between bg-white rounded-xl px-3.5 py-2.5 cursor-pointer"
-                    style={{ border: '1px solid var(--brand-border)' }}>
+                  <label className="flex items-center justify-between bg-white rounded-xl px-3.5 py-2.5 cursor-pointer border border-brand-border">
                     <div className="flex items-center gap-2">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                        style={{ color: 'var(--investment-text, #B89010)' }}>
+                        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-investment-text">
                         <polyline points="3 17 9 11 13 15 21 7" />
                         <polyline points="14 7 21 7 21 14" />
                       </svg>
-                      <span className="text-xs font-medium" style={{ color: 'var(--brand)' }}>
+                      <span className="text-xs font-medium text-brand">
                         Incluir inversiones en totales
                       </span>
-                      <span className="text-[10px]" style={{ color: 'var(--brand-mid)' }}>
+                      <span className="text-[10px] text-brand-mid">
                         ({investmentCount})
                       </span>
                     </div>
@@ -361,16 +349,15 @@ export default function ReportesPage() {
                       type="checkbox"
                       checked={includeInvestments}
                       onChange={e => setIncludeInvestments(e.target.checked)}
-                      className="w-4 h-4"
-                      style={{ accentColor: 'var(--brand)' }}
+                      className="w-4 h-4 fz-brand-check"
                     />
                   </label>
                 )}
 
                 {/* Acciones de exportación */}
                 {movements.length === 0 ? (
-                  <div className="bg-white rounded-xl shadow-sm p-6 text-center" style={{ border: '1px solid var(--brand-border)' }}>
-                    <p className="text-sm" style={{ color: 'var(--brand-mid)' }}>
+                  <div className="bg-white rounded-xl shadow-sm p-6 text-center border border-brand-border">
+                    <p className="text-sm text-brand-mid">
                       {blocked ? 'Este período no está disponible en tu plan.' : 'Sin movimientos en este período.'}
                     </p>
                   </div>
@@ -394,25 +381,18 @@ export default function ReportesPage() {
                         includeInvestments={includeInvestments}
                       />
                     ) : (
-                      // Free: botón ghosted con badge PRO — click va directo a Stripe checkout.
+                      // Free: botón ghosted con badge PRO — click → Stripe checkout
                       <button
                         type="button"
                         onClick={() => { void startProCheckout() }}
-                        className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 min-h-[48px] transition-opacity"
-                        style={{
-                          background: 'var(--brand-chip)',
-                          border: '1px solid var(--brand-border)',
-                          color: 'var(--brand-mid)',
-                          opacity: 0.85,
-                        }}
+                        className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 min-h-[48px] transition-opacity bg-brand-chip border border-brand-border text-brand-mid opacity-85"
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
                           <polyline points="14 2 14 8 20 8" />
                         </svg>
                         Descargar Excel
-                        <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                          style={{ background: 'var(--brand)', color: '#fff', letterSpacing: '0.05em' }}>
+                        <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-brand text-white tracking-[0.05em]">
                           PRO
                         </span>
                       </button>
@@ -420,19 +400,17 @@ export default function ReportesPage() {
                   </div>
                 ) : null}
 
-                {/* Movement list — `MovementCard` da modo edit inline (lápiz),
-                 * borrar con confirm y marcar pendiente como pagado. */}
+                {/* Movement list */}
                 {movements.length > 0 && (
                   <section className="flex flex-col gap-2">
-                    <h3 className="text-xs font-semibold uppercase tracking-wide px-1" style={{ color: 'var(--brand-muted)' }}>
+                    <h3 className="text-xs font-semibold uppercase tracking-wide px-1 text-brand-muted">
                       Movimientos del período ({movements.length})
                     </h3>
                     <div className="flex flex-col gap-1.5">
                       {movements.map(m => {
-                        // Si excluimos inversiones del total, dimmamos el card.
                         const dimmed = m.isInvestment && !includeInvestments
                         return (
-                          <div key={m.id} style={{ opacity: dimmed ? 0.65 : 1 }}>
+                          <div key={m.id} className={dimmed ? 'opacity-65' : ''}>
                             <MovementCard
                               movement={m}
                               onUpdated={updated =>

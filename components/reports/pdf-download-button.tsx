@@ -117,16 +117,14 @@ export default function PdfDownloadButton({ periodSlug, periodLabel, movements, 
       <button
         type="button"
         onClick={handleClick}
-        // Permitimos re-click incluso en busy: si share() del intento anterior
-        // se colgó, este click reinicia. El reqId descarta el anterior.
-        className="w-full py-3.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition-opacity min-h-[48px]"
-        style={{ background: 'var(--brand)' }}
+        // Permitimos re-click incluso en busy: si share() se colgó, este
+        // click reinicia. El reqId descarta el resultado del anterior.
+        className="w-full py-3.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition-opacity min-h-[48px] bg-brand"
       >
         {busy ? (
           <>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              strokeWidth="2.5" strokeLinecap="round"
-              style={{ animation: 'spin 1s linear infinite' }}>
+              strokeWidth="2.5" strokeLinecap="round" className="fz-spin">
               <path d="M21 12a9 9 0 1 1-6.219-8.56" />
             </svg>
             Generando PDF...
@@ -144,14 +142,13 @@ export default function PdfDownloadButton({ periodSlug, periodLabel, movements, 
         )}
       </button>
       {busy && (
-        <p className="text-[11px] text-center" style={{ color: 'var(--brand-mid)' }}>
+        <p className="text-[11px] text-center text-brand-mid">
           Si tarda más de 20 segundos, toca el botón otra vez.
         </p>
       )}
       {errorMsg && (
-        <p className="text-xs text-center" style={{ color: 'var(--danger)' }}>{errorMsg}</p>
+        <p className="text-xs text-center text-danger">{errorMsg}</p>
       )}
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 }

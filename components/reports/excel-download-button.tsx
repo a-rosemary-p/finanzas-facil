@@ -179,18 +179,12 @@ export default function ExcelDownloadButton({
       <button
         type="button"
         onClick={handleClick}
-        className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 min-h-[48px] transition-colors"
-        style={{
-          background: busy ? 'var(--brand-chip)' : 'var(--brand-chip)',
-          border: '1px solid var(--brand)',
-          color: 'var(--brand)',
-        }}
+        className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 min-h-[48px] transition-colors bg-brand-chip border border-brand text-brand"
       >
         {busy ? (
           <>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              strokeWidth="2.5" strokeLinecap="round"
-              style={{ animation: 'spin 1s linear infinite' }}>
+              strokeWidth="2.5" strokeLinecap="round" className="fz-spin">
               <path d="M21 12a9 9 0 1 1-6.219-8.56" />
             </svg>
             Generando Excel...
@@ -207,9 +201,8 @@ export default function ExcelDownloadButton({
         )}
       </button>
       {errorMsg && (
-        <p className="text-xs text-center" style={{ color: 'var(--danger)' }}>{errorMsg}</p>
+        <p className="text-xs text-center text-danger">{errorMsg}</p>
       )}
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 }

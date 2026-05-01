@@ -437,6 +437,25 @@ label,
   accent-color: var(--brand);
 }
 
+/* Preview difuminado para Free en Vista 2 / Vista 3 — el contenido detrás
+   se ve borroso, no clickable, y un CTA flota encima. */
+.fz-blur-preview {
+  filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Sombra fuerte para el CTA flotante sobre el preview difuminado */
+.fz-shadow-cta {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+/* Altura de la gráfica de tendencia (recharts ResponsiveContainer
+   necesita un padre con height fijo) */
+.fz-trend-chart-h {
+  height: 280px;
+}
+
 /* Wrapper textarea/fecha del modo Escribir — fondo paper-2 con borde */
 .fz-write-input {
   background: var(--paper-2);
