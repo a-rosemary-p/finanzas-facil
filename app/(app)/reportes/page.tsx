@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import { useAuth } from '@/hooks/use-auth'
 import { AppHeader } from '@/components/app-header'
+import { WaveSection } from '@/components/ui/wave'
 import { formatCurrency } from '@/lib/utils'
 import { MovementCard } from '@/components/entries/entry-card'
 import { CompareView } from '@/components/reports/compare-view'
@@ -167,6 +168,9 @@ export default function ReportesPage() {
         <div>
           <h1 className="font-bold text-lg text-brand">Reportes</h1>
           <p className="text-sm text-brand-mid">Resumen, comparación y tendencia de tu negocio</p>
+          <div className="mt-3">
+            <WaveSection />
+          </div>
         </div>
 
         {/* ── Tabs ── */}

@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
 import { GIROS, ESTADOS_MX } from '@/lib/constants'
 import type { ProfileUpdate } from '@/types'
-import { WaveRule } from '@/components/ui/wave'
 import { AppHeader } from '@/components/app-header'
 import { startProCheckout } from '@/lib/upgrade-to-pro'
 
@@ -19,7 +18,6 @@ function ReadField({ label, value }: { label: string; value?: string }) {
       <p className={`text-sm ${value ? 'text-brand' : 'text-brand-muted'}`}>
         {value || '—'}
       </p>
-      <WaveRule />
     </div>
   )
 }
@@ -200,7 +198,6 @@ export default function PerfilPage() {
                   <p className={`text-sm ${profile.estado ? 'text-brand' : 'text-brand-muted'}`}>
                     {profile.estado || '—'}
                   </p>
-                  <WaveRule />
                 </div>
               </div>
             )}
@@ -218,7 +215,6 @@ export default function PerfilPage() {
             <div className="flex flex-col gap-1 pt-3">
               <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">Correo</p>
               <p className="text-sm text-brand">{profile.email}</p>
-              <WaveRule />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center justify-between py-3">
@@ -239,7 +235,6 @@ export default function PerfilPage() {
                   </button>
                 )}
               </div>
-              <WaveRule />
             </div>
             <div className="flex items-center justify-between py-3">
               <div>

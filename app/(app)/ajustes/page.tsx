@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import type { SettingsUpdate } from '@/types'
-import { WaveRule } from '@/components/ui/wave'
 import { AppHeader } from '@/components/app-header'
 import { startProCheckout } from '@/lib/upgrade-to-pro'
 import { translateAuthError } from '@/lib/auth-errors'
@@ -90,7 +89,6 @@ function ToggleRow({ label, description, checked, onChange }: {
           />
         </button>
       </div>
-      <WaveRule />
     </div>
   )
 }
@@ -258,7 +256,6 @@ export default function AjustesPage() {
                   <span className="text-[10px] font-medium text-ink-300">Próximamente</span>
                 </div>
               </div>
-              <WaveRule />
             </div>
 
             <ToggleRow
@@ -330,7 +327,6 @@ export default function AjustesPage() {
                 <p className="text-sm font-semibold text-brand">
                   Free — 10 movimientos por día
                 </p>
-                <WaveRule />
               </div>
               <button
                 onClick={handleUpgrade} disabled={checkoutLoading}
@@ -355,7 +351,6 @@ export default function AjustesPage() {
                 <p className="text-sm font-semibold text-brand">
                   Pro ✓ — Movimientos ilimitados
                 </p>
-                <WaveRule />
               </div>
               <button
                 onClick={handlePortal} disabled={portalLoading}

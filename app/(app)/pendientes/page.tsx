@@ -49,6 +49,9 @@ export default function PendientesPage() {
           <p className="text-sm mt-0.5 text-brand-mid">
             Compromisos por pagar y movimientos que se repiten.
           </p>
+          <div className="mt-3">
+            <WaveSection />
+          </div>
         </div>
 
         {/* ── 1. Recurrentes (siempre visible) ─────────────────────────── */}
@@ -90,7 +93,6 @@ export default function PendientesPage() {
               )}
             </div>
           )}
-          <WaveSection />
         </section>
 
         {/* ── 2. Vencidos (solo si hay) ────────────────────────────────── */}
@@ -109,7 +111,6 @@ export default function PendientesPage() {
                 />
               ))}
             </div>
-            <WaveSection />
           </section>
         )}
 
