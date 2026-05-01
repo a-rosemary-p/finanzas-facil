@@ -39,6 +39,7 @@ import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import { startProCheckout } from '@/lib/upgrade-to-pro'
 import { AppHeader } from '@/components/app-header'
 import { WaveSection } from '@/components/ui/wave'
+import { FeedbackModal } from '@/components/feedback-modal'
 import { MetricsCard } from '@/components/registros/metrics-card'
 import { InputCard } from '@/components/registros/input-card'
 import { RecentMovements } from '@/components/registros/recent-movements'
@@ -78,6 +79,7 @@ function RegistrosInner() {
   const [upgradedBanner, setUpgradedBanner] = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
 
   // Onboarding inline: trigger en `total_movements === 0 && !onboardedAt`.
   // Se cierra explícitamente cuando el user termina o salta — `onboardedAt`
@@ -284,21 +286,27 @@ function RegistrosInner() {
             </div>
           )}
 
-          {/* Contacto discreto */}
+          {/* Comentarios — abre modal de feedback. NO mailto: el destino
+           * (admin@fiza.mx) no se expone al user; viaja por POST /api/feedback
+           * que internamente lo manda con Resend. */}
           <div className="flex justify-center pt-3 px-4">
-            <a
-              href="mailto:admin@fiza.mx"
+            <button
+              type="button"
+              onClick={() => setFeedbackOpen(true)}
               className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg text-brand-mid"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                <polyline points="22,6 12,13 2,6" />
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
-              Contacto
-            </a>
+              Comentarios
+            </button>
           </div>
         </main>
       )}
+
+      {/* Modal de feedback — global a la página (no se cierra al cambiar
+       * mode='confirming'). */}
+      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
 
       {/* Onboarding inline (primera vez del user). Renderizado después del
        * <main> para que sus elementos fixed/zIndex queden encima sin conflictos

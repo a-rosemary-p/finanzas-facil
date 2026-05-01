@@ -499,6 +499,33 @@ label,
   height: 280px;
 }
 
+/* Feedback modal — backdrop con blur leve y panel flotante centrado */
+.fz-feedback-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(14, 23, 17, 0.4);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  padding-top: max(16px, env(safe-area-inset-top));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+.fz-feedback-panel {
+  background: white;
+  border: 1px solid var(--brand-border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-3);
+  padding: 18px;
+  width: 100%;
+  max-width: 440px;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
 /* Wrapper textarea/fecha del modo Escribir — fondo paper-2 con borde */
 .fz-write-input {
   background: var(--paper-2);
