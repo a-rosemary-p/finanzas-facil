@@ -64,7 +64,13 @@ export async function updateSession(request: NextRequest) {
   // Rutas públicas que no requieren sesión.
   // Exact match para páginas fijas; los prefixes son segment-anchored
   // (terminan en `/`) para que `/login-admin` o `/logins` no cuenten como públicas.
-  const PUBLIC_EXACT = new Set(['/', '/login', '/reset-password', '/og', '/og.png', '/robots.txt', '/sitemap.xml'])
+  const PUBLIC_EXACT = new Set([
+    '/', '/login', '/reset-password', '/og', '/og.png', '/robots.txt', '/sitemap.xml',
+    // /api/feedback acepta posts anónimos desde la landing (modo público).
+    // El handler internamente bifurca según haya sesión o no, así que el
+    // middleware no debe bloquear el caso anónimo con un 401 prematuro.
+    '/api/feedback',
+  ])
   const PUBLIC_PREFIXES = ['/login/', '/reset-password/', '/auth/', '/api/webhooks/']
 
   const isPublicRoute =
