@@ -499,6 +499,20 @@ label,
   height: 280px;
 }
 
+/* Honeypot input — invisible para humanos. Sin display:none ni
+   visibility:hidden (algunos bots los detectan). Se mueve fuera del
+   viewport con position absolute. */
+.fz-honeypot {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Feedback modal — backdrop con blur leve y panel flotante centrado */
 .fz-feedback-backdrop {
   position: fixed;

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { WaveDivider, WaveUnderline } from '@/components/ui/wave'
+import { FeedbackModal } from '@/components/feedback-modal'
 
 /* ─── SVG Icons ───────────────────────────────────────────────────────────── */
 
@@ -418,6 +419,7 @@ export default function HomePage() {
   const [scrolled, setScrolled] = useState(false)
   const [openFAQ, setOpenFAQ]   = useState<number | null>(0)
   const [videoFailed, setVideoFailed] = useState(false)
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20)
@@ -905,12 +907,13 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Nav links */}
+            {/* Nav links — Contacto abre el modal de feedback (público) en
+             * vez de un mailto: el destino no se expone al visitante y el
+             * envío llega a admin@fiza.mx vía /api/feedback. */}
             <nav className="flex flex-wrap gap-x-6 gap-y-2" aria-label="Footer">
               {[
                 { label: 'Privacidad', href: '/privacidad' },
                 { label: 'Términos',   href: '/terminos' },
-                { label: 'Contacto',   href: 'mailto:admin@fiza.mx' },
               ].map(link => (
                 <Link
                   key={link.label}
@@ -926,6 +929,19 @@ export default function HomePage() {
                   {link.label}
                 </Link>
               ))}
+              <button
+                type="button"
+                onClick={() => setFeedbackOpen(true)}
+                className="text-sm bg-transparent p-0 border-0 cursor-pointer"
+                style={{
+                  color: 'rgba(255,255,255,0.72)',
+                  transition: `opacity var(--dur-fast) var(--ease-standard)`,
+                }}
+                onMouseEnter={e => { e.currentTarget.style.opacity = '0.5' }}
+                onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
+              >
+                Contacto
+              </button>
             </nav>
           </div>
 
@@ -942,6 +958,14 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* Modal de feedback — modo public: pide name + email del visitor
+       * porque no hay sesión. */}
+      <FeedbackModal
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        mode="public"
+      />
 
     </div>
   )

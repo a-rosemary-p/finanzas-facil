@@ -3,24 +3,25 @@
 /**
  * FeedbackModal — popup para que el user mande sugerencias / comentarios /
  * reportes de problemas. POST a /api/feedback que internamente lo manda
- * por correo al admin. El user NO sabe la dirección destino; para él es
- * solo "queremos saber qué piensas".
+ * por correo al admin. El user NO sabe la dirección destino.
  *
- * UX:
- *  - Toggle de tipo (sugerencia / comentario / problema)
- *  - Textarea con counter (max 2000)
- *  - [Cancelar] [Enviar]
- *  - Tras éxito → mensaje "Gracias, lo recibimos" + auto-cierre en 1.6s
+ * Dos modos:
+ *  - 'auth' (default): usado dentro de la app autenticada. La sesión
+ *    nos da nombre/email/plan automáticamente.
+ *  - 'public': usado en la landing. Pide name + email al visitor para
+ *    que el admin pueda contestar. Incluye honeypot anti-bot.
  *
  * Cierre:
  *  - Click en backdrop → cierra (a menos que se esté enviando)
  *  - Tecla Escape → cierra
+ *  - Tras éxito → "Gracias" + auto-cierre 1.6s
  */
 
 import { useEffect, useRef, useState } from 'react'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 
 type Kind = 'sugerencia' | 'comentario' | 'problema'
+type Mode = 'auth' | 'public'
 type State =
   | { kind: 'idle' }
   | { kind: 'sending' }
@@ -42,26 +43,36 @@ const PLACEHOLDER: Record<Kind, string> = {
 interface Props {
   open: boolean
   onClose: () => void
+  /** 'public' = en landing, pide name+email. Default 'auth'. */
+  mode?: Mode
 }
 
-export function FeedbackModal({ open, onClose }: Props) {
+export function FeedbackModal({ open, onClose, mode = 'auth' }: Props) {
   const [kind, setKind] = useState<Kind>('comentario')
   const [message, setMessage] = useState('')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  // Honeypot — humanos no lo ven, los bots típicamente sí lo llenan.
+  // Si viene con valor, el server finge éxito y descarta. Aquí solo lo
+  // mantenemos en el form para que esté presente en el DOM.
+  const [website, setWebsite] = useState('')
   const [state, setState] = useState<State>({ kind: 'idle' })
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const firstFieldRef = useRef<HTMLTextAreaElement | HTMLInputElement>(null)
 
-  // Reset state al abrir.
+  // Reset al abrir.
   useEffect(() => {
     if (!open) return
     setKind('comentario')
     setMessage('')
+    setName('')
+    setEmail('')
+    setWebsite('')
     setState({ kind: 'idle' })
-    // Focus después del render — sin esto el caret no entra.
-    const t = setTimeout(() => textareaRef.current?.focus(), 50)
+    const t = setTimeout(() => firstFieldRef.current?.focus(), 50)
     return () => clearTimeout(t)
   }, [open])
 
-  // Cerrar con Escape (a menos que se esté enviando).
+  // Escape para cerrar.
   useEffect(() => {
     if (!open) return
     function handleKey(e: KeyboardEvent) {
@@ -90,13 +101,33 @@ export function FeedbackModal({ open, onClose }: Props) {
       setState({ kind: 'error', msg: 'Máximo 2000 caracteres.' })
       return
     }
+    if (mode === 'public') {
+      if (name.trim().length < 1) {
+        setState({ kind: 'error', msg: 'Ingresa tu nombre.' })
+        return
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        setState({ kind: 'error', msg: 'Correo inválido.' })
+        return
+      }
+    }
 
     setState({ kind: 'sending' })
     try {
-      const res = await fetchWithAuthRetry('/api/feedback', {
+      // En modo público no necesitamos auth retry (no hay sesión).
+      const fetcher = mode === 'public' ? fetch : fetchWithAuthRetry
+      const res = await fetcher('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind, message: trimmed }),
+        body: JSON.stringify({
+          kind,
+          message: trimmed,
+          ...(mode === 'public' && {
+            name: name.trim(),
+            email: email.trim(),
+            website,  // honeypot
+          }),
+        }),
       })
       const data = await res.json().catch(() => ({})) as Record<string, unknown>
       if (!res.ok) {
@@ -135,7 +166,9 @@ export function FeedbackModal({ open, onClose }: Props) {
             </div>
             <p className="text-base font-bold text-brand">¡Gracias!</p>
             <p className="text-sm text-brand-mid text-center">
-              Recibimos tu mensaje. Te contestamos pronto si hace falta.
+              {mode === 'public'
+                ? 'Recibimos tu mensaje. Si dejaste correo, te contestamos pronto.'
+                : 'Recibimos tu mensaje. Te contestamos pronto si hace falta.'}
             </p>
           </div>
         ) : (
@@ -177,9 +210,56 @@ export function FeedbackModal({ open, onClose }: Props) {
               ))}
             </div>
 
+            {/* Modo público: name + email */}
+            {mode === 'public' && (
+              <>
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <label className="flex flex-col gap-1">
+                    <span className="fz-input-label">Nombre</span>
+                    <input
+                      ref={firstFieldRef as React.RefObject<HTMLInputElement>}
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      maxLength={80}
+                      disabled={sending}
+                      className="fz-input"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="fz-input-label">Correo</span>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      autoComplete="email"
+                      disabled={sending}
+                      className="fz-input"
+                    />
+                  </label>
+                </div>
+
+                {/* Honeypot — invisible para humanos pero presente en el DOM.
+                 * Los bots que rellenan todos los inputs lo llenan; el server
+                 * lo detecta y descarta el envío silenciosamente.
+                 * tabIndex=-1 + autoComplete=off para que screen-readers y
+                 * autofill no lo toquen. */}
+                <input
+                  type="text"
+                  name="website"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  className="fz-honeypot"
+                />
+              </>
+            )}
+
             {/* Mensaje */}
             <textarea
-              ref={textareaRef}
+              ref={mode === 'auth' ? (firstFieldRef as React.RefObject<HTMLTextAreaElement>) : undefined}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               maxLength={2000}
