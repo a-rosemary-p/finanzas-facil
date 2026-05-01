@@ -104,16 +104,45 @@ export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
           <button
             type="button"
             onClick={() => setMenuOpen(v => !v)}
-            className="flex items-center justify-center rounded-lg min-h-[44px] min-w-[44px] transition-colors"
+            className="relative flex items-center justify-center rounded-lg min-h-[44px] min-w-[44px] transition-colors"
             style={{
               background: menuOpen ? 'var(--brand-chip)' : 'transparent',
               border: '1px solid var(--brand-border)',
               color: 'var(--ink-700)',
             }}
-            aria-label="Menú"
+            aria-label={overdueCount > 0 ? `Menú · ${overdueCount} pendientes vencidos` : 'Menú'}
             aria-expanded={menuOpen}
           >
             <IconList size={22} />
+            {/* Badge sobrepuesto: avisa que hay algo en el menú (pendientes
+             * vencidos) sin tener que abrirlo. Espejo del badge en el item
+             * "Pendientes" del dropdown — visible siempre. */}
+            {overdueCount > 0 && (
+              <span
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  top: -5,
+                  right: -5,
+                  background: 'var(--danger)',
+                  color: '#fff',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  minWidth: 18,
+                  height: 18,
+                  padding: '0 5px',
+                  borderRadius: 9,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '2px solid #fff',
+                  lineHeight: 1,
+                  pointerEvents: 'none',
+                }}
+              >
+                {overdueCount > 9 ? '9+' : overdueCount}
+              </span>
+            )}
           </button>
 
           {menuOpen && (
