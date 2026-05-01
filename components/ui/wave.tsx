@@ -92,6 +92,38 @@ export function WaveUnderline({ color = 'var(--brand-light)' }: { color?: string
 }
 
 /**
+ * Section divider — la wave de "alta frecuencia" usada entre secciones
+ * grandes (después del greeting en /registros, entre secciones en
+ * /pendientes, etc.). Más visible que WaveRule (`--brand-mid` con opacity
+ * 0.5 y stroke más grueso) — pensada para separar bloques de contenido,
+ * no rows individuales.
+ */
+export function WaveSection({
+  color = 'var(--brand-mid)',
+  opacity = 0.5,
+}: {
+  color?: string
+  opacity?: number
+}) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 360 8"
+      preserveAspectRatio="none"
+      style={{ display: 'block', width: '100%', height: 8, color, opacity }}
+    >
+      <path
+        d="M 0 4 C 18 0.5, 36 7.5, 54 4 S 90 0.5, 108 4 S 144 7.5, 162 4 S 198 0.5, 216 4 S 252 7.5, 270 4 S 306 0.5, 324 4 S 342 7.5, 360 4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+/**
  * Inline row separator — replaces border-bottom between list/form rows.
  * Renders as a 6 px tall block element; no positioning required.
  * Default color matches --brand-border (same as a 1px solid divider line).

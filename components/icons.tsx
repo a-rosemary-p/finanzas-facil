@@ -140,6 +140,15 @@ export function IconCaretUp(p: IconProps) {
 /* ── Misc — usados fuera del handoff M3 (ya existían inline en otras
  * páginas, los movemos aquí para un solo lugar). ──────────────────────── */
 
+export function IconPlus(p: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" {...svgProps(p, 14)}>
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  )
+}
+
 export function IconLogout(p: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...svgProps(p, 16)}>

@@ -38,6 +38,7 @@ import { ConfirmationScreen } from '@/components/entries/confirmation-screen'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import { startProCheckout } from '@/lib/upgrade-to-pro'
 import { AppHeader } from '@/components/app-header'
+import { WaveSection } from '@/components/ui/wave'
 import { MetricsCard } from '@/components/registros/metrics-card'
 import { InputCard } from '@/components/registros/input-card'
 import { RecentMovements } from '@/components/registros/recent-movements'
@@ -185,7 +186,7 @@ function RegistrosInner() {
 
           {/* Wave divisor */}
           <div style={{ padding: '0 16px 8px' }}>
-            <WaveDivisor />
+            <WaveSection />
           </div>
 
           {/* MetricsCard */}
@@ -225,7 +226,7 @@ function RegistrosInner() {
 
           {/* Wave divisor */}
           <div style={{ padding: '14px 16px 6px' }}>
-            <WaveDivisor />
+            <WaveSection />
           </div>
 
           {/* Recent movements */}
@@ -340,27 +341,6 @@ function RegistrosInner() {
         />
       )}
     </div>
-  )
-}
-
-// Wave de alta frecuencia entre secciones — variante específica del rediseño,
-// más densa que `WaveRule` que se usa para hairlines en filas.
-function WaveDivisor() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 360 8"
-      preserveAspectRatio="none"
-      style={{ display: 'block', width: '100%', height: 8, color: 'var(--brand-mid)', opacity: 0.5 }}
-    >
-      <path
-        d="M 0 4 C 18 0.5, 36 7.5, 54 4 S 90 0.5, 108 4 S 144 7.5, 162 4 S 198 0.5, 216 4 S 252 7.5, 270 4 S 306 0.5, 324 4 S 342 7.5, 360 4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-    </svg>
   )
 }
 
