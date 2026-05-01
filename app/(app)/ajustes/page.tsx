@@ -14,14 +14,7 @@ type EditingSection = 'cuenta' | 'password' | null
 // ── Helpers de UI ───────────────────────────────────────────
 
 function SectionCard({
-  title,
-  editing,
-  onEdit,
-  onSave,
-  onCancel,
-  saving,
-  children,
-  noEdit,
+  title, editing, onEdit, onSave, onCancel, saving, children, noEdit,
 }: {
   title: string
   editing: boolean
@@ -33,9 +26,9 @@ function SectionCard({
   noEdit?: boolean
 }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ border: '1px solid var(--brand-border)' }}>
+    <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-brand-border">
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--brand-muted)' }}>
+        <p className="text-xs font-bold uppercase tracking-wider text-brand-muted">
           {title}
         </p>
         {!noEdit && (
@@ -43,15 +36,13 @@ function SectionCard({
             <div className="flex items-center gap-2">
               <button
                 type="button" onClick={onCancel}
-                className="text-xs font-medium px-3 py-1.5 rounded-lg min-h-[32px]"
-                style={{ color: 'var(--brand-mid)' }}
+                className="text-xs font-medium px-3 py-1.5 rounded-lg min-h-[32px] text-brand-mid"
               >
                 Cancelar
               </button>
               <button
                 type="button" onClick={onSave} disabled={saving}
-                className="text-xs font-bold px-3 py-1.5 rounded-lg text-white min-h-[32px] transition-opacity disabled:opacity-60"
-                style={{ background: 'var(--brand)' }}
+                className="text-xs font-bold px-3 py-1.5 rounded-lg text-white min-h-[32px] transition-opacity disabled:opacity-60 bg-brand"
               >
                 {saving ? 'Guardando…' : 'Guardar'}
               </button>
@@ -59,8 +50,7 @@ function SectionCard({
           ) : (
             <button
               type="button" onClick={onEdit}
-              className="text-xs font-medium px-3 py-1.5 rounded-lg min-h-[32px]"
-              style={{ color: 'var(--brand)', border: '1px solid var(--brand-border)', background: 'var(--brand-chip)' }}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg min-h-[32px] text-brand border border-brand-border bg-brand-chip"
             >
               Editar
             </button>
@@ -72,16 +62,6 @@ function SectionCard({
   )
 }
 
-function ReadRow({ label, value }: { label: string; value?: string }) {
-  return (
-    <div className="flex flex-col gap-1 pt-3">
-      <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>{label}</p>
-      <p className="text-sm" style={{ color: value ? 'var(--brand)' : 'var(--brand-muted)' }}>{value || '—'}</p>
-      <WaveRule />
-    </div>
-  )
-}
-
 function ToggleRow({ label, description, checked, onChange }: {
   label: string; description?: string; checked: boolean; onChange: (v: boolean) => void
 }) {
@@ -89,17 +69,21 @@ function ToggleRow({ label, description, checked, onChange }: {
     <div className="flex flex-col pt-3">
       <div className="flex items-start justify-between pb-1 gap-4">
         <div className="flex flex-col gap-0.5 flex-1">
-          <p className="text-sm font-medium" style={{ color: 'var(--brand)' }}>{label}</p>
-          {description && <p className="text-xs" style={{ color: 'var(--brand-muted)' }}>{description}</p>}
+          <p className="text-sm font-medium text-brand">{label}</p>
+          {description && <p className="text-xs text-brand-muted">{description}</p>}
         </div>
         <button
           type="button"
           onClick={() => onChange(!checked)}
-          className="relative flex-shrink-0 w-11 h-6 rounded-full transition-colors mt-0.5"
-          style={{ background: checked ? 'var(--brand)' : 'var(--brand-border)' }}
+          className={[
+            'relative flex-shrink-0 w-11 h-6 rounded-full transition-colors mt-0.5',
+            checked ? 'bg-brand' : 'bg-brand-border',
+          ].join(' ')}
           aria-checked={checked}
           role="switch"
         >
+          {/* El thumb se desliza con un translateX dinámico — clase
+           * imposible sin enumerar valores. Dejamos esto inline (es state-driven). */}
           <span
             className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
             style={{ transform: checked ? 'translateX(20px)' : 'translateX(0)' }}
@@ -117,19 +101,18 @@ function EditInput({ label, value, onChange, type = 'text', placeholder, error }
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>
+      <label className="text-xs font-medium uppercase tracking-wide text-brand-muted">
         {label}
       </label>
       <input
         type={type} value={value} onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 min-h-[44px]"
-        style={{
-          borderColor: error ? 'var(--danger)' : 'var(--brand-border)',
-          color: 'var(--brand)',
-        }}
+        className={[
+          'fz-auth-input min-h-[44px]',
+          error ? 'border-danger' : '',
+        ].join(' ')}
       />
-      {error && <p className="text-xs" style={{ color: 'var(--danger)' }}>{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
     </div>
   )
 }
@@ -140,34 +123,32 @@ export default function AjustesPage() {
   const [editingSection, setEditingSection] = useState<EditingSection>(null)
   const [saving, setSaving] = useState(false)
 
-  // ── Cuenta (email) ──
+  // Cuenta
   const [emailDraft, setEmailDraft] = useState('')
   const [emailPasswordDraft, setEmailPasswordDraft] = useState('')
   const [emailSuccess, setEmailSuccess] = useState('')
   const [emailError, setEmailError] = useState('')
 
-  // ── Contraseña draft ──
+  // Contraseña
   const [pwDraft, setPwDraft] = useState({ current: '', new: '', confirm: '' })
   const [pwError, setPwError] = useState('')
   const [pwSuccess, setPwSuccess] = useState('')
 
-  // ── Stripe ──
+  // Stripe
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
 
-  // Timer para mensaje de éxito de contraseña
   useEffect(() => {
     if (!pwSuccess) return
     const t = setTimeout(() => setPwSuccess(''), 3000)
     return () => clearTimeout(t)
   }, [pwSuccess])
 
-  // ── Toggle directo en Preferencias (sin modo edición) ──
   async function toggleSetting(update: SettingsUpdate) {
     try {
       await updateSettings(update)
     } catch {
-      // Si falla, el estado no se actualiza y el toggle vuelve a su posición anterior
+      // Si falla, el estado no se actualiza y el toggle vuelve a su posición.
     }
   }
 
@@ -176,14 +157,10 @@ export default function AjustesPage() {
     setSaving(false)
 
     if (section === 'cuenta') {
-      setEmailDraft('')
-      setEmailPasswordDraft('')
-      setEmailError('')
-      setEmailSuccess('')
+      setEmailDraft(''); setEmailPasswordDraft(''); setEmailError(''); setEmailSuccess('')
     }
     if (section === 'password') {
-      setPwDraft({ current: '', new: '', confirm: '' })
-      setPwError('')
+      setPwDraft({ current: '', new: '', confirm: '' }); setPwError('')
     }
   }
 
@@ -192,7 +169,6 @@ export default function AjustesPage() {
     setSaving(false)
   }
 
-  // ── Guardar email ──
   async function saveEmail() {
     if (!emailPasswordDraft.trim()) { setEmailError('Ingresa tu contraseña actual.'); return }
     if (!emailDraft.trim()) { setEmailError('Ingresa el nuevo correo.'); return }
@@ -204,29 +180,18 @@ export default function AjustesPage() {
       closeSection()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : ''
-      if (msg === 'wrong_password') {
-        setEmailError('La contraseña no es correcta.')
-      } else if (msg.toLowerCase().includes('invalid')) {
-        setEmailError('El correo no es válido.')
-      } else {
-        setEmailError('No se pudo actualizar. Intenta de nuevo.')
-      }
+      if (msg === 'wrong_password') setEmailError('La contraseña no es correcta.')
+      else if (msg.toLowerCase().includes('invalid')) setEmailError('El correo no es válido.')
+      else setEmailError('No se pudo actualizar. Intenta de nuevo.')
     } finally {
       setSaving(false)
     }
   }
 
-  // ── Guardar contraseña ──
   const savePassword = useCallback(async () => {
     setPwError('')
-    if (pwDraft.new.length < 10) {
-      setPwError('La nueva contraseña debe tener al menos 10 caracteres.')
-      return
-    }
-    if (pwDraft.new !== pwDraft.confirm) {
-      setPwError('Las contraseñas no coinciden.')
-      return
-    }
+    if (pwDraft.new.length < 10) { setPwError('La nueva contraseña debe tener al menos 10 caracteres.'); return }
+    if (pwDraft.new !== pwDraft.confirm) { setPwError('Las contraseñas no coinciden.'); return }
     setSaving(true)
     try {
       await updatePassword(pwDraft.current, pwDraft.new)
@@ -234,13 +199,8 @@ export default function AjustesPage() {
       closeSection()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : ''
-      if (msg === 'wrong_password') {
-        setPwError('La contraseña actual no es correcta.')
-      } else {
-        // Surface el motivo real cuando es un rechazo de Supabase
-        // (corta, débil, comprometida, etc.) en lugar del genérico.
-        setPwError(translateAuthError(msg, 'reset'))
-      }
+      if (msg === 'wrong_password') setPwError('La contraseña actual no es correcta.')
+      else setPwError(translateAuthError(msg, 'reset'))
     } finally {
       setSaving(false)
     }
@@ -266,7 +226,7 @@ export default function AjustesPage() {
   if (loading || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-sm" style={{ color: 'var(--brand-mid)' }}>Cargando...</p>
+        <p className="text-sm text-brand-mid">Cargando...</p>
       </div>
     )
   }
@@ -275,50 +235,32 @@ export default function AjustesPage() {
   const isPwEditing = editingSection === 'password'
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(115deg, #BFDACB 25%, #E8F0B9 75%)' }}>
-
+    <div className="min-h-screen fz-page-gradient">
       <AppHeader />
 
-      <main className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-4"
-        style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}
-      >
+      <main className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-4 fz-pad-safe-bottom">
 
-        {/* ── 1. Preferencias (sin modo edición — toggles guardan en vivo) ── */}
-        <SectionCard
-          title="Preferencias"
-          editing={false}
-          onEdit={() => {}}
-          onSave={() => {}}
-          onCancel={() => {}}
-          noEdit
-        >
+        {/* ── 1. Preferencias ── */}
+        <SectionCard title="Preferencias" editing={false}
+          onEdit={() => {}} onSave={() => {}} onCancel={() => {}} noEdit>
           <div className="flex flex-col pt-1">
             {/* Moneda preferida */}
             <div className="flex flex-col gap-2 pt-3">
-              <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>
+              <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">
                 Moneda preferida
               </p>
               <div className="flex gap-2">
-                {/* MXN — siempre activo por ahora */}
-                <div
-                  className="flex-1 py-2.5 rounded-xl text-sm font-bold border flex items-center justify-center min-h-[44px]"
-                  style={{ background: 'var(--brand)', color: '#fff', borderColor: 'var(--brand)' }}
-                >
+                <div className="flex-1 py-2.5 rounded-xl text-sm font-bold border flex items-center justify-center min-h-[44px] bg-brand text-white border-brand">
                   MXN
                 </div>
-                {/* USD — próximamente */}
-                <div
-                  className="flex-1 py-2.5 rounded-xl text-sm font-bold border flex flex-col items-center justify-center min-h-[44px] gap-0.5"
-                  style={{ background: '#f5f5f5', color: '#bbb', borderColor: '#e0e0e0' }}
-                >
+                <div className="flex-1 py-2.5 rounded-xl text-sm font-bold border flex flex-col items-center justify-center min-h-[44px] gap-0.5 bg-paper-2 text-ink-300 border-ink-100">
                   <span>USD</span>
-                  <span className="text-[10px] font-medium" style={{ color: '#bbb' }}>Próximamente</span>
+                  <span className="text-[10px] font-medium text-ink-300">Próximamente</span>
                 </div>
               </div>
               <WaveRule />
             </div>
 
-            {/* Toggles en vivo */}
             <ToggleRow
               label="Mostrar inversiones por default"
               description="Activos a largo plazo. Si está apagado, puedes activarlos temporalmente en el dashboard."
@@ -364,42 +306,35 @@ export default function AjustesPage() {
           ) : (
             <div>
               <div className="flex flex-col gap-1 py-3">
-                <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>
+                <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">
                   Correo electrónico
                 </p>
-                <p className="text-sm" style={{ color: 'var(--brand)' }}>{profile.email}</p>
+                <p className="text-sm text-brand">{profile.email}</p>
               </div>
               {emailSuccess && (
-                <p className="text-xs py-2" style={{ color: 'var(--brand)' }}>{emailSuccess}</p>
+                <p className="text-xs py-2 text-brand">{emailSuccess}</p>
               )}
             </div>
           )}
         </SectionCard>
 
         {/* ── 3. Suscripción ── */}
-        <SectionCard
-          title="Suscripción"
-          editing={false}
-          onEdit={() => {}}
-          onSave={() => {}}
-          onCancel={() => {}}
-          noEdit
-        >
+        <SectionCard title="Suscripción" editing={false}
+          onEdit={() => {}} onSave={() => {}} onCancel={() => {}} noEdit>
           {profile.plan === 'free' ? (
             <div className="flex flex-col gap-3 pt-1">
               <div className="flex flex-col gap-1 pt-3">
-                <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>
+                <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">
                   Plan actual
                 </p>
-                <p className="text-sm font-semibold" style={{ color: 'var(--brand)' }}>
+                <p className="text-sm font-semibold text-brand">
                   Free — 10 movimientos por día
                 </p>
                 <WaveRule />
               </div>
               <button
                 onClick={handleUpgrade} disabled={checkoutLoading}
-                className="w-full text-white rounded-xl py-3 font-bold text-sm min-h-[48px] transition-opacity disabled:opacity-60"
-                style={{ background: 'var(--brand)' }}
+                className="w-full text-white rounded-xl py-3 font-bold text-sm min-h-[48px] transition-opacity disabled:opacity-60 bg-brand"
               >
                 {checkoutLoading
                   ? 'Redirigiendo...'
@@ -407,29 +342,28 @@ export default function AjustesPage() {
                     ? 'Activa Pro — $49/mes'
                     : 'Prueba Pro gratis 30 días — $49/mes después'}
               </button>
-              <p className="text-xs text-center" style={{ color: 'var(--brand-muted)' }}>
+              <p className="text-xs text-center text-brand-muted">
                 Historial limitado a 30 días · Movimientos limitados a 10/día
               </p>
             </div>
           ) : (
             <div className="flex flex-col gap-3 pt-1">
               <div className="flex flex-col gap-1 pt-3">
-                <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>
+                <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">
                   Plan actual
                 </p>
-                <p className="text-sm font-semibold" style={{ color: 'var(--brand)' }}>
+                <p className="text-sm font-semibold text-brand">
                   Pro ✓ — Movimientos ilimitados
                 </p>
                 <WaveRule />
               </div>
               <button
                 onClick={handlePortal} disabled={portalLoading}
-                className="w-full rounded-xl py-3 font-medium text-sm min-h-[48px] border transition-opacity disabled:opacity-60"
-                style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-mid)', background: 'var(--brand-chip)' }}
+                className="w-full rounded-xl py-3 font-medium text-sm min-h-[48px] border border-brand-border text-brand-mid bg-brand-chip transition-opacity disabled:opacity-60"
               >
                 {portalLoading ? '...' : 'Gestionar suscripción'}
               </button>
-              <p className="text-xs text-center" style={{ color: 'var(--brand-muted)' }}>
+              <p className="text-xs text-center text-brand-muted">
                 Cancela cuando quieras desde el portal de Stripe.
               </p>
             </div>
@@ -472,12 +406,12 @@ export default function AjustesPage() {
             </div>
           ) : (
             <div className="flex flex-col gap-1 py-3">
-              <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>
+              <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">
                 Contraseña
               </p>
-              <p className="text-sm" style={{ color: 'var(--brand)' }}>••••••••••••</p>
+              <p className="text-sm text-brand">••••••••••••</p>
               {pwSuccess && (
-                <p className="text-xs mt-1" style={{ color: 'var(--brand)' }}>{pwSuccess}</p>
+                <p className="text-xs mt-1 text-brand">{pwSuccess}</p>
               )}
             </div>
           )}
@@ -486,8 +420,7 @@ export default function AjustesPage() {
         {/* Volver */}
         <a
           href="/registros"
-          className="text-sm font-medium py-3 rounded-xl min-h-[44px] flex items-center justify-center transition-colors"
-          style={{ color: 'var(--brand-mid)', background: 'rgba(255,255,255,0.6)' }}
+          className="text-sm font-medium py-3 rounded-xl min-h-[44px] flex items-center justify-center transition-colors text-brand-mid bg-paper-soft"
         >
           ← Volver a registros
         </a>

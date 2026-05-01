@@ -324,10 +324,45 @@ label,
   text-align: center;
 }
 
-/* Page-level gradient background (login, /pendientes, etc.) */
+/* Page-level gradient background — gama 1 (app pages: pendientes, reportes...) */
 .fz-page-gradient {
   background: linear-gradient(115deg, var(--page-grad-from) 25%, var(--page-grad-to) 75%);
 }
+
+/* Page-level gradient background — gama 2 (auth: login, reset-password)
+   Más saturado, más brand. */
+.fz-page-gradient-auth {
+  background: linear-gradient(115deg, #92C3A5 25%, #DAE68F 75%);
+}
+
+/* Auth input — más alto que fz-input estándar (min-h 44 + border-2 focus) */
+.fz-auth-input {
+  border: 1px solid var(--brand-border);
+  color: var(--brand);
+  border-radius: var(--r-md);
+  padding: 12px 12px;
+  min-height: 44px;
+  font-size: 14px;
+  background: white;
+  width: 100%;
+}
+.fz-auth-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--brand-light);
+}
+
+/* Submit button para login/register (más alto) */
+.fz-btn-auth-submit {
+  background: var(--brand);
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+  border-radius: var(--r-xl);
+  padding: 14px;
+  min-height: 52px;
+  transition: opacity var(--dur-fast) var(--ease-standard);
+}
+.fz-btn-auth-submit:disabled { opacity: 0.5; }
 
 /* Padding bottom seguro en main content (respeta home indicator de iOS) */
 .fz-pad-safe-bottom {

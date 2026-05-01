@@ -13,10 +13,10 @@ import { startProCheckout } from '@/lib/upgrade-to-pro'
 function ReadField({ label, value }: { label: string; value?: string }) {
   return (
     <div className="flex flex-col gap-1 pt-3">
-      <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>
+      <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">
         {label}
       </p>
-      <p className="text-sm" style={{ color: value ? 'var(--brand)' : 'var(--brand-muted)' }}>
+      <p className={`text-sm ${value ? 'text-brand' : 'text-brand-muted'}`}>
         {value || '—'}
       </p>
       <WaveRule />
@@ -30,14 +30,13 @@ function EditInput({ label, value, onChange, placeholder }: {
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>
+      <label className="text-xs font-medium uppercase tracking-wide text-brand-muted">
         {label}
       </label>
       <input
         type="text" value={value} onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 min-h-[44px]"
-        style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
+        className="fz-auth-input min-h-[44px]"
       />
     </div>
   )
@@ -50,13 +49,12 @@ function EditSelect({ label, value, onChange, options, placeholder }: {
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>
+      <label className="text-xs font-medium uppercase tracking-wide text-brand-muted">
         {label}
       </label>
       <select
         value={value} onChange={e => onChange(e.target.value)}
-        className="border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 min-h-[44px] bg-white"
-        style={{ borderColor: 'var(--brand-border)', color: value ? 'var(--brand)' : 'var(--brand-muted)' }}
+        className={`fz-auth-input min-h-[44px] bg-white ${value ? 'text-brand' : 'text-brand-muted'}`}
       >
         <option value="">{placeholder}</option>
         {options.map(o => <option key={o} value={o}>{o}</option>)}
@@ -114,40 +112,34 @@ export default function PerfilPage() {
   if (loading || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-sm" style={{ color: 'var(--brand-mid)' }}>Cargando...</p>
+        <p className="text-sm text-brand-mid">Cargando...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(115deg, #BFDACB 25%, #E8F0B9 75%)' }}>
-
+    <div className="min-h-screen fz-page-gradient">
       <AppHeader />
 
-      <main className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-4"
-        style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}
-      >
+      <main className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-4 fz-pad-safe-bottom">
 
         {/* Datos del negocio */}
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ border: '1px solid var(--brand-border)' }}>
-          {/* Card header: label left, edit/save/cancel right */}
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-brand-border">
           <div className="flex items-center justify-between px-4 pt-4 pb-2">
-            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--brand-muted)' }}>
+            <p className="text-xs font-bold uppercase tracking-wider text-brand-muted">
               Datos del negocio
             </p>
             {editing ? (
               <div className="flex items-center gap-2">
                 <button
                   type="button" onClick={cancelEditing}
-                  className="text-xs font-medium px-3 py-1.5 rounded-lg min-h-[32px]"
-                  style={{ color: 'var(--brand-mid)' }}
+                  className="text-xs font-medium px-3 py-1.5 rounded-lg min-h-[32px] text-brand-mid"
                 >
                   Cancelar
                 </button>
                 <button
                   type="button" onClick={handleSave} disabled={saving}
-                  className="text-xs font-bold px-3 py-1.5 rounded-lg text-white min-h-[32px] transition-opacity disabled:opacity-60"
-                  style={{ background: 'var(--brand)' }}
+                  className="text-xs font-bold px-3 py-1.5 rounded-lg text-white min-h-[32px] transition-opacity disabled:opacity-60 bg-brand"
                 >
                   {saving ? 'Guardando…' : 'Guardar'}
                 </button>
@@ -155,8 +147,7 @@ export default function PerfilPage() {
             ) : (
               <button
                 type="button" onClick={startEditing}
-                className="text-xs font-medium px-3 py-1.5 rounded-lg min-h-[32px]"
-                style={{ color: 'var(--brand)', border: '1px solid var(--brand-border)', background: 'var(--brand-chip)' }}
+                className="text-xs font-medium px-3 py-1.5 rounded-lg min-h-[32px] text-brand border border-brand-border bg-brand-chip"
               >
                 Editar
               </button>
@@ -194,7 +185,7 @@ export default function PerfilPage() {
                 />
 
                 {saveError && (
-                  <p className="text-sm" style={{ color: 'var(--danger)' }}>{saveError}</p>
+                  <p className="text-sm text-danger">{saveError}</p>
                 )}
               </div>
             ) : (
@@ -203,10 +194,10 @@ export default function PerfilPage() {
                 <ReadField label="Giro / Industria" value={profile.giro} />
                 <ReadField label="Ciudad" value={profile.ciudad} />
                 <div className="flex flex-col gap-1 pt-3">
-                  <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>
+                  <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">
                     Estado
                   </p>
-                  <p className="text-sm" style={{ color: profile.estado ? 'var(--brand)' : 'var(--brand-muted)' }}>
+                  <p className={`text-sm ${profile.estado ? 'text-brand' : 'text-brand-muted'}`}>
                     {profile.estado || '—'}
                   </p>
                   <WaveRule />
@@ -217,23 +208,23 @@ export default function PerfilPage() {
         </div>
 
         {/* Cuenta */}
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ border: '1px solid var(--brand-border)' }}>
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-brand-border">
           <div className="px-4 pt-4 pb-2">
-            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--brand-muted)' }}>
+            <p className="text-xs font-bold uppercase tracking-wider text-brand-muted">
               Cuenta
             </p>
           </div>
           <div className="px-4 pb-4">
             <div className="flex flex-col gap-1 pt-3">
-              <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>Correo</p>
-              <p className="text-sm" style={{ color: 'var(--brand)' }}>{profile.email}</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">Correo</p>
+              <p className="text-sm text-brand">{profile.email}</p>
               <WaveRule />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center justify-between py-3">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>Plan</p>
-                  <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--brand)' }}>
+                  <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">Plan</p>
+                  <p className="text-sm font-semibold mt-0.5 text-brand">
                     {profile.plan === 'pro' ? 'Pro ✓' : 'Base'}
                   </p>
                 </div>
@@ -242,8 +233,7 @@ export default function PerfilPage() {
                     type="button"
                     onClick={handleUpgrade}
                     disabled={checkoutLoading}
-                    className="text-xs font-bold px-3 py-2 rounded-lg text-white min-h-[36px] flex items-center transition-opacity"
-                    style={{ background: 'var(--brand)', opacity: checkoutLoading ? 0.6 : 1 }}
+                    className="text-xs font-bold px-3 py-2 rounded-lg text-white min-h-[36px] flex items-center transition-opacity bg-brand disabled:opacity-60"
                   >
                     {checkoutLoading ? 'Cargando...' : 'Actualizar a Pro'}
                   </button>
@@ -253,10 +243,10 @@ export default function PerfilPage() {
             </div>
             <div className="flex items-center justify-between py-3">
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--brand-muted)' }}>
+                <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">
                   Movimientos registrados
                 </p>
-                <p className="text-2xl font-bold mt-0.5" style={{ color: 'var(--brand)' }}>
+                <p className="text-2xl font-bold mt-0.5 text-brand">
                   {profile.totalMovements.toLocaleString('es-MX')}
                 </p>
               </div>
@@ -267,8 +257,7 @@ export default function PerfilPage() {
         {/* Volver */}
         <button
           type="button" onClick={() => router.back()}
-          className="text-sm font-medium py-3 rounded-xl min-h-[44px] transition-colors"
-          style={{ color: 'var(--brand-mid)', background: 'rgba(255,255,255,0.6)' }}
+          className="text-sm font-medium py-3 rounded-xl min-h-[44px] transition-colors text-brand-mid bg-paper-soft"
         >
           ← Volver
         </button>

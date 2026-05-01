@@ -14,20 +14,14 @@ export default function ResetPasswordPage() {
   const [ready, setReady] = useState(false)
 
   // Solo permitimos renderizar el form cuando el usuario llegó desde el link
-  // de recuperación (evento PASSWORD_RECOVERY). Una sesión normal no debería
-  // poder cambiar contraseña sin pasar por /ajustes (que pide contraseña actual).
+  // de recuperación (evento PASSWORD_RECOVERY).
   useEffect(() => {
     const supabase = createClient()
 
-    // Listener PRIMERO — así capturamos el PASSWORD_RECOVERY aunque la
-    // sesión se hidrate en el mismo tick del mount.
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') setReady(true)
     })
 
-    // Fallback: si Supabase ya procesó el link antes de registrar el listener,
-    // solo confiamos en una sesión fresca (creada hace <5 min vía recovery).
-    // Sin fresh-grace, damos 1.5s al listener y si no disparó, redirigimos.
     const timeout = setTimeout(() => {
       if (!ready) router.replace('/login')
     }, 1500)
@@ -51,16 +45,11 @@ export default function ResetPasswordPage() {
     const { error: updateError } = await supabase.auth.updateUser({ password })
 
     if (updateError) {
-      // Mostramos el motivo real (corta, débil, comprometida, etc.) en lugar
-      // de un genérico que dejaba al user sin saber qué cambiar.
       setError(translateAuthError(updateError.message, 'reset'))
       setLoading(false)
       return
     }
 
-    // Tras cambio por recovery: invalidar TODAS las sesiones (incluyendo esta)
-    // y regresar a login. Un token robado que llegó por esta ruta también se
-    // revoca así.
     await supabase.auth.signOut({ scope: 'global' })
     router.replace('/login')
   }
@@ -68,30 +57,29 @@ export default function ResetPasswordPage() {
   if (!ready) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-sm" style={{ color: 'var(--brand-mid)' }}>Verificando enlace...</p>
+        <p className="text-sm text-brand-mid">Verificando enlace...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(115deg, #92C3A5 25%, #DAE68F 75%)' }}>
+    <div className="min-h-screen flex items-center justify-center p-4 fz-page-gradient-auth">
       <div className="w-full max-w-sm">
-
         <div className="flex flex-col items-center mb-8">
-          <img src="/logo-white.png" alt="fiza" style={{ height: '64px', width: 'auto' }} />
+          <img src="/logo-white.png" alt="fiza" className="h-16 w-auto" />
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm p-6" style={{ border: '1px solid var(--brand-border)' }}>
-          <h2 className="font-bold text-lg mb-1" style={{ color: 'var(--brand)' }}>
+        <div className="bg-white rounded-2xl shadow-sm p-6 border border-brand-border">
+          <h2 className="font-bold text-lg mb-1 text-brand">
             Nueva contraseña
           </h2>
-          <p className="text-sm mb-5" style={{ color: 'var(--brand-mid)' }}>
+          <p className="text-sm mb-5 text-brand-mid">
             Elige una contraseña nueva para tu cuenta.
           </p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium" style={{ color: 'var(--brand)' }}>
+              <label className="text-sm font-medium text-brand">
                 Nueva contraseña
               </label>
               <input
@@ -101,14 +89,13 @@ export default function ResetPasswordPage() {
                 placeholder="••••••••"
                 autoComplete="new-password"
                 disabled={loading}
-                className="border rounded-lg px-3 py-3 min-h-[44px] focus:outline-none focus:ring-2"
-                style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
+                className="fz-auth-input"
               />
-              <p className="text-xs" style={{ color: 'var(--brand-mid)' }}>Mínimo 10 caracteres</p>
+              <p className="text-xs text-brand-mid">Mínimo 10 caracteres</p>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium" style={{ color: 'var(--brand)' }}>
+              <label className="text-sm font-medium text-brand">
                 Confirmar contraseña
               </label>
               <input
@@ -118,21 +105,15 @@ export default function ResetPasswordPage() {
                 placeholder="••••••••"
                 autoComplete="new-password"
                 disabled={loading}
-                className="border rounded-lg px-3 py-3 min-h-[44px] focus:outline-none focus:ring-2"
-                style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
+                className="fz-auth-input"
               />
             </div>
 
             {error && (
-              <p className="text-sm" style={{ color: 'var(--danger)' }}>{error}</p>
+              <p className="text-sm text-danger">{error}</p>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="text-white rounded-xl py-3.5 font-bold text-base transition-opacity disabled:opacity-50 min-h-[52px]"
-              style={{ background: 'var(--brand)' }}
-            >
+            <button type="submit" disabled={loading} className="fz-btn-auth-submit">
               {loading ? 'Guardando...' : 'Guardar nueva contraseña'}
             </button>
           </form>
