@@ -6,6 +6,19 @@ import { MOVEMENT_TYPES, MOVEMENT_TYPE_CONFIG } from '@/lib/constants'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import type { Movement } from '@/types'
 
+// Maps de clases por tipo — alternativa a los strings var() de
+// MOVEMENT_TYPE_CONFIG. Mismo color, ahora consumible como className.
+const TYPE_CHIP: Record<Movement['type'], string> = {
+  ingreso:   'bg-income-bg text-income-text border-income-border',
+  gasto:     'bg-expense-bg text-expense-text border-expense-border',
+  pendiente: 'bg-pending-bg text-pending-text border-pending-border',
+}
+const TYPE_AMOUNT_COLOR: Record<Movement['type'], string> = {
+  ingreso:   'text-income-text',
+  gasto:     'text-expense-text',
+  pendiente: 'text-pending-text',
+}
+
 interface MovementCardProps {
   movement: Movement
   onUpdated: (updated: Movement) => void
@@ -30,7 +43,6 @@ export function MovementCard({ movement, onUpdated, onDeleted, onMarkAsPaid, hid
 
   const cfg = MOVEMENT_TYPE_CONFIG[movement.type]
   const busy = saving || deleting || markingPaid
-  const cardBorder = movement.isInvestment ? '1.5px solid var(--investment)' : '1px solid var(--brand-border)'
 
   function openEdit() {
     setEditType(movement.type)
@@ -74,90 +86,95 @@ export function MovementCard({ movement, onUpdated, onDeleted, onMarkAsPaid, hid
   /* ── Modo edición ── */
   if (editing) {
     return (
-      <div className="bg-white rounded-xl shadow-sm px-4 py-4 flex flex-col gap-3" style={{ border: '1px solid var(--brand-light)' }}>
+      <div className="bg-white rounded-xl shadow-sm px-4 py-4 flex flex-col gap-3 border border-brand-light">
         {/* Selector de tipo */}
         <div className="flex gap-2">
           {MOVEMENT_TYPES.map(t => {
-            const tcfg = MOVEMENT_TYPE_CONFIG[t]
             const active = editType === t
             return (
-              <button key={t} type="button" onClick={() => setEditType(t)} disabled={busy}
-                className="flex-1 py-1.5 rounded-full text-xs font-bold border transition-colors"
-                style={active
-                  ? { background: tcfg.bg, color: tcfg.color, borderColor: tcfg.border }
-                  : { background: 'var(--brand-chip)', color: 'var(--brand-muted)', borderColor: 'var(--brand-border)' }
-                }
+              <button
+                key={t}
+                type="button"
+                onClick={() => setEditType(t)}
+                disabled={busy}
+                className={[
+                  'flex-1 py-1.5 rounded-full text-xs font-bold border transition-colors',
+                  active
+                    ? TYPE_CHIP[t]
+                    : 'bg-brand-chip text-brand-muted border-brand-border',
+                ].join(' ')}
               >
-                {tcfg.label}
+                {MOVEMENT_TYPE_CONFIG[t].label}
               </button>
             )
           })}
         </div>
 
-        <input type="text" value={editDescription} onChange={e => setEditDescription(e.target.value)}
+        <input
+          type="text" value={editDescription} onChange={e => setEditDescription(e.target.value)}
           placeholder="Descripción" maxLength={60} disabled={busy}
-          className="border rounded-lg px-3 py-2.5 text-sm w-full focus:outline-none focus:ring-2"
-          style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
+          className="border border-brand-border rounded-lg px-3 py-2.5 text-sm w-full focus:outline-none focus:ring-2 text-brand"
         />
 
         <div className="flex gap-2">
           <div className="flex-1 relative min-w-0">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold select-none" style={{ color: 'var(--brand-mid)' }}>$</span>
-            <input type="number" value={editAmount} onChange={e => setEditAmount(e.target.value)}
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold select-none text-brand-mid">$</span>
+            <input
+              type="number" value={editAmount} onChange={e => setEditAmount(e.target.value)}
               placeholder="0" min="0.01" step="0.01" disabled={busy}
-              className="border rounded-lg pl-7 pr-3 py-2.5 text-sm w-full focus:outline-none focus:ring-2"
-              style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
+              className="border border-brand-border rounded-lg pl-7 pr-3 py-2.5 text-sm w-full focus:outline-none focus:ring-2 text-brand"
             />
           </div>
-          <input type="date" value={editDate} max={getTodayString()} onChange={e => setEditDate(e.target.value)}
+          <input
+            type="date" value={editDate} max={getTodayString()} onChange={e => setEditDate(e.target.value)}
             disabled={busy}
-            className="border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 shrink-0"
-            style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)', width: '138px' }}
+            className="border border-brand-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 shrink-0 text-brand w-[138px]"
           />
         </div>
 
         <label className="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" checked={editIsInvestment} onChange={e => setEditIsInvestment(e.target.checked)}
-            disabled={busy} className="w-4 h-4" style={{ accentColor: 'var(--investment)' }}
+          <input
+            type="checkbox" checked={editIsInvestment} onChange={e => setEditIsInvestment(e.target.checked)}
+            disabled={busy} className="w-4 h-4 fz-investment-check"
           />
-          <span className="text-xs" style={{ color: 'var(--brand-mid)' }}>Marcar como inversión (activo a largo plazo)</span>
+          <span className="text-xs text-brand-mid">Marcar como inversión (activo a largo plazo)</span>
         </label>
 
-        {error && <p className="text-xs" style={{ color: 'var(--danger)' }}>{error}</p>}
+        {error && <p className="text-xs text-danger">{error}</p>}
 
         <div className="flex gap-2">
-          <button type="button" onClick={handleSave} disabled={busy}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-opacity disabled:opacity-50"
-            style={{ background: 'var(--brand)' }}
+          <button
+            type="button" onClick={handleSave} disabled={busy}
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-opacity disabled:opacity-50 bg-brand"
           >
             {saving ? 'Guardando...' : 'Guardar'}
           </button>
-          <button type="button" onClick={cancelEdit} disabled={busy}
-            className="py-2.5 px-4 rounded-xl text-sm font-medium border transition-colors disabled:opacity-50"
-            style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-mid)', background: 'var(--brand-chip)' }}
+          <button
+            type="button" onClick={cancelEdit} disabled={busy}
+            className="py-2.5 px-4 rounded-xl text-sm font-medium border border-brand-border bg-brand-chip text-brand-mid transition-colors disabled:opacity-50"
           >
             Cancelar
           </button>
         </div>
 
         {!confirmDelete ? (
-          <button type="button" onClick={() => setConfirmDelete(true)} disabled={busy}
-            className="w-full py-2 rounded-xl text-sm font-medium transition-opacity disabled:opacity-50"
-            style={{ color: 'var(--danger)', background: 'var(--danger-bg)', border: '1px solid var(--danger-border)' }}
+          <button
+            type="button" onClick={() => setConfirmDelete(true)} disabled={busy}
+            className="w-full py-2 rounded-xl text-sm font-medium transition-opacity disabled:opacity-50 text-danger bg-danger-bg border border-danger-border"
           >
             Borrar movimiento
           </button>
         ) : (
           <div className="flex gap-2">
-            <button type="button" onClick={handleDelete} disabled={busy}
-              className="flex-1 py-2 rounded-xl text-sm font-bold text-white transition-opacity disabled:opacity-50"
-              style={{ background: 'var(--danger)' }}
+            <button
+              type="button" onClick={handleDelete} disabled={busy}
+              className="flex-1 py-2 rounded-xl text-sm font-bold text-white transition-opacity disabled:opacity-50 bg-danger"
             >
               {deleting ? 'Borrando...' : '¿Confirmar borrado?'}
             </button>
-            <button type="button" onClick={() => setConfirmDelete(false)} disabled={busy}
-              className="py-2 px-3 rounded-xl text-sm font-medium border transition-colors disabled:opacity-50"
-              style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-mid)', background: 'var(--brand-chip)' }}
+            <button
+              type="button" onClick={() => setConfirmDelete(false)} disabled={busy}
+              className="py-2 px-3 rounded-xl text-sm font-medium border border-brand-border bg-brand-chip text-brand-mid transition-colors disabled:opacity-50"
             >
               No
             </button>
@@ -168,26 +185,25 @@ export function MovementCard({ movement, onUpdated, onDeleted, onMarkAsPaid, hid
   }
 
   /* ── Vista normal ── */
+  // Investment border es 1.5px y reemplaza el border-brand-border default;
+  // Tailwind no genera 1.5px stock — usamos clase utilitaria propia.
+  const cardBorderClass = movement.isInvestment ? 'fz-card-investment' : 'border border-brand-border'
+
   return (
-    <div className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center gap-3" style={{ border: cardBorder }}>
-      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 min-w-[5rem] text-center"
-        style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}
-      >
+    <div className={`bg-white rounded-xl shadow-sm px-4 py-3 flex items-center gap-3 ${cardBorderClass}`}>
+      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 min-w-[5rem] text-center border ${TYPE_CHIP[movement.type]}`}>
         {cfg.label}
       </span>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium leading-snug truncate" style={{ color: 'var(--brand)' }}>
+        <p className="text-sm font-medium leading-snug truncate text-brand">
           {movement.description}
         </p>
         {!hideDate && (
-          <p className="text-xs mt-0.5" style={{ color: 'var(--brand-mid)' }}>
+          <p className="text-xs mt-0.5 text-brand-mid">
             {formatEntryDate(movement.movementDate)}
-            {/* Audit trail (v0.27 sprint 1b): si el movimiento nació como
-             * pendiente y fue pagado, lo señalamos sutilmente. paidAt es el
-             * ISO timestamp del momento en que se marcó como pagado. */}
             {movement.paidAt && movement.originalType === 'pendiente' && (
-              <span className="ml-1.5 italic" style={{ color: 'var(--brand-muted)' }}>
+              <span className="ml-1.5 italic text-brand-muted">
                 · era pendiente
               </span>
             )}
@@ -196,7 +212,7 @@ export function MovementCard({ movement, onUpdated, onDeleted, onMarkAsPaid, hid
       </div>
 
       {movement.isInvestment && (
-        <span className="shrink-0" title="Inversión" style={{ color: 'var(--investment)' }}>
+        <span className="shrink-0 text-investment" title="Inversión">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
             <polyline points="16 7 22 7 22 13"/>
@@ -204,7 +220,7 @@ export function MovementCard({ movement, onUpdated, onDeleted, onMarkAsPaid, hid
         </span>
       )}
 
-      <span className="text-base font-bold shrink-0" style={{ color: cfg.color }}>
+      <span className={`text-base font-bold shrink-0 ${TYPE_AMOUNT_COLOR[movement.type]}`}>
         {cfg.sign}{formatCurrency(movement.amount)}
       </span>
 
@@ -213,17 +229,16 @@ export function MovementCard({ movement, onUpdated, onDeleted, onMarkAsPaid, hid
           type="button"
           onClick={async () => { setMarkingPaid(true); await onMarkAsPaid(movement.id); setMarkingPaid(false) }}
           disabled={busy}
-          className="shrink-0 px-2.5 py-1 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-50"
-          style={{ background: 'var(--brand)', color: '#fff' }}
+          className="shrink-0 px-2.5 py-1 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-50 bg-brand text-white"
           aria-label="Marcar como pagado"
         >
           {markingPaid ? '...' : 'Pagado'}
         </button>
       )}
 
-      <button type="button" onClick={openEdit}
-        className="shrink-0 p-1.5 rounded-lg transition-colors flex items-center justify-center"
-        style={{ color: 'var(--brand-muted)', background: 'var(--brand-chip)' }}
+      <button
+        type="button" onClick={openEdit}
+        className="shrink-0 p-1.5 rounded-lg transition-colors flex items-center justify-center text-brand-muted bg-brand-chip"
         aria-label="Editar movimiento"
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">

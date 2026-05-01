@@ -422,6 +422,21 @@ label,
 @keyframes fz-spin { to { transform: rotate(360deg) } }
 .fz-spin { animation: fz-spin 0.9s linear infinite; }
 
+/* Card de movimiento marcado como inversión — border 1.5px (no en stock TW) */
+.fz-card-investment {
+  border: 1.5px solid var(--investment);
+}
+
+/* Checkbox accent para el toggle "Marcar como inversión" */
+.fz-investment-check {
+  accent-color: var(--investment);
+}
+
+/* Checkbox accent verde-marca (toggle "Se repite cada" en confirmation) */
+.fz-brand-check {
+  accent-color: var(--brand);
+}
+
 /* Wrapper textarea/fecha del modo Escribir — fondo paper-2 con borde */
 .fz-write-input {
   background: var(--paper-2);

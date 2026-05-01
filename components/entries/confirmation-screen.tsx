@@ -10,8 +10,7 @@ interface ConfirmationScreenProps {
   rawText: string
   entryDate: string
   initialMovements: PendingMovement[]
-  /** Cómo se capturó la entry. Se manda al server para persistir input_source
-   *  (entries.input_source + analytics). Default 'text' para retro-compat. */
+  /** Cómo se capturó la entry. Default 'text' para retro-compat. */
   inputSource?: 'text' | 'voice' | 'photo'
   onConfirmed: (entry: Entry) => void
   onCancel: () => void
@@ -83,8 +82,6 @@ export function ConfirmationScreen({
 
       if (!res.ok) {
         const err = (data ?? {}) as Record<string, unknown>
-        // Loguea el detalle al console para que sea diagnosticable cuando el
-        // user reporta "error al guardar". El UX queda igual.
         console.error('[confirm] failed', { status: res.status, body: err, sent: { rawText, entryDate, movements: valid } })
         setError((err['message'] as string) || (err['error'] as string) || `Error al confirmar (${res.status}).`)
         setLoading(false)
@@ -106,29 +103,24 @@ export function ConfirmationScreen({
     <div className="flex flex-col gap-4">
       {/* Header */}
       <div>
-        <h2 className="font-bold text-lg" style={{ color: 'var(--brand)' }}>
+        <h2 className="font-bold text-lg text-brand">
           Revisemos tus movimientos
         </h2>
-        <p className="text-sm italic mt-1 line-clamp-2" style={{ color: 'var(--brand-mid)' }}>
-          "{rawText}"
+        <p className="text-sm italic mt-1 line-clamp-2 text-brand-mid">
+          &ldquo;{rawText}&rdquo;
         </p>
       </div>
 
       {/* Lista de movimientos editables */}
       {movements.map((m, idx) => (
-        <div
-          key={m.tempId}
-          className="bg-white rounded-xl shadow-sm p-4 flex flex-col gap-3"
-          style={{ border: '1px solid var(--brand-border)' }}
-        >
+        <div key={m.tempId} className="bg-white rounded-xl shadow-sm p-4 flex flex-col gap-3 border border-brand-border">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase" style={{ color: 'var(--brand-mid)' }}>
+            <span className="text-xs font-bold uppercase text-brand-mid">
               Movimiento {idx + 1}
             </span>
             <button
               onClick={() => remove(m.tempId)}
-              className="text-sm min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg transition-colors"
-              style={{ color: 'var(--danger)' }}
+              className="text-sm min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg transition-colors text-danger"
               title="Eliminar"
             >
               ✕
@@ -137,12 +129,11 @@ export function ConfirmationScreen({
 
           {/* Tipo */}
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>Tipo</label>
+            <label className="fz-input-label">Tipo</label>
             <select
               value={m.type}
               onChange={e => update(m.tempId, { type: e.target.value as PendingMovement['type'] })}
-              className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
-              style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
+              className="fz-input"
             >
               {MOVEMENT_TYPES.map(t => (
                 <option key={t} value={t}>{MOVEMENT_TYPE_CONFIG[t].label}</option>
@@ -152,7 +143,7 @@ export function ConfirmationScreen({
 
           {/* Monto */}
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>
+            <label className="fz-input-label">
               Monto {m.originalCurrency && m.originalCurrency !== 'MXN' ? '(MXN)' : '($)'}
             </label>
             <input
@@ -162,22 +153,18 @@ export function ConfirmationScreen({
               value={m.amount || ''}
               onChange={e => update(m.tempId, { amount: parseFloat(e.target.value) || 0 })}
               placeholder="0.00"
-              className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
-              style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
+              className="fz-input"
             />
           </div>
 
           {/* Tipo de cambio — solo visible cuando hay moneda extranjera */}
           {m.originalCurrency && m.originalCurrency !== 'MXN' && (
-            <div
-              className="flex flex-col gap-2 rounded-lg px-3 py-2.5"
-              style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}
-            >
-              <p className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>
+            <div className="flex flex-col gap-2 rounded-lg px-3 py-2.5 bg-brand-chip border border-brand-border">
+              <p className="text-xs font-medium text-brand-mid">
                 Tipo de cambio · {m.originalCurrency} → MXN
               </p>
               <div className="flex items-center gap-2">
-                <span className="text-xs" style={{ color: 'var(--brand-muted)' }}>
+                <span className="text-xs text-brand-muted">
                   {m.originalAmount} {m.originalCurrency} ×
                 </span>
                 <input
@@ -193,14 +180,13 @@ export function ConfirmationScreen({
                       amount: Math.round(orig * rate * 100) / 100,
                     })
                   }}
-                  className="border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 w-20"
-                  style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)', background: '#fff' }}
+                  className="fz-input w-20"
                 />
-                <span className="text-xs font-semibold" style={{ color: 'var(--brand)' }}>
+                <span className="text-xs font-semibold text-brand">
                   = {formatCurrency(m.amount)}
                 </span>
               </div>
-              <p className="text-xs" style={{ color: 'var(--brand-muted)' }}>
+              <p className="text-xs text-brand-muted">
                 Ajusta si el tipo de cambio del día es diferente.
               </p>
             </div>
@@ -208,26 +194,24 @@ export function ConfirmationScreen({
 
           {/* Descripción */}
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>Descripción</label>
+            <label className="fz-input-label">Descripción</label>
             <input
               type="text"
               value={m.description}
               onChange={e => update(m.tempId, { description: e.target.value })}
               placeholder="Ej: Venta de tacos"
               maxLength={60}
-              className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
-              style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
+              className="fz-input"
             />
           </div>
 
           {/* Categoría */}
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>Categoría</label>
+            <label className="fz-input-label">Categoría</label>
             <select
               value={m.category}
               onChange={e => update(m.tempId, { category: e.target.value as PendingMovement['category'] })}
-              className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
-              style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
+              className="fz-input"
             >
               {CATEGORIES.map(c => (
                 <option key={c} value={c}>{c}</option>
@@ -235,28 +219,23 @@ export function ConfirmationScreen({
             </select>
           </div>
 
-          {/* Fecha. Pendientes pueden ser futuros — para esos no aplicamos
-           * `max=today`. Para ingreso/gasto sí cap (evita typos de "registrar
-           * gasto que aún no pasa"). */}
+          {/* Fecha */}
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>Fecha</label>
+            <label className="fz-input-label">Fecha</label>
             <input
               type="date"
               value={m.movementDate}
               max={m.type === 'pendiente' ? undefined : getTodayString()}
               onChange={e => update(m.tempId, { movementDate: e.target.value })}
-              className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
-              style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
+              className="fz-input"
             />
           </div>
 
-          {/* Pendiente: dirección (cobro o pago). Sólo visible para type='pendiente'. */}
+          {/* Pendiente: dirección */}
           {m.type === 'pendiente' && (
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>
-                ¿Vas a cobrar o vas a pagar?
-              </label>
-              <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}>
+              <label className="fz-input-label">¿Vas a cobrar o vas a pagar?</label>
+              <div className="flex gap-1 p-1 rounded-lg bg-brand-chip border border-brand-border">
                 {([
                   { value: 'gasto'   as const, label: 'Voy a pagar'    },
                   { value: 'ingreso' as const, label: 'Me van a pagar' },
@@ -267,11 +246,10 @@ export function ConfirmationScreen({
                       key={opt.value}
                       type="button"
                       onClick={() => update(m.tempId, { pendingDirection: opt.value })}
-                      className="flex-1 text-xs font-bold rounded-md py-1.5 transition-colors"
-                      style={{
-                        background: active ? 'var(--brand)' : 'transparent',
-                        color: active ? '#fff' : 'var(--brand-mid)',
-                      }}
+                      className={[
+                        'flex-1 text-xs font-bold rounded-md py-1.5 transition-colors',
+                        active ? 'bg-brand text-white' : 'bg-transparent text-brand-mid',
+                      ].join(' ')}
                     >
                       {opt.label}
                     </button>
@@ -287,18 +265,20 @@ export function ConfirmationScreen({
               type="checkbox"
               checked={m.isInvestment ?? false}
               onChange={e => update(m.tempId, { isInvestment: e.target.checked })}
-              className="w-4 h-4 accent-amber-500"
+              className="w-4 h-4 fz-investment-check"
             />
-            <span className="text-xs" style={{ color: 'var(--brand-mid)' }}>
+            <span className="text-xs text-brand-mid">
               Marcar como inversión (activo a largo plazo)
             </span>
           </label>
 
-          {/* Recurrente: el LLM puede pre-marcar esto si detectó "cada mes" etc.;
-           * el user puede toggle. Si está activo, /api/entry/confirm crea
-           * un recurring_movements en lugar de un mov directo. */}
-          <div className="flex flex-col gap-1.5 rounded-lg p-2.5"
-            style={{ background: m.isRecurring ? 'var(--brand-chip)' : 'transparent', border: m.isRecurring ? '1px solid var(--brand-border)' : '1px solid transparent' }}>
+          {/* Recurrente */}
+          <div
+            className={[
+              'flex flex-col gap-1.5 rounded-lg p-2.5 border',
+              m.isRecurring ? 'bg-brand-chip border-brand-border' : 'bg-transparent border-transparent',
+            ].join(' ')}
+          >
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -307,18 +287,16 @@ export function ConfirmationScreen({
                   isRecurring: e.target.checked,
                   recurringFrequency: e.target.checked ? (m.recurringFrequency ?? 'month') : null,
                 })}
-                className="w-4 h-4"
-                style={{ accentColor: 'var(--brand)' }}
+                className="w-4 h-4 fz-brand-check"
               />
-              <span className="text-xs font-medium" style={{ color: m.isRecurring ? 'var(--brand)' : 'var(--brand-mid)' }}>
+              <span className={`text-xs font-medium ${m.isRecurring ? 'text-brand' : 'text-brand-mid'}`}>
                 Se repite cada
               </span>
               {m.isRecurring && (
                 <select
                   value={m.recurringFrequency ?? 'month'}
                   onChange={e => update(m.tempId, { recurringFrequency: e.target.value as 'week' | 'month' | 'year' })}
-                  className="text-xs font-bold border rounded-md px-2 py-1 focus:outline-none"
-                  style={{ borderColor: 'var(--brand)', color: 'var(--brand)', background: '#fff' }}
+                  className="text-xs font-bold border border-brand rounded-md px-2 py-1 focus:outline-none text-brand bg-white"
                 >
                   <option value="week">semana</option>
                   <option value="month">mes</option>
@@ -327,7 +305,7 @@ export function ConfirmationScreen({
               )}
             </label>
             {m.isRecurring && (
-              <p className="text-[11px] leading-relaxed" style={{ color: 'var(--brand-mid)' }}>
+              <p className="text-[11px] leading-relaxed text-brand-mid">
                 El próximo se va a generar como pendiente cuando este se pague.
               </p>
             )}
@@ -338,39 +316,34 @@ export function ConfirmationScreen({
       {/* Agregar movimiento manualmente */}
       <button
         onClick={addEmpty}
-        className="w-full py-3 rounded-xl text-sm font-medium border transition-colors min-h-[44px]"
-        style={{ borderColor: 'var(--brand)', color: 'var(--brand)', background: '#fff' }}
+        className="w-full py-3 rounded-xl text-sm font-medium border border-brand text-brand bg-white transition-colors min-h-[44px]"
       >
         + Agregar movimiento manualmente
       </button>
 
       {/* Resumen */}
-      <div
-        className="bg-white rounded-xl shadow-sm p-4"
-        style={{ border: '1px solid var(--brand-border)' }}
-      >
-        <p className="text-xs font-bold uppercase mb-2" style={{ color: 'var(--brand-mid)' }}>
+      <div className="bg-white rounded-xl shadow-sm p-4 border border-brand-border">
+        <p className="text-xs font-bold uppercase mb-2 text-brand-mid">
           Resumen — {movements.length} movimiento{movements.length !== 1 ? 's' : ''}
         </p>
         <div className="flex justify-between text-sm">
-          <span style={{ color: 'var(--brand)' }}>Ingresos: +{formatCurrency(summary.income)}</span>
-          <span style={{ color: 'var(--danger)' }}>Gastos: −{formatCurrency(summary.expenses)}</span>
-          <span style={{ color: summary.net >= 0 ? 'var(--brand)' : 'var(--danger)', fontWeight: 700 }}>
+          <span className="text-brand">Ingresos: +{formatCurrency(summary.income)}</span>
+          <span className="text-danger">Gastos: −{formatCurrency(summary.expenses)}</span>
+          <span className={`font-bold ${summary.net >= 0 ? 'text-brand' : 'text-danger'}`}>
             Neto: {summary.net >= 0 ? '+' : '−'}{formatCurrency(summary.net)}
           </span>
         </div>
       </div>
 
       {error && (
-        <p className="text-sm" style={{ color: 'var(--danger)' }}>{error}</p>
+        <p className="text-sm text-danger">{error}</p>
       )}
 
       {/* Acciones */}
       <button
         onClick={handleConfirm}
         disabled={loading || movements.length === 0}
-        className="w-full text-white rounded-xl py-3.5 font-bold text-base transition-opacity disabled:opacity-50 min-h-[52px]"
-        style={{ background: 'var(--brand)' }}
+        className="w-full text-white rounded-xl py-3.5 font-bold text-base transition-opacity disabled:opacity-50 min-h-[52px] bg-brand"
       >
         {loading ? 'Guardando...' : 'Confirmar y registrar'}
       </button>
@@ -378,8 +351,7 @@ export function ConfirmationScreen({
       <button
         onClick={onCancel}
         disabled={loading}
-        className="w-full py-3 rounded-xl text-sm font-medium transition-colors min-h-[44px]"
-        style={{ color: 'var(--brand-mid)', background: '#F5F5F5' }}
+        className="w-full py-3 rounded-xl text-sm font-medium transition-colors min-h-[44px] text-brand-mid bg-paper-2"
       >
         Cancelar
       </button>
