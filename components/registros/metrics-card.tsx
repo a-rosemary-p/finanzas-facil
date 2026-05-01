@@ -25,9 +25,10 @@ import { PeriodDropdown, periodDisplayLabel, type RegistrosPeriod } from './peri
 interface CompareResponse {
   period: string
   current:  { income: number; expenses: number; net: number }
-  previous: { income: number; expenses: number; net: number }
-  // Sparkline series para el período actual: un valor por bucket (7 / 7 / ~30 / 12
-  // dependiendo del período). Ver `/api/reports/compare/route.ts:bucketRanges`.
+  /** null cuando period=global — no hay "antes" del historial completo. */
+  previous: { income: number; expenses: number; net: number } | null
+  // Sparkline series para el período actual: un valor por bucket (varía
+  // según período). Ver `/api/reports/compare/route.ts:bucketRanges`.
   sparkline?: {
     income:   number[]
     expenses: number[]
@@ -36,10 +37,11 @@ interface CompareResponse {
 }
 
 const PREV_LABEL: Record<RegistrosPeriod, string> = {
-  today: 'vs un día normal',
-  week:  'vs semana pasada',
-  month: 'vs mes pasado',
-  year:  'vs año pasado',
+  global: '',                  // sin comparación
+  year:   'vs año previo',
+  month:  'vs 30 días previos',
+  week:   'vs 7 días previos',
+  today:  'vs un día normal',
 }
 
 interface Props {
@@ -64,8 +66,11 @@ export function MetricsCard({ period, onPeriodChange, refreshKey = 0 }: Props) {
   }, [period, refreshKey])
 
   const current  = data?.current  ?? { income: 0, expenses: 0, net: 0 }
-  const previous = data?.previous ?? { income: 0, expenses: 0, net: 0 }
+  const previous = data?.previous ?? null
   const spark    = data?.sparkline
+  // Para period=global no hay período anterior — el sparkline + delta se
+  // ocultan vía SubCard's `comparable=false`.
+  const comparable = period !== 'global'
 
   return (
     <div
@@ -93,7 +98,8 @@ export function MetricsCard({ period, onPeriodChange, refreshKey = 0 }: Props) {
           label="Ingresos"
           icon={<IconWallet size={20} />}
           value={current.income}
-          previousValue={previous.income}
+          previousValue={previous?.income ?? 0}
+          comparable={comparable}
           sparkPoints={spark?.income}
           colorVar="--income-text"
           bgVar="--income-bg"
@@ -105,7 +111,8 @@ export function MetricsCard({ period, onPeriodChange, refreshKey = 0 }: Props) {
           label="Gastos"
           icon={<IconReceipt size={20} />}
           value={current.expenses}
-          previousValue={previous.expenses}
+          previousValue={previous?.expenses ?? 0}
+          comparable={comparable}
           sparkPoints={spark?.expenses}
           colorVar="--expense-text"
           bgVar="--expense-bg"
@@ -117,7 +124,8 @@ export function MetricsCard({ period, onPeriodChange, refreshKey = 0 }: Props) {
           label="Neto"
           icon={<IconChartPieSlice size={20} />}
           value={current.net}
-          previousValue={previous.net}
+          previousValue={previous?.net ?? 0}
+          comparable={comparable}
           sparkPoints={spark?.net}
           colorVar="--brand"
           bgVar="--income-bg"
@@ -135,6 +143,8 @@ interface SubCardProps {
   icon: React.ReactNode
   value: number
   previousValue: number
+  /** Si false (period=global), no se renderiza ningún delta — solo sparkline si hay. */
+  comparable: boolean
   sparkPoints?: number[]
   colorVar: string  // CSS var name without `var()`
   bgVar: string
@@ -145,18 +155,17 @@ interface SubCardProps {
 }
 
 function SubCard({
-  label, icon, value, previousValue, sparkPoints, colorVar, bgVar,
+  label, icon, value, previousValue, comparable, sparkPoints, colorVar, bgVar,
   previousLabel, higherIsBetter, loading,
 }: SubCardProps) {
   const color = `var(${colorVar})`
   const bg    = `var(${bgVar})`
 
   // Lógica del delta — todas las decisiones de visibilidad viven aquí.
-  const delta = computeDelta(value, previousValue)
+  // Si no es comparable (global), forzamos delta=null pero seguimos
+  // mostrando el sparkline si hay data.
+  const delta = comparable ? computeDelta(value, previousValue) : null
 
-  // "Mejoró" = delta apunta en la dirección buena para esta métrica.
-  // (Sin uso visual hoy. Lo dejamos calculado por si en el futuro queremos
-  // colorear el texto del delta.)
   void higherIsBetter
 
   const showDeltaBlock = !!delta
@@ -181,22 +190,21 @@ function SubCard({
         {loading ? '—' : formatCurrency(value)}
       </div>
 
-      {showDeltaBlock && !loading && (
-        <>
-          {hasSpark && (
-            <div className="mt-1.5">
-              <Sparkline points={sparkPoints!} color={color} />
-            </div>
-          )}
-          <div
-            className="text-[8.5px] font-semibold text-center mt-1 leading-tight"
-            style={{ color, opacity: 0.7 }}
-          >
-            {delta.kind === 'new'
-              ? `Nuevo · ${previousLabel.replace('vs ', '')}`
-              : `${delta.pct > 0 ? '+' : ''}${Math.round(delta.pct)}% ${previousLabel}`}
-          </div>
-        </>
+      {/* Sparkline siempre que haya data, incluso para 'global' (sin delta). */}
+      {hasSpark && !loading && (
+        <div className="mt-1.5">
+          <Sparkline points={sparkPoints!} color={color} />
+        </div>
+      )}
+      {showDeltaBlock && !loading && delta && (
+        <div
+          className="text-[8.5px] font-semibold text-center mt-1 leading-tight"
+          style={{ color, opacity: 0.7 }}
+        >
+          {delta.kind === 'new'
+            ? `Nuevo · ${previousLabel.replace('vs ', '')}`
+            : `${delta.pct > 0 ? '+' : ''}${Math.round(delta.pct)}% ${previousLabel}`}
+        </div>
       )}
     </div>
   )

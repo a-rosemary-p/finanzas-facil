@@ -70,7 +70,7 @@ function RegistrosInner() {
 
   const [mode, setMode] = useState<Mode>('dashboard')
   const [pendingData, setPendingData] = useState<PendingData | null>(null)
-  const [period, setPeriod] = useState<RegistrosPeriod>('month')
+  const [period, setPeriod] = useState<RegistrosPeriod>('global')
   const [refreshKey, setRefreshKey] = useState(0)
 
   const [insight, setInsight] = useState<string | null>(null)

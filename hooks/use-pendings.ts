@@ -158,12 +158,13 @@ export function usePendings() {
   }, [pendings])
 
   // ── Helpers derivados ───────────────────────────────────────────────────
-  const today = new Date()
-  const todayYMD = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  // "Hoy" en CDMX (consistente con todo el resto de la app).
+  const todayYMD = getAppToday()
 
-  // "Vencido" = movement_date <= hoy. Inclusivo: si vence hoy ya cuenta.
-  const overdue = pendings.filter(p => p.movementDate <= todayYMD)
-  const upcoming = pendings.filter(p => p.movementDate > todayYMD)
+  // "Vencido" = movement_date < hoy (estrictamente). Los de HOY entran en
+  // upcoming para que aparezcan en el tope de la lista de próximos.
+  const overdue  = pendings.filter(p => p.movementDate <  todayYMD)
+  const upcoming = pendings.filter(p => p.movementDate >= todayYMD)
 
   return {
     pendings,

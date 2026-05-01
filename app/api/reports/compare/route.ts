@@ -1,36 +1,43 @@
 /**
  * app/api/reports/compare/route.ts
  *
- * Devuelve dos agregados — período actual hasta hoy + período equivalente
- * anterior — para sparkline+delta del card de métricas en `/registros` y
- * para la vista "¿Cómo voy?" del /reportes.
+ * Devuelve agregados de período actual + período anterior equivalente para
+ * el card de métricas en /registros y la vista "¿Cómo voy?" en /reportes.
  *
- * Comparación "justa": si hoy es 10 de abril, current = Apr 1–10 (10 días),
- * previous = Mar 1–10 (10 días). Si el período anterior es más corto que el
- * offset (ej. today=Mar 31 vs Feb), el rango previous se capa al último día
- * del período anterior — leve desbalance pero pragmático.
+ * Periodos soportados (todos rolling — basados en hoy, no en calendario):
+ *   today  → hoy (1 día) vs promedio diario de los últimos 30 días previos
+ *   week   → últimos 7 días vs los 7 días previos
+ *   month  → últimos 30 días vs los 30 días previos
+ *   year   → últimos 365 días vs los 365 días previos
+ *   global → historial completo del usuario, SIN comparación (previous=null)
  *
- * Para `period=today` no existe un "ayer equivalente" estable (un solo día es
- * muy ruidoso) — comparamos contra el **promedio diario de los últimos 30
- * días** (excluyendo hoy). El response usa la misma forma `previous` para que
- * el cliente compute %Δ igual que con week/month/year.
+ * Por qué rolling y no calendario: un user no ve un "reset" raro el día 1 de
+ * cada mes. La lectura "últimos 30 días" es estable y siempre comparable.
  *
- * Free + Pro pueden llamar este endpoint (la diferenciación Pro vive en la
- * vista — la "¿Cómo voy?" en /reportes tiene UI bloqueada para Free, breakdown
- * por categoría con frase natural, etc.). El sparkline+delta básico es valor
- * universal — un %Δ no diferencia tier por sí solo.
+ * Inversiones se EXCLUYEN siempre del agregado.
+ * Pendientes ya filtrados por la consulta (in('type', ['ingreso','gasto'])).
  *
- * Inversiones se EXCLUYEN siempre del agregado (la vista no las tiene en cuenta).
- * Pendientes ya no llegan acá vía la consulta (in('type', ['ingreso','gasto'])).
+ * Nota: /reportes usa este mismo endpoint con week|month|year. Los datos
+ * cambian (de calendario a rolling) pero el shape del response es el mismo
+ * salvo por `previous` que ahora puede ser null cuando period=global.
  */
 
 import { createClient } from '@/lib/supabase/server'
+import { getAppToday } from '@/lib/cdmx-date'
 import type { Movement, Category } from '@/types'
 
-type ComparePeriod = 'today' | 'week' | 'month' | 'year'
+type ComparePeriod = 'global' | 'year' | 'month' | 'week' | 'today'
 
-// Ventana del fallback "promedio diario" cuando period=today.
+// Para period=today: ventana del baseline "promedio diario" anterior.
 const TODAY_BASELINE_DAYS = 30
+
+// Largo (en días) de la ventana rolling para cada período no-global.
+const ROLLING_DAYS: Record<Exclude<ComparePeriod, 'global'>, number> = {
+  today: 1,
+  week:  7,
+  month: 30,
+  year:  365,
+}
 
 interface ByCategory {
   [cat: string]: { income: number; expenses: number }
@@ -44,15 +51,6 @@ interface Aggregate {
   byCategory: ByCategory
 }
 
-// Series cortas para los sparkline del card de métricas en /registros.
-// Una entrada = un bucket en el período actual.
-//   today  → 7 buckets diarios (los últimos 7 días incluyendo hoy)
-//   week   → 7 buckets diarios (lunes a domingo de la semana actual)
-//   month  → buckets diarios cubriendo todo el mes (28-31 entradas)
-//   year   → 12 buckets mensuales (enero-diciembre del año actual)
-// Los buckets futuros (días posteriores a hoy en mes/semana, meses futuros del
-// año, etc.) van con 0 — el sparkline en el cliente reflejará la caída a 0
-// al final, lo cual es lectura honesta.
 interface SparkSeries {
   income: number[]
   expenses: number[]
@@ -63,91 +61,47 @@ function fmtYMD(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-function startOfWeek(d: Date): Date {
-  const day = d.getDay() // 0 = Sunday, 1 = Monday, ...
-  const offset = day === 0 ? -6 : 1 - day
-  const monday = new Date(d)
-  monday.setDate(d.getDate() + offset)
-  monday.setHours(0, 0, 0, 0)
-  return monday
+/** Parsea YYYY-MM-DD a Date local (00:00). Evita drift de TZ del browser. */
+function parseYMD(ymd: string): Date {
+  const [y, m, d] = ymd.split('-').map(Number)
+  return new Date(y, (m ?? 1) - 1, d ?? 1)
 }
 
-function dayDiff(a: Date, b: Date): number {
-  // Number of days between two dates (b - a), ignoring DST/time
-  const ms = b.getTime() - a.getTime()
-  return Math.round(ms / (1000 * 60 * 60 * 24))
-}
-
-function lastDayOfMonth(year: number, monthIdx: number): Date {
-  return new Date(year, monthIdx + 1, 0)
+function addDays(d: Date, n: number): Date {
+  const out = new Date(d)
+  out.setDate(d.getDate() + n)
+  return out
 }
 
 interface RangePair {
-  current: { start: Date; end: Date }
-  previous: { start: Date; end: Date }
+  current:  { start: Date; end: Date }
+  /** null cuando period=global — no hay "antes" de toda la historia. */
+  previous: { start: Date; end: Date } | null
 }
 
-function computeRanges(period: ComparePeriod, today: Date): RangePair {
-  const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-
-  switch (period) {
-    case 'today': {
-      // current = hoy (1 día). previous = los últimos 30 días COMPLETOS antes
-      // de hoy. El cliente compara hoy contra (sum_30d / 30) — ver el divisor
-      // en GET handler. Excluimos hoy del baseline porque queremos comparar
-      // hoy contra "lo normal", no contra "lo normal incluyéndome".
-      const previousEnd = new Date(todayMidnight)
-      previousEnd.setDate(todayMidnight.getDate() - 1)
-      const previousStart = new Date(todayMidnight)
-      previousStart.setDate(todayMidnight.getDate() - TODAY_BASELINE_DAYS)
-      return {
-        current: { start: todayMidnight, end: todayMidnight },
-        previous: { start: previousStart, end: previousEnd },
-      }
+function computeRollingRanges(
+  period: Exclude<ComparePeriod, 'global'>,
+  todayMidnight: Date,
+): RangePair {
+  if (period === 'today') {
+    // current = hoy. previous = los 30 días COMPLETOS anteriores (excluye hoy).
+    // El cliente compara hoy contra (sum / 30) — ver scaleAggregate abajo.
+    const previousEnd   = addDays(todayMidnight, -1)
+    const previousStart = addDays(todayMidnight, -TODAY_BASELINE_DAYS)
+    return {
+      current:  { start: todayMidnight, end: todayMidnight },
+      previous: { start: previousStart, end: previousEnd },
     }
-
-    case 'week': {
-      const currentStart = startOfWeek(todayMidnight)
-      const previousStart = new Date(currentStart)
-      previousStart.setDate(currentStart.getDate() - 7)
-      const offset = dayDiff(currentStart, todayMidnight)
-      const previousEnd = new Date(previousStart)
-      previousEnd.setDate(previousStart.getDate() + offset)
-      return {
-        current: { start: currentStart, end: todayMidnight },
-        previous: { start: previousStart, end: previousEnd },
-      }
-    }
-
-    case 'month': {
-      const currentStart = new Date(todayMidnight.getFullYear(), todayMidnight.getMonth(), 1)
-      const previousStart = new Date(todayMidnight.getFullYear(), todayMidnight.getMonth() - 1, 1)
-      const offset = dayDiff(currentStart, todayMidnight)
-      let previousEnd = new Date(previousStart)
-      previousEnd.setDate(previousStart.getDate() + offset)
-      // Cap si el previous month tiene menos días que today's day-of-month
-      const prevLast = lastDayOfMonth(previousStart.getFullYear(), previousStart.getMonth())
-      if (previousEnd > prevLast) previousEnd = prevLast
-      return {
-        current: { start: currentStart, end: todayMidnight },
-        previous: { start: previousStart, end: previousEnd },
-      }
-    }
-
-    case 'year': {
-      const currentStart = new Date(todayMidnight.getFullYear(), 0, 1)
-      const previousStart = new Date(todayMidnight.getFullYear() - 1, 0, 1)
-      const offset = dayDiff(currentStart, todayMidnight)
-      let previousEnd = new Date(previousStart)
-      previousEnd.setDate(previousStart.getDate() + offset)
-      // Cap por edge case Feb 29 en año bisiesto vs no bisiesto
-      const prevYearLast = new Date(previousStart.getFullYear(), 11, 31)
-      if (previousEnd > prevYearLast) previousEnd = prevYearLast
-      return {
-        current: { start: currentStart, end: todayMidnight },
-        previous: { start: previousStart, end: previousEnd },
-      }
-    }
+  }
+  // week|month|year — current = últimos N días incluyendo hoy.
+  // previous = los N días previos (sin overlap con current).
+  const n = ROLLING_DAYS[period]
+  const currentStart  = addDays(todayMidnight, -(n - 1))
+  const previousEnd   = addDays(currentStart, -1)
+  const previousStart = addDays(previousEnd, -(n - 1))
+  return {
+    current:  { start: currentStart,  end: todayMidnight },
+    previous: { start: previousStart, end: previousEnd  },
   }
 }
 
@@ -157,7 +111,7 @@ function aggregateMovements(movs: Movement[], range: { start: Date; end: Date })
   const byCategory: ByCategory = {}
 
   for (const m of movs) {
-    if (m.isInvestment) continue // Inversiones NO cuentan en la comparación
+    if (m.isInvestment) continue
     const cat = m.category
     if (!byCategory[cat]) byCategory[cat] = { income: 0, expenses: 0 }
     if (m.type === 'ingreso') {
@@ -178,28 +132,63 @@ function aggregateMovements(movs: Movement[], range: { start: Date; end: Date })
   }
 }
 
+function emptyAggregate(start: Date, end: Date): Aggregate {
+  return {
+    range: { start: fmtYMD(start), end: fmtYMD(end) },
+    income: 0,
+    expenses: 0,
+    net: 0,
+    byCategory: {},
+  }
+}
+
 export async function GET(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: 'No autorizado' }, { status: 401 })
 
-  // Plan ya no se gata aquí — abierto a Free + Pro. La diferenciación de
-  // valor entre tiers se hace en la UI ("¿Cómo voy?" tiene preview difuminado
-  // para Free), no en este endpoint.
-
   const { searchParams } = new URL(request.url)
-  const periodRaw = searchParams.get('period') ?? 'month'
-  if (periodRaw !== 'today' && periodRaw !== 'week' && periodRaw !== 'month' && periodRaw !== 'year') {
-    return Response.json({ error: 'period inválido (today|week|month|year)' }, { status: 400 })
+  const periodRaw = searchParams.get('period') ?? 'global'
+  const validPeriods: ComparePeriod[] = ['global', 'year', 'month', 'week', 'today']
+  if (!validPeriods.includes(periodRaw as ComparePeriod)) {
+    return Response.json({ error: 'period inválido' }, { status: 400 })
   }
   const period = periodRaw as ComparePeriod
 
-  const ranges = computeRanges(period, new Date())
+  // "Hoy" CDMX consistente con el resto de la app.
+  const todayMidnight = parseYMD(getAppToday())
 
-  // Una sola query que cubre AMBOS rangos (continúo desde previousStart hasta
-  // currentEnd para minimizar viajes). Después separo en memoria.
-  const queryStart = fmtYMD(ranges.previous.start)
-  const queryEnd = fmtYMD(ranges.current.end)
+  // ─── Rangos ────────────────────────────────────────────────────────────
+  let currentRange:  { start: Date; end: Date }
+  let previousRange: { start: Date; end: Date } | null
+
+  if (period === 'global') {
+    // Necesitamos el primer movement_date del usuario para acotar la consulta
+    // y los buckets del sparkline.
+    const { data: firstRow } = await supabase
+      .from('movements')
+      .select('movement_date')
+      .eq('user_id', user.id)
+      .in('type', ['ingreso', 'gasto'])
+      .order('movement_date', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+
+    const firstDate = (firstRow?.movement_date as string | undefined)
+      ? parseYMD(firstRow!.movement_date as string)
+      : todayMidnight
+
+    currentRange  = { start: firstDate, end: todayMidnight }
+    previousRange = null
+  } else {
+    const ranges  = computeRollingRanges(period, todayMidnight)
+    currentRange  = ranges.current
+    previousRange = ranges.previous
+  }
+
+  // ─── Query única que cubre ambos rangos ────────────────────────────────
+  const queryStart = fmtYMD(previousRange?.start ?? currentRange.start)
+  const queryEnd   = fmtYMD(currentRange.end)
 
   const { data, error } = await supabase
     .from('movements')
@@ -224,26 +213,26 @@ export async function GET(request: Request) {
     isInvestment: (r.is_investment as boolean) ?? false,
   }))
 
-  // Particiona por rango — los rangos no se traslapan (previous siempre acaba
-  // antes que current empiece) así que un movimiento cae en uno o ninguno.
-  const currentStartStr  = fmtYMD(ranges.current.start)
-  const previousEndStr   = fmtYMD(ranges.previous.end)
-
+  // ─── Particionar por rango ─────────────────────────────────────────────
+  const currentStartStr = fmtYMD(currentRange.start)
   const currentMovs = allMovements.filter(m => m.movementDate >= currentStartStr)
-  const previousMovs = allMovements.filter(m => m.movementDate <= previousEndStr)
+  const current = aggregateMovements(currentMovs, currentRange)
 
-  const current = aggregateMovements(currentMovs, ranges.current)
-  let previous = aggregateMovements(previousMovs, ranges.previous)
+  let previous: Aggregate | null = null
+  if (previousRange) {
+    const previousEndStr = fmtYMD(previousRange.end)
+    const previousMovs = allMovements.filter(m => m.movementDate <= previousEndStr)
+    previous = aggregateMovements(previousMovs, previousRange)
 
-  // period=today: el "previous" cubre 30 días, así que normalizamos dividiendo
-  // entre 30 para que el cliente pueda hacer (current - previous)/previous y
-  // tenga la lectura "hoy vs lo que normalmente pasa en un día". Sin esto,
-  // siempre se vería como caída del -97% (1 día vs 30 días).
-  if (period === 'today') {
-    previous = scaleAggregate(previous, 1 / TODAY_BASELINE_DAYS)
+    // period=today: el "previous" cubre 30 días, normalizamos para comparar
+    // hoy contra "lo normal" en un día.
+    if (period === 'today') {
+      previous = scaleAggregate(previous, 1 / TODAY_BASELINE_DAYS)
+    }
   }
 
-  const sparkline = computeSparkline(period, allMovements, new Date())
+  // Sparkline: solo sobre movimientos del rango actual (no del previous).
+  const sparkline = computeSparkline(period, currentMovs, currentRange, todayMidnight)
 
   return Response.json({
     period,
@@ -253,55 +242,80 @@ export async function GET(request: Request) {
   })
 }
 
-// ─── Sparkline: buckets para curvas reales ────────────────────────────────────
+// ─── Sparkline buckets ───────────────────────────────────────────────────────
 
-function bucketRanges(period: ComparePeriod, today: Date): Array<{ start: string; end: string }> {
-  const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+interface Bucket { start: string; end: string }
 
+function bucketRanges(
+  period: ComparePeriod,
+  currentRange: { start: Date; end: Date },
+  todayMidnight: Date,
+): Bucket[] {
   switch (period) {
     case 'today': {
-      // Los últimos 7 días incluyendo hoy. Para "today" no podemos usar buckets
-      // por hora confiablemente — los movimientos no llevan timestamp granular,
-      // solo `movement_date`. La curva muestra contexto de la última semana.
-      const buckets: Array<{ start: string; end: string }> = []
+      // Para 'today' (1 día) el sparkline pierde sentido si fuera 1 punto;
+      // mantenemos 7 buckets diarios terminando hoy para dar contexto.
+      const buckets: Bucket[] = []
       for (let i = 6; i >= 0; i--) {
-        const d = new Date(todayMidnight)
-        d.setDate(todayMidnight.getDate() - i)
+        const d = addDays(todayMidnight, -i)
         const s = fmtYMD(d)
         buckets.push({ start: s, end: s })
       }
       return buckets
     }
     case 'week': {
-      const monday = startOfWeek(todayMidnight)
-      const buckets: Array<{ start: string; end: string }> = []
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(monday)
-        d.setDate(monday.getDate() + i)
+      // 7 buckets diarios terminando hoy (rolling, no lunes-domingo).
+      const buckets: Bucket[] = []
+      for (let i = 6; i >= 0; i--) {
+        const d = addDays(todayMidnight, -i)
         const s = fmtYMD(d)
         buckets.push({ start: s, end: s })
       }
       return buckets
     }
     case 'month': {
-      const firstDay = new Date(todayMidnight.getFullYear(), todayMidnight.getMonth(), 1)
-      const lastDay = lastDayOfMonth(todayMidnight.getFullYear(), todayMidnight.getMonth())
-      const buckets: Array<{ start: string; end: string }> = []
-      const cursor = new Date(firstDay)
-      while (cursor <= lastDay) {
-        const s = fmtYMD(cursor)
+      // 30 buckets diarios terminando hoy.
+      const buckets: Bucket[] = []
+      for (let i = 29; i >= 0; i--) {
+        const d = addDays(todayMidnight, -i)
+        const s = fmtYMD(d)
         buckets.push({ start: s, end: s })
-        cursor.setDate(cursor.getDate() + 1)
       }
       return buckets
     }
     case 'year': {
-      const buckets: Array<{ start: string; end: string }> = []
-      const year = todayMidnight.getFullYear()
-      for (let m = 0; m < 12; m++) {
-        const start = fmtYMD(new Date(year, m, 1))
-        const end   = fmtYMD(new Date(year, m + 1, 0))
-        buckets.push({ start, end })
+      // 12 buckets mensuales terminando con el mes de hoy.
+      const buckets: Bucket[] = []
+      for (let i = 11; i >= 0; i--) {
+        const monthStart = new Date(todayMidnight.getFullYear(), todayMidnight.getMonth() - i, 1)
+        const monthEnd   = new Date(todayMidnight.getFullYear(), todayMidnight.getMonth() - i + 1, 0)
+        buckets.push({ start: fmtYMD(monthStart), end: fmtYMD(monthEnd) })
+      }
+      return buckets
+    }
+    case 'global': {
+      // Buckets mensuales desde el mes del primer movimiento al mes actual.
+      // Si excede 36 meses, agrupamos los más viejos en el primer bucket
+      // (cap visual — sparkline con 50+ puntos se vuelve ilegible).
+      const start = currentRange.start
+      const end   = todayMidnight
+      const buckets: Bucket[] = []
+      const cursor = new Date(start.getFullYear(), start.getMonth(), 1)
+      while (cursor <= end) {
+        const mStart = new Date(cursor)
+        const mEnd   = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0)
+        buckets.push({ start: fmtYMD(mStart), end: fmtYMD(mEnd) })
+        cursor.setMonth(cursor.getMonth() + 1)
+      }
+      // Cap a 36 — los más viejos se mergean.
+      const MAX = 36
+      if (buckets.length > MAX) {
+        const overflow = buckets.length - MAX
+        const firstNew: Bucket = {
+          start: buckets[0].start,
+          end:   buckets[overflow].end,
+        }
+        return [firstNew, ...buckets.slice(overflow + 1)]
       }
       return buckets
     }
@@ -311,15 +325,13 @@ function bucketRanges(period: ComparePeriod, today: Date): Array<{ start: string
 function computeSparkline(
   period: ComparePeriod,
   movs: Movement[],
-  today: Date,
+  currentRange: { start: Date; end: Date },
+  todayMidnight: Date,
 ): SparkSeries {
-  const buckets = bucketRanges(period, today)
+  const buckets = bucketRanges(period, currentRange, todayMidnight)
   const income   = new Array(buckets.length).fill(0) as number[]
   const expenses = new Array(buckets.length).fill(0) as number[]
 
-  // Index por fecha: para buckets de 1 día (today/week/month) un map directo
-  // por movement_date es O(1). Para year (buckets de mes), iteramos lineal
-  // — solo 12 buckets, costo despreciable.
   for (const m of movs) {
     if (m.isInvestment) continue
     if (m.type !== 'ingreso' && m.type !== 'gasto') continue
@@ -339,7 +351,7 @@ function scaleAggregate(agg: Aggregate, factor: number): Aggregate {
     byCategory[cat] = { income: v.income * factor, expenses: v.expenses * factor }
   }
   return {
-    range: agg.range, // el rango sigue siendo el de los 30d, no la "media"
+    range: agg.range,
     income: agg.income * factor,
     expenses: agg.expenses * factor,
     net: agg.net * factor,

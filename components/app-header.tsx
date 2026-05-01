@@ -82,46 +82,21 @@ export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
 
       <div className="flex items-center gap-3">
         {/* Plan badge — "Base" en lugar de "Free" desde abr 2026 (DB sigue 'free').
-         * El dot rojo a la derecha del badge se enciende si hay pendientes
-         * vencidos. Indicador visible desde cualquier página de la app. */}
+         * El alert de pendientes vencidos vive ahora SOLO en el item del menú
+         * (más adelante en este header) — el badge se quedó "limpio" porque
+         * mezclar plan + alert en el mismo componente confundía visualmente. */}
         {!hidePlanBadge && profile && (
-          <Link href="/pendientes" className="relative inline-flex" aria-label="Plan y pendientes">
-            <span
-              className="text-sm font-medium px-3 py-2 rounded-full min-h-[44px] flex items-center"
-              style={
-                isPro
-                  ? { background: 'var(--brand)', color: '#fff', border: '1px solid var(--brand)' }
-                  : { background: 'var(--brand-lime)', color: 'var(--brand)', border: '1px solid var(--brand-light)' }
-              }
-            >
-              {isPro ? 'Pro' : 'Base'}
-            </span>
-            {overdueCount > 0 && (
-              <span
-                aria-label={`${overdueCount} pendientes vencidos`}
-                style={{
-                  position: 'absolute',
-                  top: -2,
-                  right: -2,
-                  background: 'var(--danger)',
-                  color: '#fff',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  minWidth: 18,
-                  height: 18,
-                  padding: '0 5px',
-                  borderRadius: 9,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '2px solid #fff',
-                  lineHeight: 1,
-                }}
-              >
-                {overdueCount > 9 ? '9+' : overdueCount}
-              </span>
-            )}
-          </Link>
+          <span
+            className="text-sm font-medium px-3 py-2 rounded-full min-h-[44px] flex items-center"
+            aria-label={`Plan ${isPro ? 'Pro' : 'Base'}`}
+            style={
+              isPro
+                ? { background: 'var(--brand)', color: '#fff', border: '1px solid var(--brand)' }
+                : { background: 'var(--brand-lime)', color: 'var(--brand)', border: '1px solid var(--brand-light)' }
+            }
+          >
+            {isPro ? 'Pro' : 'Base'}
+          </span>
         )}
 
         {/* Menú hamburger */}

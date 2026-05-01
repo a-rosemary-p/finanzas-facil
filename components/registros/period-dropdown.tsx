@@ -3,38 +3,39 @@
 /**
  * Dropdown compacto de período para el card de métricas en /registros.
  *
- * 4 opciones fijas: Hoy / Semana / Este mes / Año. Reemplazó al FilterBox
- * con chips horizontales que tenía 5+ opciones (7 días, Histórico, custom
- * range Pro). El razonamiento es que en el card de "registros" lo que el user
- * quiere ver es resumen del período elegido, sin granularidad de día arbitrario
- * — para análisis profundo está `/reportes`.
+ * 5 opciones, en orden de granularidad descendente (más amplio → más estrecho):
+ *   global   — historial completo del usuario, sin comparación
+ *   year     — rolling últimos 365 días vs los 365 previos
+ *   month    — rolling últimos 30 días vs los 30 previos
+ *   week     — rolling últimos 7 días vs los 7 previos
+ *   today    — solo hoy vs el promedio diario de los últimos 30
  *
- * Acepta `period=today` (alimenta /api/reports/compare con today vs avg-30d).
+ * El cambio clave vs la versión anterior: month/year/week NO son
+ * "el mes calendario actual" sino ventanas rolling. Esto da una lectura
+ * más estable día a día — un user no ve un salto raro al cambiar de mes.
  */
 
 import { useEffect, useRef, useState } from 'react'
 import { IconCalendar, IconCaretDown, IconCaretUp } from '@/components/icons'
 
-export type RegistrosPeriod = 'today' | 'week' | 'month' | 'year'
+export type RegistrosPeriod = 'global' | 'year' | 'month' | 'week' | 'today'
 
 const OPTIONS: Array<{ id: RegistrosPeriod; label: string }> = [
-  { id: 'today',  label: 'Hoy'       },
-  { id: 'week',   label: 'Semana'    },
-  { id: 'month',  label: 'Este mes'  },
-  { id: 'year',   label: 'Año'       },
+  { id: 'global', label: 'Histórico'        },
+  { id: 'year',   label: 'Último año'       },
+  { id: 'month',  label: 'Últimos 30 días'  },
+  { id: 'week',   label: 'Últimos 7 días'   },
+  { id: 'today',  label: 'Hoy'              },
 ]
 
 export function periodDisplayLabel(period: RegistrosPeriod): string {
-  // Lo que se muestra como "header" al lado de "Resumen" en el card.
-  const now = new Date()
+  // Lo que se muestra como header al lado de "Resumen" en el card.
   switch (period) {
+    case 'global': return 'Histórico'
+    case 'year':   return 'Último año'
+    case 'month':  return 'Últimos 30 días'
+    case 'week':   return 'Últimos 7 días'
     case 'today':  return 'Hoy'
-    case 'week':   return 'Esta semana'
-    case 'month': {
-      const m = now.toLocaleDateString('es-MX', { month: 'long' })
-      return m.charAt(0).toUpperCase() + m.slice(1)
-    }
-    case 'year':   return String(now.getFullYear())
   }
 }
 
@@ -56,7 +57,7 @@ export function PeriodDropdown({ value, onChange }: Props) {
     return () => document.removeEventListener('mousedown', handle)
   }, [open])
 
-  const current = OPTIONS.find(o => o.id === value) ?? OPTIONS[2]
+  const current = OPTIONS.find(o => o.id === value) ?? OPTIONS[0]
 
   return (
     <div ref={ref} className="relative">
@@ -84,7 +85,7 @@ export function PeriodDropdown({ value, onChange }: Props) {
           style={{
             border: '1px solid var(--brand-border)',
             boxShadow: 'var(--sh-3)',
-            minWidth: 130,
+            minWidth: 160,
             top: '110%',
             zIndex: 30,
           }}
