@@ -7,20 +7,20 @@
  *  - view: pill de fecha + descripción + monto + botones (Pagar / Editar)
  *  - edit: form inline para cambiar monto/descripción/categoría/fecha + Guardar/Cancelar/Borrar
  *
- * El estado de edit vive local (no se mezcla con la lista). El componente
- * recibe callbacks para markAsPaid / updatePending / deletePending del hook
- * `usePendings`. Optimistic updates los maneja el hook, no este componente.
+ * El estado de edit vive local. Optimistic updates los maneja el hook
+ * `usePendings`, no este componente.
  */
 
 import { useState } from 'react'
 import { CATEGORIES } from '@/lib/constants'
 import { formatCurrency } from '@/lib/utils'
 import { IconPencil } from '@/components/icons'
+import { getAppToday } from '@/lib/cdmx-date'
 import type { Movement, Category } from '@/types'
 
 interface Props {
   mov: Movement
-  /** Si la fila está vencida (movement_date <= hoy), pinta el bg con tinte rojo. */
+  /** Si la fila está vencida, cambia el border a rojo y el tinte de la pill. */
   overdue: boolean
   onMarkAsPaid: (id: string) => Promise<boolean> | boolean
   onUpdate: (
@@ -62,7 +62,6 @@ export function PendingRow({ mov, overdue, onMarkAsPaid, onUpdate, onDelete }: P
   async function handlePay() {
     setPaying(true)
     await onMarkAsPaid(mov.id)
-    // Si el hook removió la fila tras éxito, este componente se desmonta.
     setPaying(false)
   }
 
@@ -71,48 +70,38 @@ export function PendingRow({ mov, overdue, onMarkAsPaid, onUpdate, onDelete }: P
   }
 
   const dueLabel = formatDueLabel(mov.movementDate)
-  // Bg blanco para ambos (vencidos y próximos). El border rojo es la única
-  // diferencia visual entre vencido y no vencido — preferencia del user
-  // (antes había un tint rojo muy tenue que era más ruido que señal).
-  const bgTint = 'white'
-  const borderColor = overdue ? 'var(--expense-border)' : 'var(--brand-border)'
+  // Bg blanco siempre. El border rojo (`fz-row-overdue`) es la única diferencia
+  // entre vencido y no vencido — preferencia del user (antes había un tint
+  // rojo muy tenue que era más ruido que señal).
+  const rowClasses = overdue
+    ? 'bg-white border border-expense-border shadow-fz-1 rounded-xl flex items-center gap-2.5 px-3 py-2.5'
+    : 'bg-white border border-brand-border shadow-fz-1 rounded-xl flex items-center gap-2.5 px-3 py-2.5'
+
+  // Pill de fecha — colores cambian con overdue.
+  const pillClasses = overdue
+    ? 'bg-expense-bg border border-expense-border text-expense-text'
+    : 'bg-pending-bg border border-pending-border text-pending-text'
 
   if (!editing) {
     return (
-      <div
-        className="rounded-xl flex items-center gap-2.5 px-3 py-2.5"
-        style={{ background: bgTint, border: `1px solid ${borderColor}`, boxShadow: 'var(--sh-1)' }}
-      >
+      <div className={rowClasses}>
         {/* Pill de fecha */}
-        <div
-          className="flex flex-col items-center justify-center text-[10px] font-bold rounded-md flex-shrink-0"
-          style={{
-            background: overdue ? 'var(--expense-bg)' : 'var(--pending-bg)',
-            border: `1px solid ${overdue ? 'var(--expense-border)' : 'var(--pending-border)'}`,
-            color: overdue ? 'var(--expense-text)' : 'var(--pending-text)',
-            padding: '4px 8px',
-            minWidth: 50,
-            lineHeight: 1.1,
-          }}
-        >
+        <div className={`flex flex-col items-center justify-center text-[10px] font-bold rounded-md flex-shrink-0 px-2 py-1 min-w-[50px] leading-[1.1] ${pillClasses}`}>
           <span className="uppercase">{dueLabel.line1}</span>
-          <span style={{ fontSize: 11 }}>{dueLabel.line2}</span>
+          {dueLabel.line2 && <span className="text-[11px]">{dueLabel.line2}</span>}
         </div>
 
         {/* Descripción + monto */}
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium truncate" style={{ color: 'var(--ink-900)' }}>
+          <div className="text-sm font-medium truncate text-ink-900">
             {mov.description}
           </div>
-          <div className="text-[11px] mt-0.5" style={{ color: 'var(--ink-500)' }}>
+          <div className="text-[11px] mt-0.5 text-ink-500">
             {mov.category}
           </div>
         </div>
 
-        <span
-          className="text-sm font-bold tabular-nums flex-shrink-0"
-          style={{ color: 'var(--pending-text)' }}
-        >
+        <span className="text-sm font-bold tabular-nums flex-shrink-0 text-pending-text">
           {formatCurrency(mov.amount)}
         </span>
 
@@ -122,22 +111,14 @@ export function PendingRow({ mov, overdue, onMarkAsPaid, onUpdate, onDelete }: P
             type="button"
             onClick={handlePay}
             disabled={paying}
-            className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-opacity disabled:opacity-50"
-            style={{ background: 'var(--brand)', color: '#fff', minHeight: 32 }}
+            className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-opacity disabled:opacity-50 bg-brand text-white min-h-[32px]"
           >
             {paying ? '…' : 'Pagar'}
           </button>
           <button
             type="button"
             onClick={startEdit}
-            className="rounded-lg flex items-center justify-center transition-colors"
-            style={{
-              background: 'transparent',
-              color: 'var(--brand-mid)',
-              minHeight: 32,
-              minWidth: 32,
-              border: '1px solid var(--brand-border)',
-            }}
+            className="rounded-lg flex items-center justify-center transition-colors bg-transparent text-brand-mid border border-brand-border min-h-[32px] min-w-[32px]"
             aria-label="Editar"
           >
             <IconPencil size={14} />
@@ -149,58 +130,49 @@ export function PendingRow({ mov, overdue, onMarkAsPaid, onUpdate, onDelete }: P
 
   // ── Modo edición ─────────────────────────────────────────────────────────
   return (
-    <div
-      className="rounded-xl flex flex-col gap-2 p-3"
-      style={{ background: 'white', border: '1px solid var(--brand)', boxShadow: 'var(--sh-2)' }}
-    >
-      <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--brand-mid)' }}>
+    <div className="fz-card-active flex flex-col gap-2 p-3">
+      <div className="text-[10px] font-bold uppercase tracking-wide text-brand-mid">
         Editar pendiente
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>Monto</span>
+          <span className="fz-input-label">Monto</span>
           <input
-            type="number"
-            min="0"
-            step="0.01"
+            type="number" min="0" step="0.01"
             value={draft.amount || ''}
             onChange={e => setDraft(d => ({ ...d, amount: parseFloat(e.target.value) || 0 }))}
-            className="border rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-1"
-            style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
+            className="fz-input"
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>Fecha</span>
+          <span className="fz-input-label">Fecha</span>
           <input
             type="date"
             value={draft.movementDate}
             onChange={e => setDraft(d => ({ ...d, movementDate: e.target.value }))}
-            className="border rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-1"
-            style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
+            className="fz-input"
           />
         </label>
       </div>
 
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>Descripción</span>
+        <span className="fz-input-label">Descripción</span>
         <input
           type="text"
           value={draft.description}
           onChange={e => setDraft(d => ({ ...d, description: e.target.value }))}
           maxLength={60}
-          className="border rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-1"
-          style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
+          className="fz-input"
         />
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>Categoría</span>
+        <span className="fz-input-label">Categoría</span>
         <select
           value={draft.category}
           onChange={e => setDraft(d => ({ ...d, category: e.target.value as Category }))}
-          className="border rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-1"
-          style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
+          className="fz-input"
         >
           {CATEGORIES.map(c => (
             <option key={c} value={c}>{c}</option>
@@ -213,8 +185,7 @@ export function PendingRow({ mov, overdue, onMarkAsPaid, onUpdate, onDelete }: P
           <button
             type="button"
             onClick={() => setConfirmDelete(true)}
-            className="text-xs font-medium px-2.5 py-2 rounded-lg"
-            style={{ color: 'var(--danger)', background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', minHeight: 36 }}
+            className="fz-btn-danger-soft"
           >
             Borrar
           </button>
@@ -223,16 +194,14 @@ export function PendingRow({ mov, overdue, onMarkAsPaid, onUpdate, onDelete }: P
             <button
               type="button"
               onClick={handleDelete}
-              className="text-xs font-bold px-2.5 py-2 rounded-lg text-white"
-              style={{ background: 'var(--danger)', minHeight: 36 }}
+              className="fz-btn-danger"
             >
               Sí, borrar
             </button>
             <button
               type="button"
               onClick={() => setConfirmDelete(false)}
-              className="text-xs font-medium px-2.5 py-2 rounded-lg"
-              style={{ color: 'var(--brand-mid)', minHeight: 36 }}
+              className="fz-btn-ghost"
             >
               Cancelar
             </button>
@@ -242,8 +211,7 @@ export function PendingRow({ mov, overdue, onMarkAsPaid, onUpdate, onDelete }: P
           <button
             type="button"
             onClick={() => setEditing(false)}
-            className="text-xs font-medium px-2.5 py-2 rounded-lg"
-            style={{ color: 'var(--brand-mid)', minHeight: 36 }}
+            className="fz-btn-ghost"
           >
             Cancelar
           </button>
@@ -251,8 +219,7 @@ export function PendingRow({ mov, overdue, onMarkAsPaid, onUpdate, onDelete }: P
             type="button"
             onClick={handleSave}
             disabled={saving || !draft.description.trim() || draft.amount <= 0}
-            className="text-xs font-bold px-3 py-2 rounded-lg text-white transition-opacity disabled:opacity-50"
-            style={{ background: 'var(--brand)', minHeight: 36 }}
+            className="fz-btn-primary"
           >
             {saving ? 'Guardando…' : 'Guardar'}
           </button>
@@ -264,11 +231,10 @@ export function PendingRow({ mov, overdue, onMarkAsPaid, onUpdate, onDelete }: P
 
 // "30 abr" / "Hoy" / "Mañana" / "12 may" — pill compacta para la fecha.
 function formatDueLabel(ymd: string): { line1: string; line2: string } {
-  const today = new Date()
-  const todayYMD = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  const todayYMD = getAppToday()
   if (ymd === todayYMD) return { line1: 'HOY', line2: '' }
 
-  // Mañana
+  const today = new Date()
   const tomorrow = new Date(today)
   tomorrow.setDate(today.getDate() + 1)
   const tomorrowYMD = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`
@@ -280,4 +246,3 @@ function formatDueLabel(ymd: string): { line1: string; line2: string } {
   const month = date.toLocaleDateString('es-MX', { month: 'short' }).toUpperCase().replace('.', '')
   return { line1: month, line2: String(d) }
 }
-

@@ -2,10 +2,7 @@
 
 /**
  * ManualRecurringForm — formulario inline para crear un recurrente manualmente.
- * Aparece debajo del header de la sección "Recurrentes" cuando se clickea "+".
- *
- * Llama POST /api/recurring que ya existe (también materializa el primer
- * pendiente automáticamente).
+ * Llama POST /api/recurring que materializa el primer pendiente automáticamente.
  */
 
 import { useState } from 'react'
@@ -79,29 +76,22 @@ export function ManualRecurringForm({ onClose, onCreated }: Props) {
   const valid = parseFloat(amount) > 0 && description.trim().length > 0
 
   return (
-    <div
-      className="rounded-xl flex flex-col gap-2 p-3"
-      style={{ background: 'white', border: '1px solid var(--brand)', boxShadow: 'var(--sh-2)' }}
-    >
-      <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--brand-mid)' }}>
+    <div className="fz-card-active flex flex-col gap-2 p-3">
+      <div className="text-[10px] font-bold uppercase tracking-wide text-brand-mid">
         Nuevo recurrente
       </div>
 
       {/* Toggle ingreso/gasto */}
-      <div
-        className="flex p-0.5 rounded-lg"
-        style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-border)' }}
-      >
+      <div className="flex p-0.5 rounded-lg bg-brand-chip border border-brand-border">
         {(['gasto', 'ingreso'] as const).map(t => (
           <button
             key={t}
             type="button"
             onClick={() => setType(t)}
-            className="flex-1 text-xs font-bold py-1.5 rounded-md transition-colors"
-            style={{
-              background: type === t ? 'var(--brand)' : 'transparent',
-              color: type === t ? '#fff' : 'var(--brand-mid)',
-            }}
+            className={[
+              'flex-1 text-xs font-bold py-1.5 rounded-md transition-colors',
+              type === t ? 'bg-brand text-white' : 'bg-transparent text-brand-mid',
+            ].join(' ')}
           >
             {t === 'gasto' ? 'Gasto' : 'Ingreso'}
           </button>
@@ -110,59 +100,54 @@ export function ManualRecurringForm({ onClose, onCreated }: Props) {
 
       <div className="grid grid-cols-2 gap-2">
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>Monto</span>
+          <span className="fz-input-label">Monto</span>
           <input
             type="number" min="0" step="0.01" inputMode="decimal"
             value={amount}
             onChange={e => setAmount(e.target.value)}
-            className="border rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-1"
-            style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
+            className="fz-input"
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>Próximo pago</span>
+          <span className="fz-input-label">Próximo pago</span>
           <input
             type="date"
             value={nextDueDate}
             onChange={e => setNextDueDate(e.target.value)}
-            className="border rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-1"
-            style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
+            className="fz-input"
           />
         </label>
       </div>
 
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>Descripción</span>
+        <span className="fz-input-label">Descripción</span>
         <input
           type="text"
           value={description}
           onChange={e => setDescription(e.target.value)}
           maxLength={60}
           placeholder="Ej: Netflix, Renta, Cliente fijo, etc."
-          className="border rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-1"
-          style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
+          className="fz-input"
         />
       </label>
 
       <div className="grid grid-cols-2 gap-2">
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>Categoría</span>
+          <span className="fz-input-label">Categoría</span>
           <select
             value={category}
             onChange={e => setCategory(e.target.value as Category)}
-            className="border rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-1"
-            style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
+            className="fz-input"
           >
             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium" style={{ color: 'var(--brand-mid)' }}>Frecuencia</span>
+          <span className="fz-input-label">Frecuencia</span>
           <select
             value={frequency}
             onChange={e => setFrequency(e.target.value as RecurringFrequency)}
-            className="border rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-1"
-            style={{ borderColor: 'var(--brand-border)', color: 'var(--brand)' }}
+            className="fz-input"
           >
             {FREQ_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
           </select>
@@ -170,24 +155,18 @@ export function ManualRecurringForm({ onClose, onCreated }: Props) {
       </div>
 
       {error && (
-        <p className="text-xs" style={{ color: 'var(--danger)' }}>{error}</p>
+        <p className="text-xs text-danger">{error}</p>
       )}
 
       <div className="flex gap-1.5 justify-end mt-1">
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-xs font-medium px-3 py-2 rounded-lg"
-          style={{ color: 'var(--brand-mid)', minHeight: 36 }}
-        >
+        <button type="button" onClick={onClose} className="fz-btn-ghost">
           Cancelar
         </button>
         <button
           type="button"
           onClick={handleSubmit}
           disabled={saving || !valid}
-          className="text-xs font-bold px-3.5 py-2 rounded-lg text-white transition-opacity disabled:opacity-50"
-          style={{ background: 'var(--brand)', minHeight: 36 }}
+          className="fz-btn-primary"
         >
           {saving ? 'Guardando…' : 'Guardar'}
         </button>

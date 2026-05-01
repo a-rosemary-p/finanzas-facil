@@ -3,21 +3,13 @@
 /**
  * AppHeader — header compartido por todas las páginas protegidas.
  *
- * Antes vivía inline en `dashboard`, `perfil`, `ajustes`, `reportes`. Cuatro
- * copias casi idénticas que divergían silenciosamente (ej: `reportes` no tenía
- * plan badge ni botón Salir). Centralizado para que un cambio se propague a
- * todas las páginas en una sola edición.
- *
- * Diseño v2 (handoff abr 2026):
+ * Diseño v2:
  *  - Header sólido blanco que cubre desde y=0 incluyendo el safe-area-inset-top
- *    del status bar nativo (status bar de iOS/Android no se traslapa con el
- *    contenido, igual que antes).
- *  - Wave cutoff al fondo: SVG blanco que sangra ~10px hacia el gradiente.
- *    Reemplaza el `border-bottom` recto. Puramente estético.
- *  - Plan badge (Pro/Free) y burger menu a la derecha. Click outside cierra.
- *
- * Uso: `<AppHeader />` en cualquier página protegida. Sin props necesarios —
- * lee plan + logout de `useAuth()` por sí solo.
+ *    del status bar nativo.
+ *  - Wave cutoff inferior: SVG blanco que sangra ~10px hacia el gradiente.
+ *  - Plan badge (Pro/Free) y burger menu a la derecha.
+ *  - El alert de pendientes vencidos vive sobrepuesto al botón hamburger
+ *    (visible siempre) y duplicado en el item "Pendientes" del dropdown.
  */
 
 import { useEffect, useRef, useState } from 'react'
@@ -42,14 +34,10 @@ const MENU_ITEMS: Array<{ label: string; href: string }> = [
 
 export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
   const { profile, logout } = useAuth()
-  // Notification dot: si hay pendientes vencidos. Hook ya hace su propio fetch
-  // a Supabase con RLS — barato y nos da el contador siempre vigente.
   const { overdueCount } = usePendings()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  // Cierra el menú al click fuera. Sin esto el dropdown queda abierto al
-  // navegar a otra parte de la pantalla.
   useEffect(() => {
     if (!menuOpen) return
     function handle(e: MouseEvent) {
@@ -65,35 +53,28 @@ export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
 
   return (
     <header
-      className="bg-white sticky top-0 flex items-center justify-between px-4"
+      className="bg-white sticky top-0 flex items-center justify-between px-4 z-20 fz-app-header"
+      // El header tapa el status bar nativo del móvil con su safe area.
+      // Esto es comportamiento responsive imposible de expresar como class.
       style={{
-        // El header tapa el status bar nativo del móvil con su safe area.
         paddingTop: 'calc(env(safe-area-inset-top, 0px) + 10px)',
-        paddingBottom: '10px',
-        minHeight: '56px',
-        position: 'sticky',
-        zIndex: 20,
       }}
     >
-      {/* Logo → /registros (la pantalla "casa") */}
+      {/* Logo → /registros */}
       <Link href="/registros" aria-label="Ir a Registros">
-        <img src="/logo-green.png" alt="fiza" style={{ height: '32px', width: 'auto', display: 'block' }} />
+        <img src="/logo-green.png" alt="fiza" className="h-8 w-auto block" />
       </Link>
 
       <div className="flex items-center gap-3">
-        {/* Plan badge — "Base" en lugar de "Free" desde abr 2026 (DB sigue 'free').
-         * El alert de pendientes vencidos vive ahora SOLO en el item del menú
-         * (más adelante en este header) — el badge se quedó "limpio" porque
-         * mezclar plan + alert en el mismo componente confundía visualmente. */}
         {!hidePlanBadge && profile && (
           <span
-            className="text-sm font-medium px-3 py-2 rounded-full min-h-[44px] flex items-center"
-            aria-label={`Plan ${isPro ? 'Pro' : 'Base'}`}
-            style={
+            className={[
+              'text-sm font-medium px-3 py-2 rounded-full min-h-[44px] flex items-center border',
               isPro
-                ? { background: 'var(--brand)', color: '#fff', border: '1px solid var(--brand)' }
-                : { background: 'var(--brand-lime)', color: 'var(--brand)', border: '1px solid var(--brand-light)' }
-            }
+                ? 'bg-brand text-white border-brand'
+                : 'bg-brand-lime text-brand border-brand-light',
+            ].join(' ')}
+            aria-label={`Plan ${isPro ? 'Pro' : 'Base'}`}
           >
             {isPro ? 'Pro' : 'Base'}
           </span>
@@ -104,41 +85,18 @@ export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
           <button
             type="button"
             onClick={() => setMenuOpen(v => !v)}
-            className="relative flex items-center justify-center rounded-lg min-h-[44px] min-w-[44px] transition-colors"
-            style={{
-              background: menuOpen ? 'var(--brand-chip)' : 'transparent',
-              border: '1px solid var(--brand-border)',
-              color: 'var(--ink-700)',
-            }}
+            className={[
+              'relative flex items-center justify-center rounded-lg min-h-[44px] min-w-[44px] transition-colors border border-brand-border text-ink-700',
+              menuOpen ? 'bg-brand-chip' : 'bg-transparent',
+            ].join(' ')}
             aria-label={overdueCount > 0 ? `Menú · ${overdueCount} pendientes vencidos` : 'Menú'}
             aria-expanded={menuOpen}
           >
             <IconList size={22} />
-            {/* Badge sobrepuesto: avisa que hay algo en el menú (pendientes
-             * vencidos) sin tener que abrirlo. Espejo del badge en el item
-             * "Pendientes" del dropdown — visible siempre. */}
             {overdueCount > 0 && (
               <span
                 aria-hidden="true"
-                style={{
-                  position: 'absolute',
-                  top: -5,
-                  right: -5,
-                  background: 'var(--danger)',
-                  color: '#fff',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  minWidth: 18,
-                  height: 18,
-                  padding: '0 5px',
-                  borderRadius: 9,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '2px solid #fff',
-                  lineHeight: 1,
-                  pointerEvents: 'none',
-                }}
+                className="fz-alert-badge"
               >
                 {overdueCount > 9 ? '9+' : overdueCount}
               </span>
@@ -147,8 +105,7 @@ export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
 
           {menuOpen && (
             <div
-              className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg overflow-hidden"
-              style={{ border: '1px solid var(--brand-border)', top: '100%', zIndex: 50 }}
+              className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-fz-3 overflow-hidden border border-brand-border top-full z-50"
               role="menu"
             >
               {MENU_ITEMS.map(item => {
@@ -158,29 +115,12 @@ export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
                     key={item.label}
                     href={item.href}
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors hover:bg-[var(--brand-chip)] min-h-[48px]"
-                    style={{ color: 'var(--brand)' }}
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors hover:bg-brand-chip min-h-[48px] text-brand"
                     role="menuitem"
                   >
                     <span className="flex-1">{item.label}</span>
                     {showDot && (
-                      <span
-                        aria-label={`${overdueCount} vencidos`}
-                        style={{
-                          background: 'var(--danger)',
-                          color: '#fff',
-                          fontSize: 10,
-                          fontWeight: 700,
-                          minWidth: 20,
-                          height: 18,
-                          padding: '0 6px',
-                          borderRadius: 9,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          lineHeight: 1,
-                        }}
-                      >
+                      <span aria-label={`${overdueCount} vencidos`} className="fz-menu-badge">
                         {overdueCount > 9 ? '9+' : overdueCount}
                       </span>
                     )}
@@ -191,8 +131,7 @@ export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
               <button
                 type="button"
                 onClick={() => { setMenuOpen(false); logout() }}
-                className="flex items-center gap-3 px-4 py-3 text-sm font-medium w-full transition-colors hover:bg-[var(--danger-bg)] min-h-[48px]"
-                style={{ color: 'var(--danger)' }}
+                className="flex items-center gap-3 px-4 py-3 text-sm font-medium w-full transition-colors hover:bg-danger-bg min-h-[48px] text-danger"
                 role="menuitem"
               >
                 <IconLogout size={15} />
@@ -203,29 +142,13 @@ export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
         </div>
       </div>
 
-      {/* Wave cutoff inferior — SVG blanco que sangra hacia el gradiente.
-       * Reemplaza el border-bottom recto.
-       *
-       * Bug que tenía sin `height` explícito: en desktop con viewport ancho,
-       * el SVG sin height definido se renderizaba con la altura default del
-       * browser (~150px) y, con preserveAspectRatio="none", el path estiraba
-       * la wave verticalmente — por eso "se separaba" del header. Fijamos
-       * height al rango y del viewBox para que se mantenga proporcional
-       * sin importar el ancho. */}
+      {/* Wave cutoff inferior — la altura y el bottom negativo son específicos
+       * de este SVG, mejor mantenerlos como clase utilitaria de globals. */}
       <svg
         aria-hidden="true"
         viewBox="0 0 390 12"
         preserveAspectRatio="none"
-        style={{
-          display: 'block',
-          width: '100%',
-          height: 12,
-          position: 'absolute',
-          bottom: -11,   // 1px de overlap con el header para evitar hairline gap
-          left: 0,
-          zIndex: 1,
-          pointerEvents: 'none',
-        }}
+        className="fz-app-header__wave"
       >
         <path
           d="M 0 0 L 0 6 C 48 12, 97 0, 146 6 S 243 12, 292 6 S 350 2, 390 6 L 390 0 Z"

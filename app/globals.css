@@ -40,6 +40,10 @@
   /* Pro plan */
   --pro-bg:         #EEFBE8;
 
+  /* Page-level gradient stops (used in the .fz-page-gradient util) */
+  --page-grad-from: #BFDACB;
+  --page-grad-to:   #E8F0B9;
+
   /* Legacy aliases kept for body gradient vars */
   --color-bg-top:    #F4F6EB;
   --color-bg-bottom: #E8EDD8;
@@ -56,6 +60,10 @@
   /* Paper (off-white backgrounds — more natural than #fff) */
   --paper:   #FCFDF8;   /* base white */
   --paper-2: #F7F9F1;   /* alt section bg */
+
+  /* Translucencias usadas en hints/tooltips sobre el gradient page bg */
+  --paper-soft: rgba(255, 255, 255, 0.6);   /* empty-state cards */
+  --paper-pure: #ffffff;
 
   /* Radius scale */
   --r-sm:   6px;
@@ -77,8 +85,71 @@
   --dur-slow: 400ms;
 }
 
+/* ─────────────────────────────────────────────────────────
+   TAILWIND v4 THEME REGISTRATION
+   Expone los tokens de :root como utilities. Después de esto
+   se puede usar: bg-brand, text-ink-900, shadow-fz-2, border-brand-border,
+   ring-brand-light, etc. en lugar de style={{}} inline.
+
+   Convención: prefijo "fz-" en shadows/radius para no chocar con
+   los defaults de Tailwind (shadow-md, rounded-xl).
+   ───────────────────────────────────────────────────────── */
 @theme inline {
   --font-sans: var(--font-outfit), Arial, Helvetica, sans-serif;
+
+  /* Colors — todos exponen bg-/text-/border-/ring- */
+  --color-brand:          var(--brand);
+  --color-brand-mid:      var(--brand-mid);
+  --color-brand-light:    var(--brand-light);
+  --color-brand-border:   var(--brand-border);
+  --color-brand-chip:     var(--brand-chip);
+  --color-brand-muted:    var(--brand-muted);
+  --color-brand-lime:     var(--brand-lime);
+
+  --color-income-bg:      var(--income-bg);
+  --color-income-border:  var(--income-border);
+  --color-income-text:    var(--income-text);
+
+  --color-expense-bg:     var(--expense-bg);
+  --color-expense-border: var(--expense-border);
+  --color-expense-text:   var(--expense-text);
+
+  --color-pending-bg:     var(--pending-bg);
+  --color-pending-border: var(--pending-border);
+  --color-pending-text:   var(--pending-text);
+
+  --color-danger:         var(--danger);
+  --color-danger-bg:      var(--danger-bg);
+  --color-danger-border:  var(--danger-border);
+
+  --color-investment:      var(--investment);
+  --color-investment-text: var(--investment-text);
+
+  --color-pro-bg:         var(--pro-bg);
+
+  --color-ink-900:        var(--ink-900);
+  --color-ink-700:        var(--ink-700);
+  --color-ink-500:        var(--ink-500);
+  --color-ink-300:        var(--ink-300);
+  --color-ink-100:        var(--ink-100);
+
+  --color-paper:          var(--paper);
+  --color-paper-2:        var(--paper-2);
+  --color-paper-soft:     var(--paper-soft);
+  --color-paper-pure:     var(--paper-pure);
+
+  /* Shadows */
+  --shadow-fz-1: var(--sh-1);
+  --shadow-fz-2: var(--sh-2);
+  --shadow-fz-3: var(--sh-3);
+
+  /* Easings + durations (genera ease-standard, duration-fast, etc.) */
+  --ease-standard: var(--ease-standard);
+  --ease-spring:   var(--ease-spring);
+
+  --duration-fast: var(--dur-fast);
+  --duration-std:  var(--dur-std);
+  --duration-slow: var(--dur-slow);
 }
 
 html {
@@ -128,4 +199,209 @@ a,
 label,
 [role="button"] {
   touch-action: manipulation;
+}
+
+/* ─────────────────────────────────────────────────────────
+   SEMANTIC UTILITY CLASSES — patrones repetidos.
+   Antes vivían como bloques de style={{}} en cada componente.
+   Cualquier cambio de "look de un card" se hace acá ahora.
+   ───────────────────────────────────────────────────────── */
+
+/* Cards */
+.fz-card {
+  background: var(--paper-pure);
+  border: 1px solid var(--brand-border);
+  box-shadow: var(--sh-1);
+  border-radius: var(--r-xl);
+}
+.fz-card-2 {
+  background: var(--paper-pure);
+  border: 1px solid var(--brand-border);
+  box-shadow: var(--sh-2);
+  border-radius: var(--r-xl);
+}
+.fz-card-active {
+  background: var(--paper-pure);
+  border: 1px solid var(--brand);
+  box-shadow: var(--sh-2);
+  border-radius: var(--r-xl);
+}
+.fz-card-empty {
+  background: var(--paper-soft);
+  border: 1px dashed var(--brand-border);
+  border-radius: var(--r-xl);
+}
+
+/* Inputs */
+.fz-input {
+  border: 1px solid var(--brand-border);
+  color: var(--brand);
+  border-radius: var(--r-md);
+  padding: 0.5rem 0.625rem;
+  font-size: 14px;
+  background: white;
+}
+.fz-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 1px var(--brand-light);
+}
+.fz-input-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--brand-mid);
+}
+
+/* Buttons */
+.fz-btn-primary {
+  background: var(--brand);
+  color: #fff;
+  font-weight: 700;
+  border-radius: var(--r-lg);
+  min-height: 36px;
+  padding: 0.5rem 0.875rem;
+  font-size: 12px;
+  transition: opacity var(--dur-fast) var(--ease-standard),
+              background var(--dur-fast) var(--ease-standard);
+}
+.fz-btn-primary:hover { background: #4A7359; }
+.fz-btn-primary:disabled { opacity: 0.5; }
+
+.fz-btn-ghost {
+  color: var(--brand-mid);
+  font-weight: 500;
+  border-radius: var(--r-lg);
+  min-height: 36px;
+  padding: 0.5rem 0.625rem;
+  font-size: 12px;
+  background: transparent;
+}
+.fz-btn-ghost:hover { background: var(--brand-chip); }
+
+.fz-btn-danger {
+  background: var(--danger);
+  color: #fff;
+  font-weight: 700;
+  border-radius: var(--r-lg);
+  min-height: 36px;
+  padding: 0.5rem 0.625rem;
+  font-size: 12px;
+}
+.fz-btn-danger-soft {
+  color: var(--danger);
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--r-lg);
+  min-height: 36px;
+  padding: 0.5rem 0.625rem;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Section header / chips */
+.fz-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--brand-mid);
+}
+.fz-chip {
+  background: var(--brand-chip);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--r-md);
+  color: var(--ink-700);
+  padding: 0.25rem 0.625rem;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Hint card (empty states) */
+.fz-empty-card {
+  background: var(--paper-soft);
+  border: 1px dashed var(--brand-border);
+  border-radius: var(--r-xl);
+  padding: 1.5rem 1rem;
+  text-align: center;
+}
+
+/* Page-level gradient background (login, /pendientes, etc.) */
+.fz-page-gradient {
+  background: linear-gradient(115deg, var(--page-grad-from) 25%, var(--page-grad-to) 75%);
+}
+
+/* Padding bottom seguro en main content (respeta home indicator de iOS) */
+.fz-pad-safe-bottom {
+  padding-bottom: max(2rem, env(safe-area-inset-bottom));
+}
+
+/* Sparkline — usa currentColor del padre (hereda text-X) */
+.fz-sparkline {
+  height: 10px;
+  opacity: 0.55;
+}
+
+/* Sub-card del MetricsCard — el wrapper rounded con fondo de variant.
+   El color text-X se aplica en el JSX al wrapper para que herede en
+   icono, label, monto, sparkline y delta. */
+.fz-subcard {
+  border-radius: var(--r-lg);
+  padding: 0.625rem 0.5rem 0.5rem;
+  position: relative;
+  overflow: hidden;
+  min-height: 96px;
+}
+
+/* App header — geometría sticky + wave cutoff inferior. La safe-area
+   del status bar nativo se aplica via inline style (no hay forma limpia
+   en CSS class para `calc(env() + 10px)` que se mantenga responsive). */
+.fz-app-header {
+  padding-bottom: 10px;
+  min-height: 56px;
+  position: sticky;
+}
+.fz-app-header__wave {
+  display: block;
+  width: 100%;
+  height: 12px;
+  position: absolute;
+  bottom: -11px;
+  left: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Alert badges (pendientes vencidos) — sobrepuesto al hamburger */
+.fz-alert-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  line-height: 1;
+  pointer-events: none;
+}
+/* Variante inline (en items del menú) — sin bordes blancos ni position */
+.fz-menu-badge {
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
