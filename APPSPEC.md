@@ -2,10 +2,10 @@
 
 > **La spec viva está fuera del repo**, en la carpeta del proyecto.
 >
-> Versión actual: **v0.28** (abril 27, 2026)
-> Archivo: `C:\Users\arome\Documents - Local\App Finanzas Pymes\Fiza_APP_SPEC v0.28. 270426.md`
+> Versión actual: **v0.281** (abril 30, 2026)
+> Archivo: `C:\Users\arome\Documents - Local\App Finanzas Pymes\Fiza_APP_SPEC v0.281. 300426.md`
 >
-> Contiene: rutas (incl. `/pendientes`), API routes (incl. `/api/recurring`, `/api/onboarding/complete`), schema DB (migrations 001–015), hooks (usePendings, useRecurring), componentes (pendientes/, onboarding/), tipos, constantes, flujos, enforcement Base vs Pro, security headers, rate limiting, audit trail, recurrentes, onboarding, y changelogs v0.21 → v0.28.
+> Contiene: rutas (incl. `/pendientes` reestructurada, `/api/feedback` público), API routes (incl. `/api/track`, `/api/feedback`, `/api/recurring`, `/api/onboarding/complete`), schema DB (migrations 001–018), hooks (usePendings, useRecurring), componentes (pendientes/, onboarding/, FeedbackModal, PageViewTracker), tipos, constantes, flujos, enforcement Base vs Pro, analytics events, CDMX timezone, style system Tailwind v4, security headers, rate limiting, audit trail, recurrentes, onboarding, y changelogs v0.21 → v0.281.
 
 ---
 
@@ -32,7 +32,11 @@
 - **Mobile vs desktop**: nunca user-agent sniff. Usa `(hover: none) and (pointer: coarse)` media query — patrón canónico en `lib/file-share.ts:shareOrDownload`.
 - **`fetchWithAuthRetry` (en `lib/fetch-with-auth.ts`)** debe usarse en TODA llamada cliente a `/api/*`. Sin él, una página abierta >1hr da 401 hasta que el user recargue.
 - **Períodos en `/reportes`**: usa los helpers de `lib/periods.ts` (week/month/quarter/year). No reimplementes "qué es la semana actual".
-- **Períodos en `/registros`**: distinto set — `today/week/month/year` (`RegistrosPeriod` en `components/registros/period-dropdown.tsx`). Alimenta `/api/reports/compare` que devuelve agregados + sparkline series.
+- **Períodos en `/registros` (v0.281)**: rolling, no calendario. `RegistrosPeriod = 'global' | 'year' | 'month' | 'week' | 'today'`. Default `global`. `period=global` devuelve `previous: null` — el cliente oculta el delta. Sparkline buckets: today/week=7 daily, month=30 daily, year=12 monthly, global=monthly desde primer movement (cap 36).
+- **(v0.281) Timezone CDMX**: cualquier "es hoy?" usa `getAppToday()` de `lib/cdmx-date.ts`. SQL equivalente: `(NOW() AT TIME ZONE 'America/Mexico_City')::date`. Migrations 017 reescribió los 3 funciones que dependían de `CURRENT_DATE` (UTC).
+- **(v0.281) Analytics**: registra eventos via `track(name, payload)` (cliente, fire-and-forget) o `trackServer(supabase, userId, name, payload)` (server). Eventos vivos en sección 10 del spec. Tabla `analytics_events` (migration 018) es solo-INSERT desde la app; SELECT solo con service_role.
+- **(v0.281) Feedback modal**: el botón "Comentarios" / "Contacto" en /registros y landing usa `<FeedbackModal>` que POSTea a `/api/feedback`. NO `mailto:`. Env `RESEND_API_KEY` requerido.
+- **(v0.281) Estilos**: usar utility classes generadas por `@theme` y clases `fz-*` de globals.css. No `style={{}}` inline para color/spacing/shadow/typography. Excepción: state-driven (width%, translateX, max-height) y APIs de lib (recharts/react-pdf).
 - **Pendientes (`type='pendiente'`) NO van en `/reportes`** — filtradas a SQL. Para feature de `/pendientes` futura.
 - **Inversiones excluidas por default de totales** (reportes y registros); siempre marcadas con ícono SVG ↗️.
 - **LLM prompts**: extracción de fechas activa — DD/MM mexicano/europeo, NO MM/DD gringo. Si tocas `lib/ai/prompts.ts`, no metas backticks dentro del template literal (rompe el build).
