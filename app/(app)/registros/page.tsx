@@ -142,18 +142,17 @@ function RegistrosInner() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-sm" style={{ color: 'var(--brand-mid)' }}>Cargando...</p>
+        <p className="text-sm text-brand-mid">Cargando...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(115deg, #BFDACB 25%, #E8F0B9 75%)' }}>
+    <div className="min-h-screen fz-page-gradient">
       <AppHeader />
 
       {mode === 'confirming' && pendingData ? (
-        <main className="max-w-lg mx-auto px-4 py-6"
-          style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
+        <main className="max-w-lg mx-auto px-4 py-6 fz-pad-safe-bottom">
           <ConfirmationScreen
             rawText={pendingData.rawText}
             entryDate={pendingData.entryDate}
@@ -164,28 +163,19 @@ function RegistrosInner() {
           />
         </main>
       ) : (
-        <main className="max-w-lg mx-auto" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
+        <main className="max-w-lg mx-auto fz-pad-safe-bottom">
           {/* Greeting */}
-          <div style={{ padding: '22px 18px 16px' }}>
-            <h1
-              className="font-bold"
-              style={{
-                fontSize: 22,
-                lineHeight: 1.1,
-                letterSpacing: '-0.02em',
-                color: 'var(--ink-900)',
-                margin: 0,
-              }}
-            >
+          <div className="px-[18px] pt-[22px] pb-4">
+            <h1 className="font-bold text-[22px] leading-[1.1] tracking-[-0.02em] text-ink-900 m-0">
               Hola, {profile?.displayName ?? ''}
             </h1>
-            <div className="text-xs mt-0.5" style={{ color: 'var(--ink-500)' }}>
+            <div className="text-xs mt-0.5 text-ink-500">
               {getFechaFormateada()}
             </div>
           </div>
 
           {/* Wave divisor */}
-          <div style={{ padding: '0 16px 8px' }}>
+          <div className="px-4 pb-2">
             <WaveSection />
           </div>
 
@@ -208,24 +198,15 @@ function RegistrosInner() {
 
           {/* Insight chip */}
           {insight && (
-            <div className="flex justify-center" style={{ padding: '14px 18px 4px' }}>
-              <span
-                className="inline-block rounded-full text-xs px-3 py-1.5"
-                style={{
-                  background: 'var(--paper)',
-                  border: '1px solid var(--expense-border)',
-                  color: 'var(--ink-700)',
-                  maxWidth: 320,
-                  textAlign: 'center',
-                }}
-              >
+            <div className="flex justify-center px-[18px] pt-3.5 pb-1">
+              <span className="inline-block rounded-full text-xs px-3 py-1.5 bg-paper border border-expense-border text-ink-700 max-w-[320px] text-center">
                 {insight}
               </span>
             </div>
           )}
 
           {/* Wave divisor */}
-          <div style={{ padding: '14px 16px 6px' }}>
+          <div className="px-4 pt-3.5 pb-1.5">
             <WaveSection />
           </div>
 
@@ -236,18 +217,15 @@ function RegistrosInner() {
 
           {/* Banner upgrade exitoso */}
           {upgradedBanner && (
-            <div className="mx-3.5 mt-2 rounded-xl p-4 flex items-center gap-3"
-              style={{ background: 'var(--brand-chip)', border: '1px solid var(--brand-light)' }}
-            >
+            <div className="mx-3.5 mt-2 rounded-xl p-4 flex items-center gap-3 bg-brand-chip border border-brand-light">
               <div className="flex-1">
-                <p className="text-sm font-bold" style={{ color: 'var(--brand)' }}>¡Bienvenido al plan Pro!</p>
-                <p className="text-xs" style={{ color: 'var(--brand-mid)' }}>Ya tienes movimientos ilimitados.</p>
+                <p className="text-sm font-bold text-brand">¡Bienvenido al plan Pro!</p>
+                <p className="text-xs text-brand-mid">Ya tienes movimientos ilimitados.</p>
               </div>
               <button
                 type="button"
                 onClick={() => setUpgradedBanner(false)}
-                className="text-lg leading-none min-w-[36px] min-h-[36px] flex items-center justify-center"
-                style={{ color: 'var(--brand-mid)' }}
+                className="text-lg leading-none min-w-[36px] min-h-[36px] flex items-center justify-center text-brand-mid"
                 aria-label="Cerrar"
               >×</button>
             </div>
@@ -255,25 +233,29 @@ function RegistrosInner() {
 
           {/* Banner Base (= plan='free' en DB) */}
           {profile?.plan === 'free' && (
-            <div className="mx-3.5 mt-2 bg-white rounded-xl p-4 flex flex-col gap-2"
-              style={{ border: '1px solid var(--brand-border)' }}
-            >
+            <div className="mx-3.5 mt-2 bg-white rounded-xl p-4 flex flex-col gap-2 border border-brand-border">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium" style={{ color: 'var(--brand)' }}>Plan Base</p>
-                <p className="text-sm" style={{ color: 'var(--brand-mid)' }}>{profile.movementsToday}/10 hoy</p>
+                <p className="text-sm font-medium text-brand">Plan Base</p>
+                <p className="text-sm text-brand-mid">{profile.movementsToday}/10 hoy</p>
               </div>
-              <div className="w-full rounded-full h-1.5" style={{ background: 'var(--brand-border)' }}>
-                <div className="h-1.5 rounded-full transition-all" style={{
-                  width: `${Math.min((profile.movementsToday / 10) * 100, 100)}%`,
-                  background: profile.movementsToday >= 10 ? 'var(--danger)' : 'var(--brand)',
-                }} />
+              <div className="w-full rounded-full h-1.5 bg-brand-border">
+                <div
+                  className={[
+                    'h-1.5 rounded-full transition-all',
+                    profile.movementsToday >= 10 ? 'bg-danger' : 'bg-brand',
+                  ].join(' ')}
+                  style={{
+                    // El % es dinámico, no hay forma de hacerlo via class
+                    // sin generar un set infinito de utilities arbitrarias.
+                    width: `${Math.min((profile.movementsToday / 10) * 100, 100)}%`,
+                  }}
+                />
               </div>
               <button
                 type="button"
                 onClick={handleUpgrade}
                 disabled={checkoutLoading}
-                className="w-full text-white rounded-xl py-3 font-bold text-sm min-h-[44px] transition-opacity disabled:opacity-60"
-                style={{ background: 'var(--brand)' }}
+                className="w-full text-white rounded-xl py-3 font-bold text-sm min-h-[44px] transition-opacity disabled:opacity-60 bg-brand"
               >
                 {checkoutLoading
                   ? 'Redirigiendo...'
@@ -286,19 +268,16 @@ function RegistrosInner() {
 
           {/* Banner Pro */}
           {profile?.plan === 'pro' && (
-            <div className="mx-3.5 mt-2 bg-white rounded-xl p-4 flex items-center justify-between"
-              style={{ border: '1px solid var(--brand-border)' }}
-            >
+            <div className="mx-3.5 mt-2 bg-white rounded-xl p-4 flex items-center justify-between border border-brand-border">
               <div>
-                <p className="text-sm font-bold" style={{ color: 'var(--brand)' }}>Plan Pro activo ✓</p>
-                <p className="text-xs" style={{ color: 'var(--brand-mid)' }}>Movimientos ilimitados</p>
+                <p className="text-sm font-bold text-brand">Plan Pro activo ✓</p>
+                <p className="text-xs text-brand-mid">Movimientos ilimitados</p>
               </div>
               <button
                 type="button"
                 onClick={handlePortal}
                 disabled={portalLoading}
-                className="text-xs font-medium px-3 py-2 rounded-lg border min-h-[36px] transition-opacity disabled:opacity-60"
-                style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-mid)', background: 'var(--brand-chip)' }}
+                className="text-xs font-medium px-3 py-2 rounded-lg border border-brand-border text-brand-mid bg-brand-chip min-h-[36px] transition-opacity disabled:opacity-60"
               >
                 {portalLoading ? '...' : 'Gestionar'}
               </button>
@@ -309,8 +288,7 @@ function RegistrosInner() {
           <div className="flex justify-center pt-3 px-4">
             <a
               href="mailto:admin@fiza.mx"
-              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg"
-              style={{ color: 'var(--brand-mid)' }}
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg text-brand-mid"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
@@ -348,7 +326,7 @@ export default function RegistrosPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-sm" style={{ color: 'var(--brand-mid)' }}>Cargando...</p>
+        <p className="text-sm text-brand-mid">Cargando...</p>
       </div>
     }>
       <RegistrosInner />

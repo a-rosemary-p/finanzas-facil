@@ -195,23 +195,16 @@ export function InputCard({ onMovementsExtracted, onboardingHighlight = null }: 
   const escribirOpen = mode === 'escribir'
 
   return (
-    <div
-      className="rounded-2xl bg-white p-3.5"
-      style={{ border: '1px solid var(--brand-border)', boxShadow: 'var(--sh-2)', overflow: 'hidden' }}
-    >
-      {/* Header: ¿Qué pasó hoy en tu negocio? */}
+    <div className="rounded-2xl bg-white p-3.5 border border-brand-border shadow-fz-2 overflow-hidden">
+      {/* Header */}
       <div className="flex items-center gap-2 mb-3">
-        <span style={{ color: 'var(--brand-muted)' }}>
-          <IconChatText size={18} />
-        </span>
-        <span className="text-sm font-bold" style={{ color: 'var(--ink-900)' }}>
+        <IconChatText size={18} className="text-brand-muted" />
+        <span className="text-sm font-bold text-ink-900">
           ¿Qué pasó hoy en tu negocio?
         </span>
       </div>
 
-      {/* 3 botones.
-       *
-       * NOTA sobre el input file: NO ponemos `capture="environment"`. Ese
+      {/* NOTA sobre el input file: NO ponemos `capture="environment"`. Ese
        * atributo fuerza la cámara directa y se pierde el sheet nativo de
        * iOS/Android que ofrece Cámara / Foto Library / Archivos. Sin el
        * atributo, ambos sistemas operativos muestran el menú correcto
@@ -223,10 +216,7 @@ export function InputCard({ onMovementsExtracted, onboardingHighlight = null }: 
         className="hidden"
         onChange={handlePhotoChange}
       />
-      <div
-        className="grid grid-cols-3 gap-2"
-        style={{ marginBottom: escribirOpen ? 12 : 0 }}
-      >
+      <div className={`grid grid-cols-3 gap-2 ${escribirOpen ? 'mb-3' : ''}`}>
         <CaptureButton
           variant="filled"
           icon={photoLoading ? <Spinner size={28} /> : <IconCamera size={28} />}
@@ -272,13 +262,11 @@ export function InputCard({ onMovementsExtracted, onboardingHighlight = null }: 
         />
       </div>
 
-      {/* Textarea expandible (Escribir) */}
+      {/* Textarea expandible — el max-height animado es la diferencia entre
+       * "no abierto" y "abierto"; lo dejamos inline porque depende del state. */}
       <div
-        style={{
-          maxHeight: escribirOpen ? 220 : 0,
-          overflow: 'hidden',
-          transition: 'max-height 0.25s cubic-bezier(0.2, 0.7, 0.2, 1)',
-        }}
+        className="overflow-hidden transition-[max-height] duration-std ease-standard"
+        style={{ maxHeight: escribirOpen ? 220 : 0 }}
       >
         <textarea
           value={text}
@@ -287,58 +275,36 @@ export function InputCard({ onMovementsExtracted, onboardingHighlight = null }: 
           maxLength={1000}
           placeholder="Ej: cobré $8,500 del proyecto del cliente, $1,200 fue de comisiones."
           disabled={busy}
-          className="w-full rounded-xl text-sm focus:outline-none focus:ring-1"
-          style={{
-            background: 'var(--paper-2)',
-            border: '1px solid var(--brand-border)',
-            color: 'var(--ink-900)',
-            padding: '10px 12px',
-            marginTop: 4,
-            resize: 'none',
-          }}
+          className="w-full text-sm fz-write-input mt-1"
         />
       </div>
 
       {/* Fecha expandible (Escribir) */}
       <div
-        style={{
-          maxHeight: escribirOpen ? 80 : 0,
-          overflow: 'hidden',
-          transition: 'max-height 0.25s cubic-bezier(0.2, 0.7, 0.2, 1)',
-        }}
+        className="overflow-hidden transition-[max-height] duration-std ease-standard"
+        style={{ maxHeight: escribirOpen ? 80 : 0 }}
       >
         <div className="mt-2.5">
-          <div className="text-xs font-semibold mb-1.5" style={{ color: 'var(--ink-500)' }}>
+          <div className="text-xs font-semibold mb-1.5 text-ink-500">
             ¿Cuándo ocurrió?
           </div>
-          <label
-            className="flex items-center justify-between rounded-xl"
-            style={{
-              background: 'var(--paper-2)',
-              border: '1px solid var(--brand-border)',
-              padding: '8px 12px',
-              cursor: 'pointer',
-            }}
-          >
+          <label className="flex items-center justify-between rounded-xl bg-paper-2 border border-brand-border px-3 py-2 cursor-pointer">
             <input
               type="date"
               value={fecha}
               max={getTodayString()}
               onChange={e => setFecha(e.target.value)}
               disabled={busy}
-              className="text-sm font-medium bg-transparent focus:outline-none flex-1 min-w-0"
-              style={{ color: 'var(--ink-700)' }}
+              className="text-sm font-medium bg-transparent focus:outline-none flex-1 min-w-0 text-ink-700"
             />
-            <span style={{ color: 'var(--brand-muted)' }}>
-              <IconCalendar size={20} />
-            </span>
+            <IconCalendar size={20} className="text-brand-muted" />
           </label>
         </div>
       </div>
 
       {/* Error inline */}
       {error && (
-        <p className="text-xs mt-2.5" style={{ color: 'var(--danger)' }}>
+        <p className="text-xs mt-2.5 text-danger">
           {error}
         </p>
       )}
@@ -349,12 +315,7 @@ export function InputCard({ onMovementsExtracted, onboardingHighlight = null }: 
           type="button"
           onClick={handleEscribirSubmit}
           disabled={busy || !text.trim()}
-          className="w-full rounded-xl text-white text-sm font-bold mt-3 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
-          style={{
-            background: 'var(--brand-mid)',
-            minHeight: 44,
-            boxShadow: '0 4px 14px rgba(107,140,120,0.28)',
-          }}
+          className="fz-btn-submit-write"
         >
           {submitting ? (
             <>
@@ -396,59 +357,20 @@ function CaptureButton({
   variant, icon, label, hint, active, disabled,
   highlighted = false, dimmed = false, onClick,
 }: CaptureButtonProps) {
-  const filled = variant === 'filled'
-
-  // Salvia (#8AAB94) ya existe como `--brand-muted`. Activo oscurece a `--brand-mid`.
-  const bg =
-    filled
-      ? (active ? 'var(--brand-mid)' : 'var(--brand-muted)')
-      : (active ? 'var(--brand-muted)' : 'white')
-  const fg =
-    filled
-      ? 'white'
-      : (active ? 'white' : 'var(--brand-muted)')
-  const hintColor =
-    filled
-      ? 'rgba(255,255,255,0.72)'
-      : (active ? 'rgba(255,255,255,0.72)' : 'rgba(138,171,148,0.85)')
-  const border = filled ? 'none' : '2px solid var(--brand-muted)'
-  const shadow = filled ? '0 4px 12px rgba(107,140,120,0.28)' : 'none'
-
-  // Onboarding visual: el botón highlighted se levanta sobre el backdrop con
-  // halo pulsante. Los demás se atenúan (opacity baja) para guiar la mirada.
   const className = [
-    'flex flex-col items-center justify-center transition-all disabled:opacity-50',
+    'fz-capture-btn',
+    `fz-capture-btn--${variant}`,
+    active ? 'is-active' : '',
+    dimmed ? 'fz-capture-btn--dimmed' : '',
     highlighted ? 'fz-onboarding-halo' : '',
   ].filter(Boolean).join(' ')
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={className}
-      style={{
-        height: 90,
-        borderRadius: 16,
-        background: bg,
-        color: fg,
-        border,
-        boxShadow: highlighted ? undefined : shadow,
-        gap: 4,
-        padding: '8px 4px',
-        opacity: dimmed ? 0.35 : undefined,
-        transition: 'opacity 0.25s, box-shadow 0.25s',
-      }}
-    >
+    <button type="button" onClick={onClick} disabled={disabled} className={className}>
       {icon}
-      <span className="text-[12px] font-bold leading-tight">{label}</span>
+      <span className="text-xs font-bold leading-tight">{label}</span>
       {hint && (
-        <span
-          className="text-[9px] font-medium leading-tight text-center"
-          style={{ color: hintColor }}
-        >
-          {hint}
-        </span>
+        <span className="fz-capture-btn__hint">{hint}</span>
       )}
     </button>
   )
@@ -468,7 +390,7 @@ function Spinner({ size = 28 }: { size?: number }) {
       viewBox="0 0 24 24"
       fill="none"
       aria-hidden="true"
-      style={{ animation: 'fz-spin 0.9s linear infinite' }}
+      className="fz-spin"
     >
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" opacity="0.25" />
       <path
@@ -477,7 +399,6 @@ function Spinner({ size = 28 }: { size?: number }) {
         strokeWidth="2"
         strokeLinecap="round"
       />
-      <style>{`@keyframes fz-spin { to { transform: rotate(360deg) } }`}</style>
     </svg>
   )
 }
