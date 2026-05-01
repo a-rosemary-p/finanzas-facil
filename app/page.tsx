@@ -181,7 +181,7 @@ function StepCard({
       className="rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden"
       style={{
         background: isPro
-          ? 'linear-gradient(145deg, var(--brand) 0%, #3d6050 100%)'
+          ? 'linear-gradient(145deg, var(--brand) 0%, var(--brand-deep) 100%)'
           : 'var(--paper)',
         border: isPro ? 'none' : '1px solid var(--brand-border)',
         boxShadow: isPro ? 'var(--sh-3)' : 'var(--sh-1)',
@@ -482,7 +482,7 @@ export default function HomePage() {
               background: 'var(--brand)',
               transition: `background var(--dur-fast) var(--ease-standard)`,
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#4A7359')}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--brand-hover)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'var(--brand)')}
           >
             Empieza gratis
@@ -493,7 +493,7 @@ export default function HomePage() {
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
       <section
         className="relative overflow-hidden"
-        style={{ background: '#5F8A6C' }}
+        style={{ background: 'var(--brand-hero)' }}
       >
         <div className="max-w-5xl mx-auto px-5 pt-16 pb-28 md:py-20 md:pb-32 flex flex-col md:flex-row items-center gap-10 md:gap-14">
 
@@ -549,13 +549,13 @@ export default function HomePage() {
               className="px-7 py-3.5 rounded-xl font-bold text-base text-center min-h-[52px] inline-flex items-center justify-center gap-2 w-full sm:w-auto"
               style={{
                 background: 'var(--brand-lime)',
-                color: '#3d6050',
+                color: 'var(--brand-deep)',
                 boxShadow: 'var(--sh-3)',
                 transition: `transform var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard)`,
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.transform = 'scale(1.02)'
-                e.currentTarget.style.background = '#C8D672'
+                e.currentTarget.style.background = 'var(--lime-hover)'
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.transform = 'scale(1)'
@@ -644,7 +644,7 @@ export default function HomePage() {
                   display: 'block',
                   // Pinta el fondo del <video> con el verde del hero para tapar
                   // cualquier sub-pixel gap que se asome al hacer scroll.
-                  backgroundColor: '#5F8A6C',
+                  backgroundColor: 'var(--brand-hero)',
                 }}
               >
                 <source src="/iphone-hero.mp4" type="video/mp4" />
@@ -741,14 +741,14 @@ export default function HomePage() {
             — fiza es para ti.
           </p>
         </div>
-        <WaveDivider fill="#3d6050" />
+        <WaveDivider fill="var(--brand-deep)" />
       </section>
 
       {/* ── Features destacados ─────────────────────────────────────────────── */}
       <section
         id="que-hace"
         className="py-14 px-4"
-        style={{ background: 'linear-gradient(145deg, #3d6050 0%, #578466 100%)', position: 'relative', overflow: 'hidden' }}
+        style={{ background: 'linear-gradient(145deg, var(--brand-deep) 0%, #578466 100%)', position: 'relative', overflow: 'hidden' }}
       >
         <div className="max-w-4xl mx-auto">
           <p
@@ -817,7 +817,7 @@ export default function HomePage() {
             }}
             onMouseEnter={e => {
               e.currentTarget.style.transform = 'scale(1.02)'
-              e.currentTarget.style.background = '#4A7359'
+              e.currentTarget.style.background = 'var(--brand-hover)'
             }}
             onMouseLeave={e => {
               e.currentTarget.style.transform = 'scale(1)'

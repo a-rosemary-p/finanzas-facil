@@ -12,6 +12,10 @@
   --brand-chip:     #F4F6EB;   /* chip / tag / input bg */
   --brand-muted:    #8AAB94;   /* placeholder, icon, disabled */
   --brand-lime:     #DAE68F;   /* yellow-green — income accent */
+  --brand-deep:     #3d6050;   /* deep — landing hero gradient stop */
+  --brand-hero:     #5F8A6C;   /* landing hero solid bg */
+  --brand-hover:    #4A7359;   /* hover sobre var(--brand) buttons */
+  --lime-hover:     #C8D672;   /* hover sobre var(--brand-lime) buttons */
 
   /* Income (ingreso) */
   --income-bg:      #DAE68F;
@@ -105,6 +109,10 @@
   --color-brand-chip:     var(--brand-chip);
   --color-brand-muted:    var(--brand-muted);
   --color-brand-lime:     var(--brand-lime);
+  --color-brand-deep:     var(--brand-deep);
+  --color-brand-hero:     var(--brand-hero);
+  --color-brand-hover:    var(--brand-hover);
+  --color-lime-hover:     var(--lime-hover);
 
   --color-income-bg:      var(--income-bg);
   --color-income-border:  var(--income-border);
