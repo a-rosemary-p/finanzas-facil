@@ -153,9 +153,10 @@ function PieCard({ title, slices, colors, emptyText, accentClass }: PieCardProps
                     borderRadius: 8,
                     fontSize: 12,
                   }}
-                  formatter={(value: number, name: string) => {
-                    const pct = total > 0 ? Math.round((value / total) * 100) : 0
-                    return [`${formatCurrency(value)} · ${pct}%`, name]
+                  formatter={(value, name) => {
+                    const num = Number(value ?? 0)
+                    const pct = total > 0 ? Math.round((num / total) * 100) : 0
+                    return [`${formatCurrency(num)} · ${pct}%`, String(name ?? '')]
                   }}
                 />
               </PieChart>
