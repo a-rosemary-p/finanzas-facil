@@ -41,6 +41,10 @@ interface Totals {
   net: number
 }
 
+interface ByCategory {
+  [cat: string]: { income: number; expenses: number }
+}
+
 interface Bucket {
   label: string  // ej "1 may", "Sem 18", "May"
   start: string  // YYYY-MM-DD
@@ -82,7 +86,7 @@ export async function GET(request: Request) {
 
   const { data: rows, error } = await supabase
     .from('movements')
-    .select('type, amount, movement_date, is_investment')
+    .select('type, amount, category, movement_date, is_investment')
     .eq('user_id', user.id)
     .gte('movement_date', queryStart)
     .lte('movement_date', queryEnd)
@@ -93,10 +97,10 @@ export async function GET(request: Request) {
     return Response.json({ error: 'Error al cargar datos' }, { status: 500 })
   }
 
-  type Row = { type: string; amount: number; movement_date: string; is_investment: boolean | null }
   const movs = (rows ?? []).map(r => ({
     type: r['type'] as string,
     amount: Number(r['amount']),
+    category: r['category'] as string,
     movement_date: r['movement_date'] as string,
     is_investment: (r['is_investment'] as boolean | null) ?? false,
   }))
@@ -107,6 +111,7 @@ export async function GET(request: Request) {
 
   const current = aggregate(inCurrent)
   const prev = aggregate(inPrevious)
+  const byCategory = aggregateByCategory(inCurrent)
 
   // Time series del período actual
   const buckets = computeBuckets(mode, currentRange.start, currentRange.end, inCurrent)
@@ -119,6 +124,7 @@ export async function GET(request: Request) {
     range: currentRange,
     previousRange,
     buckets,
+    byCategory,
   })
 }
 
@@ -130,6 +136,16 @@ function aggregate(movs: Array<{ type: string; amount: number }>): Totals {
     else if (m.type === 'gasto') expenses += m.amount
   }
   return { income, expenses, net: income - expenses }
+}
+
+function aggregateByCategory(movs: Array<{ type: string; amount: number; category: string }>): ByCategory {
+  const out: ByCategory = {}
+  for (const m of movs) {
+    if (!out[m.category]) out[m.category] = { income: 0, expenses: 0 }
+    if (m.type === 'ingreso') out[m.category].income += m.amount
+    else if (m.type === 'gasto') out[m.category].expenses += m.amount
+  }
+  return out
 }
 
 function computeBuckets(

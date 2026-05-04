@@ -329,9 +329,9 @@ export default function ReportesPage() {
           <>
             <EstePeriodoView period={period} />
 
-            {/* Botones de export — siempre que haya movements, igual que antes */}
+            {/* Botones de export — lado a lado (PDF + Excel) */}
             {profile && movements.length > 0 && (
-              <div className="flex flex-col gap-2 mt-1">
+              <div className="grid grid-cols-2 gap-2 mt-1">
                 <PdfDownloadButton
                   periodSlug={slug}
                   periodLabel={label}
@@ -353,14 +353,14 @@ export default function ReportesPage() {
                   <button
                     type="button"
                     onClick={() => { void startProCheckout() }}
-                    className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 min-h-[48px] transition-opacity bg-brand-chip border border-brand-border text-brand-mid opacity-85"
+                    className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 min-h-[48px] transition-opacity bg-brand-chip border border-brand-border text-brand-mid opacity-85"
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
                       <polyline points="14 2 14 8 20 8" />
                     </svg>
-                    Descargar Excel
-                    <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-brand text-white tracking-[0.05em]">
+                    Excel
+                    <span className="text-[9px] font-bold px-1 py-0.5 rounded-full bg-brand text-white tracking-[0.05em]">
                       PRO
                     </span>
                   </button>

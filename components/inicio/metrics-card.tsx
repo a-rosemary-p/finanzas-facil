@@ -25,12 +25,11 @@ import { IconWallet, IconReceipt, IconChartPieSlice } from '@/components/icons'
 import { Sparkline } from './sparkline'
 import { PeriodDropdown, periodDisplayLabel, type RegistrosPeriod } from './period-dropdown'
 
-type CardVariant = 'income' | 'expense' | 'neto'
+type CardVariant = 'income' | 'expense'
 
 const VARIANT_CLASSES: Record<CardVariant, string> = {
   income:  'text-income-text bg-income-bg',
   expense: 'text-expense-text bg-expense-bg',
-  neto:    'text-brand bg-income-bg',
 }
 
 interface CompareResponse {
@@ -119,7 +118,10 @@ export function MetricsCard({ period, onPeriodChange, refreshKey = 0 }: Props) {
           previousValue={previous?.net ?? 0}
           comparable={comparable}
           sparkPoints={spark?.net}
-          variant="neto"
+          // Neto pinta verde si >= 0, rojo si negativo. Antes era siempre verde
+          // (hardcoded a 'neto' variant) — bug de v0.281 que ocultaba meses
+          // donde el neto era pérdida.
+          variant={current.net >= 0 ? 'income' : 'expense'}
           previousLabel={PREV_LABEL[period]}
           loading={loading}
         />

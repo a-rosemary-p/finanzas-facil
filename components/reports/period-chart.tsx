@@ -16,7 +16,7 @@
 
 import { useState } from 'react'
 import {
-  ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, Legend,
+  ComposedChart, Bar, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid,
 } from 'recharts'
 import { formatCurrency } from '@/lib/utils'
@@ -60,19 +60,10 @@ const SERIES_TEXT_CLS: Record<Series, string> = {
 }
 
 export function PeriodChart({ buckets, loading, mode }: Props) {
-  const [active, setActive] = useState<Record<Series, boolean>>({
-    income: true,
-    expenses: true,
-    net: true,
-  })
-
-  function toggle(s: Series) {
-    setActive(prev => {
-      const next = { ...prev, [s]: !prev[s] }
-      if (!next.income && !next.expenses && !next.net) return prev
-      return next
-    })
-  }
+  // Single-select: solo una serie visible a la vez. Cada toggle reemplaza
+  // la activa. El default es 'income'. Esto reemplaza el multi-select que
+  // saturaba visualmente (3 barras + 1 línea en mobile se veía denso).
+  const [active, setActive] = useState<Series>('income')
 
   const fmtTick = (v: number) => {
     const abs = Math.abs(v)
@@ -86,15 +77,15 @@ export function PeriodChart({ buckets, loading, mode }: Props) {
 
   return (
     <div className="bg-white rounded-2xl border border-brand-border p-3 flex flex-col gap-2">
-      {/* Toggles de serie */}
+      {/* Toggle de serie — single-select. Click reemplaza la activa. */}
       <div className="flex gap-1 p-1 rounded-lg bg-brand-chip border border-brand-border">
         {(['income', 'expenses', 'net'] as Series[]).map(s => {
-          const isOn = active[s]
+          const isOn = active === s
           return (
             <button
               key={s}
               type="button"
-              onClick={() => toggle(s)}
+              onClick={() => setActive(s)}
               className={[
                 'flex-1 text-xs font-bold rounded-md min-h-[32px] px-2 transition-colors flex items-center justify-center gap-1.5',
                 isOn ? `bg-white shadow-fz-1 ${SERIES_TEXT_CLS[s]}` : 'bg-transparent text-brand-mid',
@@ -154,15 +145,13 @@ export function PeriodChart({ buckets, loading, mode }: Props) {
                 formatter={(value, name) => [formatCurrency(Number(value ?? 0)), String(name ?? '')]}
                 labelStyle={{ color: 'var(--brand)', fontWeight: 600 }}
               />
-              <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" iconSize={8} />
-
-              {active.income && (
+              {active === 'income' && (
                 <Bar dataKey="income" name="Ingresos" fill={COLORS.income} radius={[4, 4, 0, 0]} />
               )}
-              {active.expenses && (
+              {active === 'expenses' && (
                 <Bar dataKey="expenses" name="Gastos" fill={COLORS.expenses} radius={[4, 4, 0, 0]} />
               )}
-              {active.net && (
+              {active === 'net' && (
                 <Line
                   type="monotone"
                   dataKey="net"

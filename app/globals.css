@@ -507,6 +507,13 @@ label,
   height: 280px;
 }
 
+/* Card de análisis IA en /reportes ¿Cómo voy? — min-height fijo para que el
+   layout NO salte cuando llega la respuesta del modelo. El user pidió
+   explícitamente que ni el botón ni la tendencia se muevan. */
+.fz-ai-card {
+  min-height: 320px;
+}
+
 /* Honeypot input — invisible para humanos. Sin display:none ni
    visibility:hidden (algunos bots los detectan). Se mueve fuera del
    viewport con position absolute. */

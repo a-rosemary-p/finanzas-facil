@@ -6,23 +6,26 @@
  * Pro only. Free ve el mismo layout pero con datos placeholder difuminados +
  * CTA centrado "Activar Pro" → directo a Stripe.
  *
- * Bloques:
- *  1. Headline AI: lectura principal en una frase con número concreto
- *  2. Insights AI: 3-4 frases con observaciones y recomendaciones por giro
- *  3. Tendencia: gráfica con últimos 12 períodos del mismo modo (absorbe Tendencia)
- *  4. Cheer: frase de cierre AI
+ * Bloques (orden vertical, todos siempre visibles para que el layout NO salte
+ * cuando llega el análisis):
+ *   1. Pies de Ingresos / Gastos por categoría — siempre cargados con la data
+ *      del período. Sin AI.
+ *   2. Card de IA con tamaño fijo. Inicia vacío con un botón "Analizar con IA".
+ *      Click → llamada a /api/reports/insights, rellena el card sin empujar
+ *      lo de abajo. Cambiar el período NO regenera automáticamente — vuelve
+ *      al estado vacío y el user vuelve a clickear si lo quiere.
+ *   3. Tendencia: gráfica con últimos 12 meses. Absorbe la antigua tab.
  *
- * Datos AI vienen de /api/reports/insights (gpt-4.1-mini, cache 1h browser-side).
- * Tendencia viene de /api/reports/trend (existente).
+ * Datos AI: /api/reports/insights (gpt-4.1-mini).
+ * Datos pies / period: /api/reports/period-summary (extendido en v0.29 con byCategory).
  */
 
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import { startProCheckout } from '@/lib/upgrade-to-pro'
-import type { PeriodSelection, PeriodMode } from '@/lib/periods'
+import type { PeriodSelection } from '@/lib/periods'
 
-// recharts es ~100KB — solo cargar cuando esta tab se monta
 const TrendChart = dynamic(
   () => import('./trend-chart-mini').then(m => m.TrendChartMini),
   {
@@ -37,10 +40,31 @@ const TrendChart = dynamic(
   },
 )
 
+const CategoryPies = dynamic(
+  () => import('./category-pies').then(m => m.CategoryPies),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="bg-white rounded-2xl border border-brand-border p-4">
+        <p className="text-sm text-brand-mid text-center">Cargando categorías...</p>
+      </div>
+    ),
+  },
+)
+
 interface InsightsResponse {
   headline: string
   insights: string[]
   cheer: string
+}
+
+interface ByCategory {
+  [cat: string]: { income: number; expenses: number }
+}
+
+interface PeriodSummary {
+  byCategory: ByCategory
+  current: { income: number; expenses: number; net: number }
 }
 
 interface Props {
@@ -58,84 +82,199 @@ export function ComoVoyView({ period, plan }: Props) {
 // ── Pro view ────────────────────────────────────────────────────────────────
 
 function ProView({ period }: { period: PeriodSelection }) {
-  const [insights, setInsights] = useState<InsightsResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  // Datos del período (pies). Siempre cargado, no requiere AI.
+  const [summary, setSummary] = useState<PeriodSummary | null>(null)
+  const [summaryLoading, setSummaryLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
-    setError('')
-    setInsights(null)
-
-    fetchWithAuthRetry(`/api/reports/insights?mode=${period.mode}&anchor=${period.anchor}`)
-      .then(async r => {
-        const json = await r.json().catch(() => null) as Record<string, unknown> | null
-        if (!r.ok) {
-          if (cancelled) return
-          setError((json?.['error'] as string) || 'No se pudo generar el análisis.')
-          setLoading(false)
-          return
+    setSummaryLoading(true)
+    fetchWithAuthRetry(`/api/reports/period-summary?mode=${period.mode}&anchor=${period.anchor}`)
+      .then(r => r.json())
+      .then((d: PeriodSummary) => {
+        if (!cancelled) {
+          setSummary(d)
+          setSummaryLoading(false)
         }
-        if (cancelled) return
-        setInsights(json as unknown as InsightsResponse)
-        setLoading(false)
       })
       .catch(() => {
-        if (cancelled) return
-        setError('Sin conexión. Intenta de nuevo.')
-        setLoading(false)
+        if (!cancelled) {
+          setSummary(null)
+          setSummaryLoading(false)
+        }
       })
-
     return () => { cancelled = true }
   }, [period.mode, period.anchor])
 
+  // Estado del análisis IA — manual, no se autodispara con cambios de período.
+  type InsightsState =
+    | { kind: 'idle' }
+    | { kind: 'loading' }
+    | { kind: 'ready'; data: InsightsResponse }
+    | { kind: 'error'; msg: string }
+  const [insightsState, setInsightsState] = useState<InsightsState>({ kind: 'idle' })
+
+  // Reset a 'idle' cuando cambia el período — el user pide explicitly que NO
+  // se autogenere; queremos que vuelva al CTA.
+  useEffect(() => {
+    setInsightsState({ kind: 'idle' })
+  }, [period.mode, period.anchor])
+
+  async function runAnalysis() {
+    setInsightsState({ kind: 'loading' })
+    try {
+      const res = await fetchWithAuthRetry(`/api/reports/insights?mode=${period.mode}&anchor=${period.anchor}`)
+      const json = await res.json().catch(() => null) as Record<string, unknown> | null
+      if (!res.ok) {
+        setInsightsState({ kind: 'error', msg: (json?.['error'] as string) || 'No se pudo generar el análisis.' })
+        return
+      }
+      setInsightsState({ kind: 'ready', data: json as unknown as InsightsResponse })
+    } catch {
+      setInsightsState({ kind: 'error', msg: 'Sin conexión. Intenta de nuevo.' })
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
-      {/* Bloque 1: Headline */}
-      <InsightCard variant="headline" loading={loading} error={error}>
-        {insights?.headline}
-      </InsightCard>
+      {/* Bloque 1: Pies por categoría */}
+      <CategoryPies
+        byCategory={summary?.byCategory ?? {}}
+        loading={summaryLoading}
+      />
 
-      {/* Bloque 2: Insights detallados */}
-      {insights && insights.insights.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-1.5 px-1">
-            <AIBadge />
-            <p className="fz-eyebrow">Análisis</p>
-          </div>
-          {insights.insights.map((text, i) => (
-            <InsightCard key={i} variant="insight">{text}</InsightCard>
-          ))}
-        </div>
-      )}
+      {/* Bloque 2: Card de IA con tamaño fijo. */}
+      <AICard state={insightsState} onAnalyze={runAnalysis} />
 
       {/* Bloque 3: Tendencia */}
       <div className="flex flex-col gap-2">
-        <p className="fz-eyebrow px-1">Tendencia</p>
-        <TrendChart granularity={trendGranularity(period.mode)} />
+        <p className="fz-eyebrow px-1">Tendencia · últimos 12 meses</p>
+        <TrendChart granularity="month" />
       </div>
-
-      {/* Bloque 4: Cheer */}
-      {insights?.cheer && (
-        <InsightCard variant="cheer">{insights.cheer}</InsightCard>
-      )}
     </div>
   )
 }
 
-function trendGranularity(mode: PeriodMode): 'week' | 'month' {
-  // Para week/month → tendencia mensual de 12 meses (más útil que 12 semanas)
-  // Para quarter/year → mensual también (12 últimos)
-  return 'month'
+// ── AI Card (tamaño fijo) ──────────────────────────────────────────────────
+
+interface AICardProps {
+  state:
+    | { kind: 'idle' }
+    | { kind: 'loading' }
+    | { kind: 'ready'; data: InsightsResponse }
+    | { kind: 'error'; msg: string }
+  onAnalyze: () => void
 }
 
-// ── Free preview ────────────────────────────────────────────────────────────
+function AICard({ state, onAnalyze }: AICardProps) {
+  // min-height fijo para que el card NO crezca/encoja según el contenido —
+  // el layout se queda estable cuando llega el análisis.
+  return (
+    <div className="bg-white rounded-2xl border border-brand-light shadow-fz-1 fz-ai-card flex flex-col">
+      <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-brand-border">
+        <div className="flex items-center gap-1.5">
+          <AIBadge animated={state.kind === 'loading'} />
+          <span className="fz-eyebrow">Análisis IA</span>
+        </div>
+        {state.kind === 'ready' && (
+          <button
+            type="button"
+            onClick={onAnalyze}
+            className="text-[11px] font-medium text-brand-mid underline"
+          >
+            Regenerar
+          </button>
+        )}
+      </div>
+
+      <div className="flex-1 px-4 py-4 flex flex-col">
+        {state.kind === 'idle' && (
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-brand-chip text-brand">
+              <AIIcon size={22} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-ink-900">
+                ¿Qué cuentan tus números?
+              </p>
+              <p className="text-xs mt-1 text-brand-mid max-w-[280px]">
+                La IA analiza este período vs el anterior y te dice qué está cambiando, en lenguaje claro y adaptado a tu giro.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onAnalyze}
+              className="text-sm font-bold py-2.5 px-5 rounded-xl text-white bg-brand mt-1 inline-flex items-center gap-1.5"
+            >
+              <AIIcon size={14} />
+              Analizar con IA
+            </button>
+          </div>
+        )}
+
+        {state.kind === 'loading' && (
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2" strokeLinecap="round" className="text-brand fz-spin">
+              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+            </svg>
+            <p className="text-sm text-brand-mid">Analizando tus números…</p>
+            <p className="text-xs text-ink-300">Tarda unos segundos</p>
+          </div>
+        )}
+
+        {state.kind === 'error' && (
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center">
+            <p className="text-sm text-danger">{state.msg}</p>
+            <button
+              type="button"
+              onClick={onAnalyze}
+              className="text-xs font-medium px-3 py-2 rounded-lg text-brand border border-brand-border bg-brand-chip"
+            >
+              Intentar de nuevo
+            </button>
+          </div>
+        )}
+
+        {state.kind === 'ready' && (
+          <div className="flex-1 flex flex-col gap-3">
+            <p className="text-base font-bold text-ink-900 leading-snug">
+              {state.data.headline}
+            </p>
+            <ul className="flex flex-col gap-2">
+              {state.data.insights.map((text, i) => (
+                <li key={i} className="text-sm text-ink-700 leading-relaxed flex gap-2">
+                  <span className="text-brand-mid mt-0.5 shrink-0">•</span>
+                  <span>{text}</span>
+                </li>
+              ))}
+            </ul>
+            {state.data.cheer && (
+              <p className="text-sm font-medium italic text-income-text mt-auto pt-2">
+                {state.data.cheer}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Free preview ───────────────────────────────────────────────────────────
 
 function FreePreview() {
-  // Mockup placeholder — no usa data real del user (decisión de producto:
-  // mockup más controlado, sin leak)
-  const mock: InsightsResponse = {
+  const mockByCategory: ByCategory = {
+    'Servicios profesionales': { income: 12450, expenses: 0 },
+    'Honorarios': { income: 4800, expenses: 0 },
+    'Reembolsos': { income: 1200, expenses: 0 },
+    'Marketing y publicidad': { income: 0, expenses: 3200 },
+    'Software y suscripciones': { income: 0, expenses: 1850 },
+    'Renta': { income: 0, expenses: 2500 },
+    'Servicios básicos': { income: 0, expenses: 800 },
+  }
+
+  const mockInsights: InsightsResponse = {
     headline: 'Vendiste 23% más que el mes pasado, principalmente por servicios.',
     insights: [
       'Tu margen neto se mantuvo en 31%, alineado con tu giro.',
@@ -149,17 +288,8 @@ function FreePreview() {
     <div className="relative">
       <div className="fz-blur-preview">
         <div className="flex flex-col gap-4">
-          <InsightCard variant="headline">{mock.headline}</InsightCard>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-1.5 px-1">
-              <AIBadge />
-              <p className="fz-eyebrow">Análisis</p>
-            </div>
-            {mock.insights.map((text, i) => (
-              <InsightCard key={i} variant="insight">{text}</InsightCard>
-            ))}
-          </div>
-          <InsightCard variant="cheer">{mock.cheer}</InsightCard>
+          <CategoryPies byCategory={mockByCategory} loading={false} />
+          <AICard state={{ kind: 'ready', data: mockInsights }} onAnalyze={() => {}} />
         </div>
       </div>
 
@@ -170,7 +300,7 @@ function FreePreview() {
           </div>
           <p className="font-bold text-base text-brand">Análisis profundo de tu negocio</p>
           <p className="text-xs leading-relaxed text-brand-mid">
-            Comparativas inteligentes adaptadas a tu giro, generadas con IA. Detecta qué está cambiando y por qué.
+            Pies de categorías, comparativas inteligentes adaptadas a tu giro, y tendencia histórica. Todo en una vista.
           </p>
           <button
             type="button"
@@ -187,63 +317,6 @@ function FreePreview() {
 
 // ── Sub-components ──────────────────────────────────────────────────────────
 
-interface InsightCardProps {
-  variant: 'headline' | 'insight' | 'cheer'
-  loading?: boolean
-  error?: string
-  children?: React.ReactNode
-}
-
-function InsightCard({ variant, loading, error, children }: InsightCardProps) {
-  if (loading) {
-    return (
-      <div className="bg-white rounded-xl border border-brand-border p-4 flex items-center gap-2">
-        <AIBadge animated />
-        <p className="text-sm text-brand-mid">Analizando tus números...</p>
-      </div>
-    )
-  }
-  if (error) {
-    return (
-      <div className="bg-danger-bg rounded-xl border border-danger-border p-4">
-        <p className="text-sm text-danger">{error}</p>
-      </div>
-    )
-  }
-
-  if (variant === 'headline') {
-    return (
-      <div className="bg-white rounded-2xl border border-brand-light p-4 shadow-fz-1">
-        <div className="flex items-center gap-1.5 mb-2">
-          <AIBadge />
-          <span className="fz-eyebrow">Lectura</span>
-        </div>
-        <p className="text-base font-bold text-ink-900 leading-snug">
-          {children}
-        </p>
-      </div>
-    )
-  }
-  if (variant === 'cheer') {
-    return (
-      <div className="bg-income-bg rounded-xl border border-income-border p-3 text-center">
-        <p className="text-sm font-medium italic text-income-text">
-          {children}
-        </p>
-      </div>
-    )
-  }
-  // insight
-  return (
-    <div className="bg-white rounded-xl border border-brand-border p-3">
-      <p className="text-sm text-ink-700 leading-relaxed">
-        {children}
-      </p>
-    </div>
-  )
-}
-
-// AI badge — pequeño chip indicando que el contenido viene de un modelo
 function AIBadge({ animated = false }: { animated?: boolean }) {
   return (
     <span
@@ -258,7 +331,6 @@ function AIBadge({ animated = false }: { animated?: boolean }) {
   )
 }
 
-// Sparkly icon — decorativo, asocia "esto lo dijo el modelo"
 function AIIcon({ size = 14 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
