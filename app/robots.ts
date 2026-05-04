@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/registros', '/perfil', '/ajustes', '/reportes', '/api/'],
+        disallow: ['/inicio', '/perfil', '/ajustes', '/reportes', '/api/'],
       },
       {
         // Permitir explícitamente scrapers de redes sociales

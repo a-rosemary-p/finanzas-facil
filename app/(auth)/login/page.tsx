@@ -56,7 +56,7 @@ function LoginInner() {
     if (mode === 'login') {
       const { error: authError } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
       if (authError) { setError(translateAuthError(authError.message, mode)); setLoading(false); return }
-      router.push('/registros'); router.refresh()
+      router.push('/inicio'); router.refresh()
     } else {
       const { error: authError } = await supabase.auth.signUp({
         email: email.trim(), password,

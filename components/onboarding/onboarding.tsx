@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Onboarding inline para `/registros` — primera vez del usuario.
+ * Onboarding inline para `/inicio` — primera vez del usuario.
  *
  * Trigger: `profile.totalMovements === 0 && !profile.onboardedAt`. La página
  * principal queda visible atrás (con backdrop tenue); el tour highlightea los

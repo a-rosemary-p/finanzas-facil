@@ -414,10 +414,10 @@ export default function AjustesPage() {
 
         {/* Volver */}
         <a
-          href="/registros"
+          href="/inicio"
           className="text-sm font-medium py-3 rounded-xl min-h-[44px] flex items-center justify-center transition-colors text-brand-mid bg-paper-soft"
         >
-          ← Volver a registros
+          ← Volver a inicio
         </a>
 
       </main>

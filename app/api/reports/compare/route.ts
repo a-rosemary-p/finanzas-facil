@@ -2,7 +2,7 @@
  * app/api/reports/compare/route.ts
  *
  * Devuelve agregados de período actual + período anterior equivalente para
- * el card de métricas en /registros y la vista "¿Cómo voy?" en /reportes.
+ * el card de métricas en /inicio y la vista "¿Cómo voy?" en /reportes.
  *
  * Periodos soportados (todos rolling — basados en hoy, no en calendario):
  *   today  → hoy (1 día) vs promedio diario de los últimos 30 días previos

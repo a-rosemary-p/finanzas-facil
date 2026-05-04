@@ -394,7 +394,7 @@ label,
   min-height: 96px;
 }
 
-/* Capture buttons (foto / dictar / escribir) en el InputCard de /registros */
+/* Capture buttons (foto / dictar / escribir) en el InputCard de /inicio */
 .fz-capture-btn {
   height: 90px;
   border-radius: var(--r-xl);

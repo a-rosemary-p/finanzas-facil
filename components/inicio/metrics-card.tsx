@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * MetricsCard — el card de "[Periodo] · Resumen" en /registros.
+ * MetricsCard — el card de "[Periodo] · Resumen" en /inicio.
  *
  * Llama `/api/reports/compare?period=X`. Si previous es null (period=global)
  * NO se muestra delta, solo el sparkline.

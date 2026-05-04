@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * InputCard — la zona de captura en /registros (rediseño abr 2026).
+ * InputCard — la zona de captura en /inicio (rediseño abr 2026).
  *
  * Tres "botones gordos" como entry points al flujo:
  *   - Foto:     abre file picker (cámara nativa en mobile / archivo en desktop),

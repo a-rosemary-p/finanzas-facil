@@ -93,7 +93,7 @@ export function WaveUnderline({ color = 'var(--brand-light)' }: { color?: string
 
 /**
  * Section divider — la wave de "alta frecuencia" usada entre secciones
- * grandes (después del greeting en /registros, entre secciones en
+ * grandes (después del greeting en /inicio, entre secciones en
  * /pendientes, etc.). Más visible que WaveRule (`--brand-mid` con opacity
  * 0.5 y stroke más grueso) — pensada para separar bloques de contenido,
  * no rows individuales.

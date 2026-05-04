@@ -93,18 +93,24 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Usuario autenticado en página de landing/login → redirige a /registros
+  // Usuario autenticado en página de landing/login → redirige a /inicio (v0.29)
   if (user && (pathname === '/' || pathname === '/login' || pathname.startsWith('/login/'))) {
     const url = request.nextUrl.clone()
-    url.pathname = '/registros'
+    url.pathname = '/inicio'
     return NextResponse.redirect(url)
   }
 
-  // Backwards-compat: links viejos a /dashboard (emails de Stripe success URL,
-  // bookmarks, etc.) → redirect permanente a /registros. Renombre abr 2026.
+  // Backwards-compat: links viejos a /dashboard (emails Stripe success URL pre-v0.27,
+  // bookmarks) y /registros (v0.27-v0.281) → redirect permanente a /inicio.
+  // Mantener mientras circulen URLs viejos en correos transaccionales y links externos.
   if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
     const url = request.nextUrl.clone()
-    url.pathname = pathname.replace(/^\/dashboard/, '/registros')
+    url.pathname = pathname.replace(/^\/dashboard/, '/inicio')
+    return NextResponse.redirect(url)
+  }
+  if (pathname === '/registros' || pathname.startsWith('/registros/')) {
+    const url = request.nextUrl.clone()
+    url.pathname = pathname.replace(/^\/registros/, '/inicio')
     return NextResponse.redirect(url)
   }
 

@@ -60,7 +60,7 @@ export interface Profile {
   mostrarPendientes?: boolean
   trialUsed: boolean  // true una vez que el usuario activó el trial por primera vez
   /** Timestamp ISO cuando el user terminó/saltó el onboarding. NULL = no lo
-   * ha visto, dispara el flow inline en /registros. */
+   * ha visto, dispara el flow inline en /inicio. */
   onboardedAt?: string | null
 }
 

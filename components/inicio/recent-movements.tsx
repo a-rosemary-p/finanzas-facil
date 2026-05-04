@@ -12,7 +12,7 @@
  * Comportamiento (acordado abr 2026):
  *  - Default: 5 movimientos.
  *  - Click "Mostrar más" → expande a 10.
- *  - Otro click (ya con 10) → navega a `/reportes` (el explorador completo).
+ *  - Otro click (ya con 10) → navega a `/movimientos` (el explorador completo, v0.29).
  */
 
 import { useEffect, useState } from 'react'
@@ -97,7 +97,7 @@ export function RecentMovements({ refreshKey = 0 }: Props) {
           ) : (
             <button
               type="button"
-              onClick={() => router.push('/reportes')}
+              onClick={() => router.push('/movimientos')}
               className="w-full h-11 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 bg-brand"
             >
               Ver todos los movimientos

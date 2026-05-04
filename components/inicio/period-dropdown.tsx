@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Dropdown compacto de período para el card de métricas en /registros.
+ * Dropdown compacto de período para el card de métricas en /inicio.
  *
  * 5 opciones, en orden de granularidad descendente (más amplio → más estrecho):
  *   global   — historial completo del usuario, sin comparación

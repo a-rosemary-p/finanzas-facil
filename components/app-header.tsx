@@ -25,11 +25,12 @@ interface AppHeaderProps {
 }
 
 const MENU_ITEMS: Array<{ label: string; href: string }> = [
-  { label: 'Registros',  href: '/registros'  },
-  { label: 'Pendientes', href: '/pendientes' },
-  { label: 'Reportes',   href: '/reportes'   },
-  { label: 'Perfil',     href: '/perfil'     },
-  { label: 'Ajustes',    href: '/ajustes'    },
+  { label: 'Inicio',      href: '/inicio'      },
+  { label: 'Movimientos', href: '/movimientos' },
+  { label: 'Pendientes',  href: '/pendientes'  },
+  { label: 'Reportes',    href: '/reportes'    },
+  { label: 'Perfil',      href: '/perfil'      },
+  { label: 'Ajustes',     href: '/ajustes'     },
 ]
 
 export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
@@ -61,7 +62,7 @@ export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
       }}
     >
       {/* Logo → /registros */}
-      <Link href="/registros" aria-label="Ir a Registros">
+      <Link href="/inicio" aria-label="Ir a Inicio">
         <img src="/logo-green.png" alt="fiza" className="h-8 w-auto block" />
       </Link>
 

@@ -83,8 +83,8 @@ export async function POST(req: NextRequest) {
         ...(profile?.trial_used ? {} : { trial_period_days: 30 }),
         metadata: { supabase_user_id: user.id },
       },
-      success_url: `${base}/registros?upgraded=1`,
-      cancel_url: `${base}/registros`,
+      success_url: `${base}/inicio?upgraded=1`,
+      cancel_url: `${base}/inicio`,
       locale: 'es',
       metadata: { supabase_user_id: user.id },
     })

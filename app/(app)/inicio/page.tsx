@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Página principal de Fiza — `/registros` (rediseño abr 2026, antes /dashboard).
+ * Página principal de Fiza — `/inicio` (rediseño abr 2026, antes /dashboard).
  *
  * Único propósito: que el user **registre** lo que pasó en su negocio. Los
  * elementos de exploración (filtros de tipo, búsqueda por mes específico,
@@ -40,11 +40,11 @@ import { startProCheckout } from '@/lib/upgrade-to-pro'
 import { AppHeader } from '@/components/app-header'
 import { WaveSection } from '@/components/ui/wave'
 import { FeedbackModal } from '@/components/feedback-modal'
-import { MetricsCard } from '@/components/registros/metrics-card'
-import { InputCard } from '@/components/registros/input-card'
-import { RecentMovements } from '@/components/registros/recent-movements'
+import { MetricsCard } from '@/components/inicio/metrics-card'
+import { InputCard } from '@/components/inicio/input-card'
+import { RecentMovements } from '@/components/inicio/recent-movements'
 import { Onboarding, type OnboardingHighlight } from '@/components/onboarding/onboarding'
-import type { RegistrosPeriod } from '@/components/registros/period-dropdown'
+import type { RegistrosPeriod } from '@/components/inicio/period-dropdown'
 import type { Entry, PendingMovement } from '@/types'
 
 type Mode = 'dashboard' | 'confirming'
@@ -106,7 +106,7 @@ function RegistrosInner() {
   useEffect(() => {
     if (searchParams.get('upgraded') === '1') {
       setUpgradedBanner(true)
-      window.history.replaceState({}, '', '/registros')
+      window.history.replaceState({}, '', '/inicio')
     }
   }, [searchParams])
 
