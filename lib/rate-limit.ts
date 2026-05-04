@@ -4,7 +4,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-export type RateLimitBucket = 'entry' | 'entry_photo' | 'transcribe'
+export type RateLimitBucket = 'entry' | 'entry_photo' | 'transcribe' | 'insights'
 
 interface BucketConfig {
   limit: number
@@ -30,6 +30,11 @@ const CONFIGS: Record<RateLimitBucket, BucketConfig> = {
     limit: 60,
     windowSeconds: 3600,
     blockedMessage: 'Estás usando el dictado demasiado rápido. Espera unos minutos y vuelve a intentar.',
+  },
+  insights: {
+    limit: 30,
+    windowSeconds: 3600,
+    blockedMessage: 'Demasiadas solicitudes de análisis. Espera unos minutos y vuelve a intentar.',
   },
 }
 

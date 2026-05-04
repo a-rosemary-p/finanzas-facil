@@ -465,6 +465,14 @@ label,
 @keyframes fz-spin { to { transform: rotate(360deg) } }
 .fz-spin { animation: fz-spin 0.9s linear infinite; }
 
+/* Pulse opacity — usado para indicar contenido en proceso (AI badge mientras
+   genera insights). Más sutil que el spinner. */
+@keyframes fz-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+.fz-pulse { animation: fz-pulse 1.4s ease-in-out infinite; }
+
 /* Card de movimiento marcado como inversión — border 1.5px (no en stock TW) */
 .fz-card-investment {
   border: 1.5px solid var(--investment);
