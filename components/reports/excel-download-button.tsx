@@ -1,10 +1,14 @@
 'use client'
-// Loaded with dynamic({ ssr: false }) — la lib xlsx pesa ~700KB, solo
-// queremos cargarla cuando el user efectivamente click el botón.
+// v0.291 rework: single sheet con banner Fiza brand horizontal arriba y texto
+// "Tipo" coloreado por categoría (verde/rojo/amarillo).
 //
-// El import de 'xlsx' es ASÍNCRONO dentro del handler (await import('xlsx'))
-// para que Next no la incluya en el chunk de la página. Resultado: el bundle
-// de /reportes no crece por esta lib hasta que el user pide su Excel.
+// Cambio de lib: `xlsx` (sheetjs community) → `exceljs`. La community edition
+// de sheetjs NO soporta escribir estilos; el fork con estilos (`xlsx-js-style`)
+// es maintenance risk. exceljs está activamente mantenido, tiene API limpia
+// para fills/fonts/merges, y pesa similar (~700KB). Lo cargamos via
+// `await import('exceljs')` dentro del handler para mantener el bundle limpio.
+//
+// El componente sigue cargándose con `dynamic({ ssr: false })` desde la página.
 
 import { useRef, useState } from 'react'
 import { shareOrDownload } from '@/lib/file-share'
@@ -28,9 +32,30 @@ type State =
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
-// Excel limita los nombres de sheet a 31 caracteres y prohíbe ciertos chars
-function sanitizeSheetName(s: string): string {
-  return s.replace(/[\\/?*[\]:]/g, '').slice(0, 31)
+// Brand colors — espejo de globals.css. Los hex SIN # porque exceljs los pide
+// en formato ARGB (ocho hex digits, los primeros dos son alfa = FF opaco).
+const BRAND          = 'FF578466' // --brand
+const BRAND_DEEP     = 'FF3F6450' // tono más oscuro para el banner top
+const BRAND_CHIP     = 'FFF4F6EB' // bg suave para sección headers
+const PAPER          = 'FFFCFDF8' // base white
+const INK_TEXT       = 'FF1B2A23' // texto principal oscuro
+const INCOME_TEXT    = 'FF578466' // verde
+const EXPENSE_TEXT   = 'FFD0481A' // naranja-rojo
+const PENDING_TEXT   = 'FFB89010' // amarillo
+const NETO_STRONG    = 'FF2E5266' // slate-petróleo (v0.29)
+
+// Mapeo del color del texto de la celda "Tipo" — la única celda con color
+// según spec v0.291.
+function tipoColor(m: Movement): string {
+  if (m.type === 'pendiente') return PENDING_TEXT
+  if (m.type === 'ingreso')   return INCOME_TEXT
+  return EXPENSE_TEXT // gasto (incluye inversiones marcadas como gasto)
+}
+
+function tipoLabel(m: Movement): string {
+  if (m.type === 'pendiente') return 'Pendiente'
+  if (m.type === 'ingreso')   return 'Ingreso'
+  return 'Gasto'
 }
 
 export default function ExcelDownloadButton({
@@ -46,109 +71,231 @@ export default function ExcelDownloadButton({
     try {
       const fileName = `fiza-reporte-${periodSlug}.xlsx`
 
-      // Carga xlsx solo cuando el user pide el Excel — chunk separado del bundle.
-      const XLSX = await import('xlsx')
+      // Carga exceljs solo cuando el user pide el Excel — chunk separado.
+      const ExcelJS = (await import('exceljs')).default
 
       if (myId !== reqIdRef.current) return
 
-      // ── Construir el workbook ─────────────────────────────────────────
       // Filtramos según el toggle de inversiones; pendientes ya vienen
       // filtrados desde el server.
       const filtered = movements.filter(m => includeInvestments || !m.isInvestment)
 
-      // Agrupar por categoría
-      const byCategory: Record<string, { income: number; expenses: number; movs: Movement[] }> = {}
+      // Totales (excluyendo pendientes — pendientes no son "real money" todavía)
       let totalIncome = 0
       let totalExpenses = 0
+      const byCategory = new Map<string, { income: number; expenses: number; count: number }>()
 
       for (const m of filtered) {
-        if (!byCategory[m.category]) byCategory[m.category] = { income: 0, expenses: 0, movs: [] }
-        byCategory[m.category].movs.push(m)
+        if (!byCategory.has(m.category)) {
+          byCategory.set(m.category, { income: 0, expenses: 0, count: 0 })
+        }
+        const bucket = byCategory.get(m.category)!
+        bucket.count += 1
         if (m.type === 'ingreso') {
           totalIncome += m.amount
-          byCategory[m.category].income += m.amount
+          bucket.income += m.amount
         } else if (m.type === 'gasto') {
           totalExpenses += m.amount
-          byCategory[m.category].expenses += m.amount
+          bucket.expenses += m.amount
         }
       }
 
-      const wb = XLSX.utils.book_new()
-
-      // ── Sheet 1: Resumen ─────────────────────────────────────────────
-      const summaryHeader: (string | number)[][] = [
-        [`Reporte · ${periodLabel}`],
-        [displayName + (giro ? ` · ${giro}` : '')],
-        [`Generado: ${new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })}`],
-        [],
-        ['TOTALES'],
-        ['Ingresos', totalIncome],
-        ['Gastos', totalExpenses],
-        ['Neto', totalIncome - totalExpenses],
-        [],
-        ['DESGLOSE POR CATEGORÍA'],
-        ['Categoría', 'Ingresos', 'Gastos', 'Neto', '# Movimientos'],
-      ]
-      // Categorías ordenadas por monto neto descendente
-      const sortedCats = Object.entries(byCategory)
+      const sortedCats = Array.from(byCategory.entries())
         .sort((a, b) => (b[1].income - b[1].expenses) - (a[1].income - a[1].expenses))
-      for (const [cat, data] of sortedCats) {
-        summaryHeader.push([cat, data.income, data.expenses, data.income - data.expenses, data.movs.length])
-      }
 
-      const summarySheet = XLSX.utils.aoa_to_sheet(summaryHeader)
-      // Anchos de columna sugeridos (en chars)
-      summarySheet['!cols'] = [
-        { wch: 22 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 16 },
+      // ── Workbook + sheet único ────────────────────────────────────────
+      const wb = new ExcelJS.Workbook()
+      wb.creator = 'Fiza'
+      wb.created = new Date()
+      const ws = wb.addWorksheet('Reporte', {
+        views: [{ showGridLines: false }],
+        properties: { defaultRowHeight: 18 },
+      })
+
+      // Anchos de columna — 5 columnas para los movimientos
+      ws.columns = [
+        { width: 12 }, // A: Fecha
+        { width: 38 }, // B: Descripción
+        { width: 12 }, // C: Tipo
+        { width: 22 }, // D: Categoría
+        { width: 14 }, // E: Monto
       ]
-      XLSX.utils.book_append_sheet(wb, summarySheet, 'Resumen')
 
-      // ── Sheets 2+: una hoja por categoría con movimientos ────────────
-      // Se agregan en el mismo orden que el resumen para coherencia.
-      for (const [cat, data] of sortedCats) {
-        if (data.movs.length === 0) continue
-        const rows: (string | number)[][] = [
-          ['Fecha', 'Descripción', 'Tipo', 'Monto', 'Inversión'],
-          ...data.movs
-            .slice()
-            .sort((a, b) => b.movementDate.localeCompare(a.movementDate))
-            .map(m => [
-              m.movementDate,
-              m.description,
-              m.type === 'ingreso' ? 'Ingreso' : 'Gasto',
-              m.amount,
-              m.isInvestment ? 'Sí' : '',
-            ]),
-          [],
-          [
-            'Total',
-            '',
-            '',
-            data.movs.reduce((sum, m) => sum + (m.type === 'ingreso' ? m.amount : -m.amount), 0),
-            '',
-          ],
-        ]
-        const sheet = XLSX.utils.aoa_to_sheet(rows)
-        sheet['!cols'] = [
-          { wch: 12 }, { wch: 36 }, { wch: 10 }, { wch: 12 }, { wch: 10 },
-        ]
-        XLSX.utils.book_append_sheet(wb, sheet, sanitizeSheetName(cat))
+      // ── Banner Fiza horizontal (filas 1-2) ────────────────────────────
+      ws.mergeCells('A1:E2')
+      const banner = ws.getCell('A1')
+      banner.value = `Fiza · Reporte ${periodLabel}`
+      banner.font = { name: 'Calibri', size: 18, bold: true, color: { argb: 'FFFFFFFF' } }
+      banner.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 }
+      banner.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: BRAND_DEEP },
+      }
+      ws.getRow(1).height = 26
+      ws.getRow(2).height = 14
+
+      // ── Subtitle (fila 3): user · giro · generado ─────────────────────
+      ws.mergeCells('A3:E3')
+      const sub = ws.getCell('A3')
+      const generated = new Date().toLocaleDateString('es-MX', {
+        day: '2-digit', month: 'long', year: 'numeric',
+      })
+      sub.value = `${displayName}${giro ? ` · ${giro}` : ''}  ·  Generado: ${generated}`
+      sub.font = { name: 'Calibri', size: 10, color: { argb: 'FF7A8B82' } }
+      sub.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 }
+      ws.getRow(3).height = 18
+
+      // Fila 4 vacía
+      ws.getRow(4).height = 8
+
+      // ── TOTALES ───────────────────────────────────────────────────────
+      const totalsHeader = ws.getCell('A5')
+      totalsHeader.value = 'TOTALES'
+      totalsHeader.font = { name: 'Calibri', size: 11, bold: true, color: { argb: BRAND } }
+      ws.mergeCells('A5:E5')
+      ws.getCell('A5').alignment = { vertical: 'middle', horizontal: 'left' }
+      ws.getCell('A5').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_CHIP } }
+      ws.getRow(5).height = 22
+
+      const totalsRows: Array<[string, number, string]> = [
+        ['Ingresos', totalIncome,                INCOME_TEXT],
+        ['Gastos',   totalExpenses,              EXPENSE_TEXT],
+        ['Neto',     totalIncome - totalExpenses, NETO_STRONG],
+      ]
+      let r = 6
+      for (const [label, value, color] of totalsRows) {
+        const labelCell = ws.getCell(`A${r}`)
+        labelCell.value = label
+        labelCell.font = { name: 'Calibri', size: 11, color: { argb: INK_TEXT } }
+        const valCell = ws.getCell(`E${r}`)
+        valCell.value = value
+        valCell.numFmt = '"$"#,##0.00'
+        valCell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: color } }
+        valCell.alignment = { horizontal: 'right' }
+        r++
       }
 
-      // Caso edge: sin movimientos en este período → solo el Resumen.
-      if (sortedCats.length === 0) {
-        // Ya tenemos Resumen; está bien. El user tendrá un xlsx con un solo sheet.
+      // Espacio
+      r++
+
+      // ── DESGLOSE POR CATEGORÍA ────────────────────────────────────────
+      if (sortedCats.length > 0) {
+        const catHeaderRow = r
+        ws.mergeCells(`A${catHeaderRow}:E${catHeaderRow}`)
+        const catHeader = ws.getCell(`A${catHeaderRow}`)
+        catHeader.value = 'DESGLOSE POR CATEGORÍA'
+        catHeader.font = { name: 'Calibri', size: 11, bold: true, color: { argb: BRAND } }
+        catHeader.alignment = { vertical: 'middle', horizontal: 'left' }
+        catHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_CHIP } }
+        ws.getRow(catHeaderRow).height = 22
+        r++
+
+        const colsRow = r
+        const colHeaders = ['Categoría', 'Ingresos', 'Gastos', 'Neto', '#']
+        colHeaders.forEach((label, i) => {
+          const cell = ws.getCell(colsRow, i + 1)
+          cell.value = label
+          cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: INK_TEXT } }
+          cell.alignment = { horizontal: i === 0 ? 'left' : 'right' }
+          cell.border = { bottom: { style: 'thin', color: { argb: 'FFE3E7DC' } } }
+        })
+        r++
+
+        for (const [cat, data] of sortedCats) {
+          const net = data.income - data.expenses
+          ws.getCell(r, 1).value = cat
+          ws.getCell(r, 2).value = data.income
+          ws.getCell(r, 3).value = data.expenses
+          ws.getCell(r, 4).value = net
+          ws.getCell(r, 5).value = data.count
+
+          ws.getCell(r, 2).numFmt = '"$"#,##0.00'
+          ws.getCell(r, 3).numFmt = '"$"#,##0.00'
+          ws.getCell(r, 4).numFmt = '"$"#,##0.00'
+          ws.getCell(r, 4).font = {
+            name: 'Calibri', size: 10, bold: true,
+            color: { argb: net >= 0 ? INCOME_TEXT : EXPENSE_TEXT },
+          }
+          ws.getCell(r, 1).font = { name: 'Calibri', size: 10, color: { argb: INK_TEXT } }
+          for (let c = 2; c <= 5; c++) {
+            ws.getCell(r, c).alignment = { horizontal: 'right' }
+          }
+          r++
+        }
+
+        r++ // espacio
+      }
+
+      // ── MOVIMIENTOS ───────────────────────────────────────────────────
+      const movsHeaderRow = r
+      ws.mergeCells(`A${movsHeaderRow}:E${movsHeaderRow}`)
+      const movsHeader = ws.getCell(`A${movsHeaderRow}`)
+      movsHeader.value = 'MOVIMIENTOS'
+      movsHeader.font = { name: 'Calibri', size: 11, bold: true, color: { argb: BRAND } }
+      movsHeader.alignment = { vertical: 'middle', horizontal: 'left' }
+      movsHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_CHIP } }
+      ws.getRow(movsHeaderRow).height = 22
+      r++
+
+      // Headers de columnas
+      const movsColRow = r
+      const movsCols = ['Fecha', 'Descripción', 'Tipo', 'Categoría', 'Monto']
+      movsCols.forEach((label, i) => {
+        const cell = ws.getCell(movsColRow, i + 1)
+        cell.value = label
+        cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: INK_TEXT } }
+        cell.alignment = { horizontal: i === 4 ? 'right' : 'left' }
+        cell.border = { bottom: { style: 'thin', color: { argb: 'FFE3E7DC' } } }
+      })
+      r++
+
+      // Data rows — ordenadas por fecha desc
+      const sortedMovs = filtered.slice().sort((a, b) => b.movementDate.localeCompare(a.movementDate))
+      for (const m of sortedMovs) {
+        ws.getCell(r, 1).value = m.movementDate
+        ws.getCell(r, 1).font = { name: 'Calibri', size: 10, color: { argb: INK_TEXT } }
+
+        const descLabel = m.isInvestment ? `${m.description} (Inversión)` : m.description
+        ws.getCell(r, 2).value = descLabel
+        ws.getCell(r, 2).font = { name: 'Calibri', size: 10, color: { argb: INK_TEXT } }
+
+        const tipoCell = ws.getCell(r, 3)
+        tipoCell.value = tipoLabel(m)
+        tipoCell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: tipoColor(m) } }
+
+        ws.getCell(r, 4).value = m.category
+        ws.getCell(r, 4).font = { name: 'Calibri', size: 10, color: { argb: INK_TEXT } }
+
+        const amount = ws.getCell(r, 5)
+        amount.value = m.amount
+        amount.numFmt = '"$"#,##0.00'
+        amount.alignment = { horizontal: 'right' }
+        amount.font = { name: 'Calibri', size: 10, color: { argb: INK_TEXT } }
+
+        r++
+      }
+
+      // Aplicar fondo paper a toda el área usada (look más limpio que el default
+      // gris de Excel)
+      const lastRow = r - 1
+      for (let row = 1; row <= lastRow; row++) {
+        for (let col = 1; col <= 5; col++) {
+          const cell = ws.getCell(row, col)
+          if (!cell.fill || (cell.fill as { type?: string }).type === undefined) {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PAPER } }
+          }
+        }
       }
 
       if (myId !== reqIdRef.current) return
 
       // ── Generar Blob ─────────────────────────────────────────────────
-      const arr = XLSX.write(wb, { type: 'array', bookType: 'xlsx' })
-      const blob = new Blob([arr], { type: XLSX_MIME })
+      const buffer = await wb.xlsx.writeBuffer()
+      const blob = new Blob([buffer as ArrayBuffer], { type: XLSX_MIME })
 
       if (myId !== reqIdRef.current) return
 
-      // ── Share o download ─────────────────────────────────────────────
       await shareOrDownload({
         blob,
         fileName,
