@@ -136,11 +136,9 @@ function PieCard({ title, slices, colors, emptyText, accentClass }: PieCardProps
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  outerRadius={48}
-                  innerRadius={20}
-                  paddingAngle={1}
-                  stroke="white"
-                  strokeWidth={1}
+                  outerRadius={50}
+                  innerRadius={28}
+                  stroke="none"
                 >
                   {slices.map((_, i) => (
                     <Cell key={i} fill={colors[i % colors.length]} />
@@ -149,9 +147,10 @@ function PieCard({ title, slices, colors, emptyText, accentClass }: PieCardProps
                 <Tooltip
                   contentStyle={{
                     background: 'white',
-                    border: '1px solid var(--brand-border)',
+                    border: 'none',
                     borderRadius: 8,
                     fontSize: 12,
+                    boxShadow: '0 4px 12px rgba(14,23,17,0.10)',
                   }}
                   formatter={(value, name) => {
                     const num = Number(value ?? 0)

@@ -10,7 +10,7 @@
  * Datos: GET /api/reports/period-summary?mode=X&anchor=YYYY-MM-DD
  */
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import { formatCurrency } from '@/lib/utils'
@@ -32,7 +32,25 @@ const PeriodChart = dynamic(
   },
 )
 
+// Donas de categorías — viven aquí en v0.29 (movidas de "¿Cómo voy?"
+// porque pertenecen a la lectura del PERÍODO actual, no a la comparativa).
+const CategoryPies = dynamic(
+  () => import('./category-pies').then(m => m.CategoryPies),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="bg-white rounded-2xl border border-brand-border p-4">
+        <p className="text-sm text-brand-mid text-center">Cargando categorías...</p>
+      </div>
+    ),
+  },
+)
+
 interface Totals { income: number; expenses: number; net: number }
+
+interface ByCategory {
+  [cat: string]: { income: number; expenses: number }
+}
 
 interface SummaryResponse {
   mode: PeriodMode
@@ -42,6 +60,8 @@ interface SummaryResponse {
   range: { start: string; end: string }
   previousRange: { start: string; end: string }
   buckets: Array<{ label: string; start: string; end: string; income: number; expenses: number; net: number }>
+  previousBuckets?: Array<{ label: string; start: string; end: string; income: number; expenses: number; net: number }>
+  byCategory: ByCategory
 }
 
 interface Props {
@@ -108,11 +128,17 @@ export function EstePeriodoView({ period }: Props) {
         />
       </div>
 
-      {/* Gráfica I/G/Neto en el tiempo */}
+      {/* Gráfica I/G/Neto en el tiempo (todas barras, single-select) */}
       <PeriodChart
         buckets={data?.buckets ?? []}
         loading={loading}
         mode={period.mode}
+      />
+
+      {/* Donas: Ingresos por categoría / Gastos por categoría */}
+      <CategoryPies
+        byCategory={data?.byCategory ?? {}}
+        loading={loading}
       />
     </div>
   )

@@ -3,21 +3,17 @@
 /**
  * ¿Cómo voy? — pestaña de análisis comparativo de /reportes (v0.29).
  *
- * Pro only. Free ve el mismo layout pero con datos placeholder difuminados +
- * CTA centrado "Activar Pro" → directo a Stripe.
+ * Pro only. Free ve un mockup blureado + CTA Stripe.
  *
- * Bloques (orden vertical, todos siempre visibles para que el layout NO salte
- * cuando llega el análisis):
- *   1. Pies de Ingresos / Gastos por categoría — siempre cargados con la data
- *      del período. Sin AI.
- *   2. Card de IA con tamaño fijo. Inicia vacío con un botón "Analizar con IA".
- *      Click → llamada a /api/reports/insights, rellena el card sin empujar
- *      lo de abajo. Cambiar el período NO regenera automáticamente — vuelve
- *      al estado vacío y el user vuelve a clickear si lo quiere.
- *   3. Tendencia: gráfica con últimos 12 meses. Absorbe la antigua tab.
+ * Filosofía v0.29: "¿Cómo voy?" es 100% comparativa entre el período
+ * seleccionado y el anterior. Sin tendencia histórica (esa la quitamos
+ * en este iteration), sin donas de categorías (esas viven en "Este
+ * período" porque pertenecen a la lectura del período actual).
  *
- * Datos AI: /api/reports/insights (gpt-4.1-mini).
- * Datos pies / period: /api/reports/period-summary (extendido en v0.29 con byCategory).
+ * Bloques (orden vertical, todos siempre visibles para que el layout NO
+ * se mueva cuando llega el análisis IA):
+ *   1. Card de IA con tamaño fijo (botón "Analizar con IA" en idle)
+ *   2. Gráfica comparativa: current vs previous overlapped, toggle I/G/Neto
  */
 
 import { useEffect, useState } from 'react'
@@ -26,27 +22,15 @@ import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import { startProCheckout } from '@/lib/upgrade-to-pro'
 import type { PeriodSelection } from '@/lib/periods'
 
-const TrendChart = dynamic(
-  () => import('./trend-chart-mini').then(m => m.TrendChartMini),
+const PeriodComparisonChart = dynamic(
+  () => import('./period-comparison-chart').then(m => m.PeriodComparisonChart),
   {
     ssr: false,
     loading: () => (
       <div className="bg-white rounded-2xl border border-brand-border p-3">
         <div className="fz-trend-chart-h flex items-center justify-center">
-          <p className="text-sm text-brand-mid">Cargando gráfica...</p>
+          <p className="text-sm text-brand-mid">Cargando comparativa...</p>
         </div>
-      </div>
-    ),
-  },
-)
-
-const CategoryPies = dynamic(
-  () => import('./category-pies').then(m => m.CategoryPies),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="bg-white rounded-2xl border border-brand-border p-4">
-        <p className="text-sm text-brand-mid text-center">Cargando categorías...</p>
       </div>
     ),
   },
@@ -58,13 +42,18 @@ interface InsightsResponse {
   cheer: string
 }
 
-interface ByCategory {
-  [cat: string]: { income: number; expenses: number }
+interface Bucket {
+  label: string
+  start: string
+  end: string
+  income: number
+  expenses: number
+  net: number
 }
 
 interface PeriodSummary {
-  byCategory: ByCategory
-  current: { income: number; expenses: number; net: number }
+  buckets: Bucket[]
+  previousBuckets: Bucket[]
 }
 
 interface Props {
@@ -82,7 +71,7 @@ export function ComoVoyView({ period, plan }: Props) {
 // ── Pro view ────────────────────────────────────────────────────────────────
 
 function ProView({ period }: { period: PeriodSelection }) {
-  // Datos del período (pies). Siempre cargado, no requiere AI.
+  // Buckets para la gráfica comparativa
   const [summary, setSummary] = useState<PeriodSummary | null>(null)
   const [summaryLoading, setSummaryLoading] = useState(true)
 
@@ -106,7 +95,6 @@ function ProView({ period }: { period: PeriodSelection }) {
     return () => { cancelled = true }
   }, [period.mode, period.anchor])
 
-  // Estado del análisis IA — manual, no se autodispara con cambios de período.
   type InsightsState =
     | { kind: 'idle' }
     | { kind: 'loading' }
@@ -114,8 +102,7 @@ function ProView({ period }: { period: PeriodSelection }) {
     | { kind: 'error'; msg: string }
   const [insightsState, setInsightsState] = useState<InsightsState>({ kind: 'idle' })
 
-  // Reset a 'idle' cuando cambia el período — el user pide explicitly que NO
-  // se autogenere; queremos que vuelva al CTA.
+  // Reset al idle cuando cambia el período — el user pidió que NO se autogenere.
   useEffect(() => {
     setInsightsState({ kind: 'idle' })
   }, [period.mode, period.anchor])
@@ -137,20 +124,15 @@ function ProView({ period }: { period: PeriodSelection }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Bloque 1: Pies por categoría */}
-      <CategoryPies
-        byCategory={summary?.byCategory ?? {}}
-        loading={summaryLoading}
-      />
-
-      {/* Bloque 2: Card de IA con tamaño fijo. */}
+      {/* Card IA — tamaño fijo, no se mueve cuando llega la respuesta */}
       <AICard state={insightsState} onAnalyze={runAnalysis} />
 
-      {/* Bloque 3: Tendencia */}
-      <div className="flex flex-col gap-2">
-        <p className="fz-eyebrow px-1">Tendencia · últimos 12 meses</p>
-        <TrendChart granularity="month" />
-      </div>
+      {/* Gráfica comparativa actual vs anterior */}
+      <PeriodComparisonChart
+        buckets={summary?.buckets ?? []}
+        previousBuckets={summary?.previousBuckets ?? []}
+        loading={summaryLoading}
+      />
     </div>
   )
 }
@@ -167,8 +149,6 @@ interface AICardProps {
 }
 
 function AICard({ state, onAnalyze }: AICardProps) {
-  // min-height fijo para que el card NO crezca/encoja según el contenido —
-  // el layout se queda estable cuando llega el análisis.
   return (
     <div className="bg-white rounded-2xl border border-brand-light shadow-fz-1 fz-ai-card flex flex-col">
       <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-brand-border">
@@ -198,7 +178,7 @@ function AICard({ state, onAnalyze }: AICardProps) {
                 ¿Qué cuentan tus números?
               </p>
               <p className="text-xs mt-1 text-brand-mid max-w-[280px]">
-                La IA analiza este período vs el anterior y te dice qué está cambiando, en lenguaje claro y adaptado a tu giro.
+                La IA compara este período con el anterior y te dice qué está cambiando, en lenguaje claro y adaptado a tu giro.
               </p>
             </div>
             <button
@@ -264,16 +244,6 @@ function AICard({ state, onAnalyze }: AICardProps) {
 // ── Free preview ───────────────────────────────────────────────────────────
 
 function FreePreview() {
-  const mockByCategory: ByCategory = {
-    'Servicios profesionales': { income: 12450, expenses: 0 },
-    'Honorarios': { income: 4800, expenses: 0 },
-    'Reembolsos': { income: 1200, expenses: 0 },
-    'Marketing y publicidad': { income: 0, expenses: 3200 },
-    'Software y suscripciones': { income: 0, expenses: 1850 },
-    'Renta': { income: 0, expenses: 2500 },
-    'Servicios básicos': { income: 0, expenses: 800 },
-  }
-
   const mockInsights: InsightsResponse = {
     headline: 'Vendiste 23% más que el mes pasado, principalmente por servicios.',
     insights: [
@@ -284,12 +254,30 @@ function FreePreview() {
     cheer: 'Sigue así. Vas mejor que el mes pasado, y se nota.',
   }
 
+  // Mock de buckets para que la gráfica comparativa también se vea blureada
+  const mockBuckets = Array.from({ length: 10 }, (_, i) => ({
+    label: `${i + 1}`,
+    start: '',
+    end: '',
+    income: 800 + i * 200 + Math.random() * 500,
+    expenses: 400 + i * 100 + Math.random() * 300,
+    net: 400 + i * 100,
+  }))
+  const mockPrev = Array.from({ length: 10 }, (_, i) => ({
+    label: `${i + 1}`,
+    start: '',
+    end: '',
+    income: 600 + i * 180 + Math.random() * 400,
+    expenses: 350 + i * 80 + Math.random() * 200,
+    net: 250 + i * 100,
+  }))
+
   return (
     <div className="relative">
       <div className="fz-blur-preview">
         <div className="flex flex-col gap-4">
-          <CategoryPies byCategory={mockByCategory} loading={false} />
           <AICard state={{ kind: 'ready', data: mockInsights }} onAnalyze={() => {}} />
+          <PeriodComparisonChart buckets={mockBuckets} previousBuckets={mockPrev} loading={false} />
         </div>
       </div>
 
@@ -298,9 +286,9 @@ function FreePreview() {
           <div className="w-12 h-12 rounded-full flex items-center justify-center bg-brand-chip text-brand">
             <AIIcon size={22} />
           </div>
-          <p className="font-bold text-base text-brand">Análisis profundo de tu negocio</p>
+          <p className="font-bold text-base text-brand">Compara tu desempeño</p>
           <p className="text-xs leading-relaxed text-brand-mid">
-            Pies de categorías, comparativas inteligentes adaptadas a tu giro, y tendencia histórica. Todo en una vista.
+            Análisis con IA adaptado a tu giro + gráfica comparativa de tu período actual contra el anterior.
           </p>
           <button
             type="button"

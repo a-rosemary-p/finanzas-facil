@@ -113,8 +113,12 @@ export async function GET(request: Request) {
   const prev = aggregate(inPrevious)
   const byCategory = aggregateByCategory(inCurrent)
 
-  // Time series del período actual
+  // Time series — mismas buckets para current y previous (alineadas por índice).
+  // Para "¿Cómo voy?" pintamos current vs previous overlapped y queremos que
+  // el bucket N de un período corresponda al bucket N del otro: día 1 vs día 1,
+  // semana 1 vs semana 1, mes 1 vs mes 1.
   const buckets = computeBuckets(mode, currentRange.start, currentRange.end, inCurrent)
+  const previousBuckets = computeBuckets(mode, previousRange.start, previousRange.end, inPrevious)
 
   return Response.json({
     mode,
@@ -124,6 +128,7 @@ export async function GET(request: Request) {
     range: currentRange,
     previousRange,
     buckets,
+    previousBuckets,
     byCategory,
   })
 }

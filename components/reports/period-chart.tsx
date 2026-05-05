@@ -16,7 +16,7 @@
 
 import { useState } from 'react'
 import {
-  ComposedChart, Bar, Line, XAxis, YAxis, Tooltip,
+  BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid,
 } from 'recharts'
 import { formatCurrency } from '@/lib/utils'
@@ -116,53 +116,49 @@ export function PeriodChart({ buckets, loading, mode }: Props) {
       ) : (
         <div className="fz-trend-chart-h">
           <ResponsiveContainer>
-            <ComposedChart data={buckets} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--brand-border)" vertical={false} />
+            <BarChart data={buckets} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="2 4" stroke="var(--ink-100)" vertical={false} />
               <XAxis
                 dataKey="label"
-                tick={{ fontSize: 10, fill: 'var(--brand-mid)' }}
-                axisLine={{ stroke: 'var(--brand-border)' }}
+                tick={{ fontSize: 10, fill: 'var(--ink-300)' }}
+                axisLine={false}
                 tickLine={false}
                 interval={mode === 'month' ? 'preserveStartEnd' : 0}
                 angle={buckets.length > 8 ? -30 : 0}
                 textAnchor={buckets.length > 8 ? 'end' : 'middle'}
-                height={buckets.length > 8 ? 50 : 30}
+                height={buckets.length > 8 ? 40 : 24}
               />
               <YAxis
-                tick={{ fontSize: 10, fill: 'var(--brand-mid)' }}
+                tick={{ fontSize: 10, fill: 'var(--ink-300)' }}
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={fmtTick}
-                width={50}
+                width={44}
               />
               <Tooltip
+                cursor={{ fill: 'var(--brand-chip)', opacity: 0.5 }}
                 contentStyle={{
                   background: 'white',
-                  border: '1px solid var(--brand-border)',
+                  border: 'none',
                   borderRadius: 8,
                   fontSize: 12,
+                  boxShadow: '0 4px 12px rgba(14,23,17,0.10)',
                 }}
                 formatter={(value, name) => [formatCurrency(Number(value ?? 0)), String(name ?? '')]}
-                labelStyle={{ color: 'var(--brand)', fontWeight: 600 }}
+                labelStyle={{ color: 'var(--brand)', fontWeight: 600, marginBottom: 4 }}
               />
+              {/* Todas las series renderizan como barras (incluyendo Neto) —
+               * más consistente; el toggle es single-select, máximo 1 a la vez. */}
               {active === 'income' && (
-                <Bar dataKey="income" name="Ingresos" fill={COLORS.income} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="income" name="Ingresos" fill={COLORS.income} radius={[4, 4, 0, 0]} maxBarSize={32} />
               )}
               {active === 'expenses' && (
-                <Bar dataKey="expenses" name="Gastos" fill={COLORS.expenses} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="expenses" name="Gastos" fill={COLORS.expenses} radius={[4, 4, 0, 0]} maxBarSize={32} />
               )}
               {active === 'net' && (
-                <Line
-                  type="monotone"
-                  dataKey="net"
-                  name="Neto"
-                  stroke={COLORS.net}
-                  strokeWidth={2.5}
-                  dot={{ r: 3, fill: COLORS.net }}
-                  activeDot={{ r: 5 }}
-                />
+                <Bar dataKey="net" name="Neto" fill={COLORS.net} radius={[4, 4, 0, 0]} maxBarSize={32} />
               )}
-            </ComposedChart>
+            </BarChart>
           </ResponsiveContainer>
         </div>
       )}
