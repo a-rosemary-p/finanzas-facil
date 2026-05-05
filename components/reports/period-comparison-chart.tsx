@@ -41,10 +41,14 @@ interface Props {
   loading: boolean
 }
 
-const COLORS = {
-  current:  '#578466',  // var(--brand)
-  previous: '#8C9C92',  // var(--ink-300) — gris suave para "el que ya pasó"
-} as const
+// Las líneas adoptan el color de la serie activa: la actual saturada, la
+// anterior una versión más muted del MISMO tono (no gris universal — pega
+// más cohesivo y se lee inmediato como "el mismo número, antes").
+const SERIES_COLORS: Record<Series, { current: string; previous: string }> = {
+  income:   { current: '#578466', previous: '#92C3A5' }, // brand / brand-light
+  expenses: { current: '#D0481A', previous: '#F79366' }, // expense-text / expense-border
+  net:      { current: '#2E5266', previous: '#7891A0' }, // neto-strong / neto-soft
+}
 
 const SERIES_LABEL: Record<Series, string> = {
   income:   'Ingresos',
@@ -55,7 +59,21 @@ const SERIES_LABEL: Record<Series, string> = {
 const SERIES_TEXT_CLS: Record<Series, string> = {
   income:   'text-income-text',
   expenses: 'text-expense-text',
-  net:      'text-pending-text',
+  net:      'text-neto-strong',
+}
+
+// Border y bg del card cambian con la serie activa — el user pidió que
+// "todo cambie de color". Mantenemos blanco el bg principal pero tintamos
+// el border y el track del toggle (vía bg sutil en su contenedor).
+const SERIES_CARD_CLS: Record<Series, string> = {
+  income:   'border-income-border',
+  expenses: 'border-expense-border',
+  net:      'border-neto-soft',
+}
+const SERIES_TOGGLE_BG_CLS: Record<Series, string> = {
+  income:   'bg-income-bg/60 border-income-border',
+  expenses: 'bg-expense-bg/60 border-expense-border',
+  net:      'bg-paper-2 border-neto-soft',
 }
 
 export function PeriodComparisonChart({ buckets, previousBuckets, loading }: Props) {
@@ -89,9 +107,15 @@ export function PeriodComparisonChart({ buckets, previousBuckets, loading }: Pro
   const isEmpty = !loading && data.every(d => (d.current ?? 0) === 0 && (d.previous ?? 0) === 0)
 
   return (
-    <div className="bg-white rounded-2xl border border-brand-border p-3 flex flex-col gap-2">
-      {/* Toggle single-select */}
-      <div className="flex gap-1 p-1 rounded-lg bg-brand-chip border border-brand-border">
+    <div className={[
+      'bg-white rounded-2xl border p-3 flex flex-col gap-2 transition-colors',
+      SERIES_CARD_CLS[active],
+    ].join(' ')}>
+      {/* Toggle single-select — su track también cambia de tinte con la serie activa */}
+      <div className={[
+        'flex gap-1 p-1 rounded-lg border transition-colors',
+        SERIES_TOGGLE_BG_CLS[active],
+      ].join(' ')}>
         {(['income', 'expenses', 'net'] as Series[]).map(s => {
           const isOn = active === s
           return (
@@ -161,7 +185,7 @@ export function PeriodComparisonChart({ buckets, previousBuckets, loading }: Pro
                 type="monotone"
                 dataKey="previous"
                 name="Anterior"
-                stroke={COLORS.previous}
+                stroke={SERIES_COLORS[active].previous}
                 strokeWidth={1.8}
                 strokeDasharray="4 3"
                 dot={false}
@@ -172,7 +196,7 @@ export function PeriodComparisonChart({ buckets, previousBuckets, loading }: Pro
                 type="monotone"
                 dataKey="current"
                 name="Actual"
-                stroke={COLORS.current}
+                stroke={SERIES_COLORS[active].current}
                 strokeWidth={2.4}
                 dot={false}
                 activeDot={{ r: 5 }}

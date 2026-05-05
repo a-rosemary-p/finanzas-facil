@@ -39,12 +39,12 @@ interface Props {
   mode: PeriodMode
 }
 
-// Mismo mapeo de colores que TrendView — recharts requiere literales JS,
-// var() de CSS no resuelve dentro de los props del SVG.
+// Recharts requiere literales JS — var() de CSS no resuelve dentro de los
+// props de los SVG primitives. Mantenemos hex en sync con globals.css.
 const COLORS = {
   income:   '#578466',  // var(--brand)
   expenses: '#D0481A',  // var(--danger)
-  net:      '#B89010',  // var(--pending-text)
+  net:      '#2E5266',  // var(--neto-strong) — slate-petróleo, ver globals.css
 } as const
 
 const SERIES_LABEL: Record<Series, string> = {
@@ -56,7 +56,7 @@ const SERIES_LABEL: Record<Series, string> = {
 const SERIES_TEXT_CLS: Record<Series, string> = {
   income:   'text-brand',
   expenses: 'text-danger',
-  net:      'text-pending-text',
+  net:      'text-neto-strong',
 }
 
 export function PeriodChart({ buckets, loading, mode }: Props) {

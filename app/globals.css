@@ -41,6 +41,12 @@
   --investment:     #FFCE57;
   --investment-text: #B89010;
 
+  /* Neto en gráficas — slate-petróleo. Antes usábamos pending-text (mostaza)
+     pero se veía apagado contra los verdes/rojos saturados. Este tono cool
+     contrasta limpio sin chocar con el resto de la paleta brand. */
+  --neto-strong: #2E5266;   /* línea/barra principal del período actual */
+  --neto-soft:   #7891A0;   /* línea/barra del período anterior (más muted) */
+
   /* Pro plan */
   --pro-bg:         #EEFBE8;
 
@@ -132,6 +138,9 @@
 
   --color-investment:      var(--investment);
   --color-investment-text: var(--investment-text);
+
+  --color-neto-strong:     var(--neto-strong);
+  --color-neto-soft:       var(--neto-soft);
 
   --color-pro-bg:         var(--pro-bg);
 
