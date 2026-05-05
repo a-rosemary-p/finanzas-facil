@@ -2,10 +2,10 @@
 
 > **La spec viva está fuera del repo**, en la carpeta del proyecto.
 >
-> Versión actual: **v0.281** (abril 30, 2026)
-> Archivo: `C:\Users\arome\Documents - Local\App Finanzas Pymes\Fiza_APP_SPEC v0.281. 300426.md`
+> Versión actual: **v0.29** (mayo 1, 2026)
+> Archivo: `C:\Users\arome\Documents - Local\App Finanzas Pymes\Fiza_APP_SPEC v0.29. 010526.md`
 >
-> Contiene: rutas (incl. `/pendientes` reestructurada, `/api/feedback` público), API routes (incl. `/api/track`, `/api/feedback`, `/api/recurring`, `/api/onboarding/complete`), schema DB (migrations 001–018), hooks (usePendings, useRecurring), componentes (pendientes/, onboarding/, FeedbackModal, PageViewTracker), tipos, constantes, flujos, enforcement Base vs Pro, analytics events, CDMX timezone, style system Tailwind v4, security headers, rate limiting, audit trail, recurrentes, onboarding, y changelogs v0.21 → v0.281.
+> Contiene: rutas (incl. `/inicio` rename + `/movimientos` nueva), API routes (incl. `/api/movimientos`, `/api/reports/period-summary`, `/api/reports/insights`, `/api/track`, `/api/feedback`), schema DB (migrations 001–018), hooks (usePendings con `dueAlertCount`, useRecurring), componentes (inicio/, pendientes/, reports/ con este-periodo + como-voy + charts, FeedbackModal, PageViewTracker), tipos, constantes, flujos, enforcement Base vs Pro, AI insights endpoint con prompt adaptativo a giro, analytics events, CDMX timezone, style system Tailwind v4, security headers, rate limiting, audit trail, recurrentes, onboarding, y changelogs v0.21 → v0.29.
 
 ---
 
@@ -32,7 +32,13 @@
 - **Mobile vs desktop**: nunca user-agent sniff. Usa `(hover: none) and (pointer: coarse)` media query — patrón canónico en `lib/file-share.ts:shareOrDownload`.
 - **`fetchWithAuthRetry` (en `lib/fetch-with-auth.ts`)** debe usarse en TODA llamada cliente a `/api/*`. Sin él, una página abierta >1hr da 401 hasta que el user recargue.
 - **Períodos en `/reportes`**: usa los helpers de `lib/periods.ts` (week/month/quarter/year). No reimplementes "qué es la semana actual".
-- **Períodos en `/registros` (v0.281)**: rolling, no calendario. `RegistrosPeriod = 'global' | 'year' | 'month' | 'week' | 'today'`. Default `global`. `period=global` devuelve `previous: null` — el cliente oculta el delta. Sparkline buckets: today/week=7 daily, month=30 daily, year=12 monthly, global=monthly desde primer movement (cap 36).
+- **Períodos en `/inicio` (v0.281)**: rolling, no calendario. `RegistrosPeriod = 'global' | 'year' | 'month' | 'week' | 'today'`. Default `global`.
+- **(v0.29) `/registros` no existe — es `/inicio`.** Los redirects `/registros[/...]` → `/inicio[/...]` siguen activos en `proxy.ts` para back-compat con bookmarks viejos. Cualquier código nuevo apunta a `/inicio`.
+- **(v0.29) `/movimientos` es la página de "ver todo + editar"**, NO `/reportes`. `/reportes` es analítica predefinida con IA. Si necesitas listar movimientos para que el user los edite, mándalo a `/movimientos`. Endpoint nuevo `/api/movimientos` con multi-select de 5 categorías; el clásico `/api/movements` solo lo usan exports y MetricsCard.
+- **(v0.29) /reportes tiene 2 tabs**: "Este período" (Free + Pro) con números + barras + donas; "¿Cómo voy?" (Pro only) con AI insights + comparativa actual-vs-anterior. Tendencia se eliminó. AI no autogenera al cambiar período — botón "Analizar con IA" explícito.
+- **(v0.29) Endpoint AI `/api/reports/insights`** usa gpt-4.1-mini con prompt adaptativo a `profile.giro`. Pro only. Cache `private, max-age=3600`. Rate limit bucket `insights` 30/hr.
+- **(v0.29) Color del Neto en gráficas**: `var(--neto-strong)` (#2E5266) — slate-petróleo. NO usar `var(--pending-text)` (mostaza apagado). Variante muted `var(--neto-soft)` para serie del período anterior.
+- **(v0.29) Pendientes alert**: `usePendings` expone DOS contadores. `overdueCount` (`< hoy`) drives la sección "Vencidos" en /pendientes. `dueAlertCount` (`<= hoy`) drives el badge en el header AppHeader. Un pendiente que vence HOY alerta en el header pero no aparece en Vencidos.
 - **(v0.281) Timezone CDMX**: cualquier "es hoy?" usa `getAppToday()` de `lib/cdmx-date.ts`. SQL equivalente: `(NOW() AT TIME ZONE 'America/Mexico_City')::date`. Migrations 017 reescribió los 3 funciones que dependían de `CURRENT_DATE` (UTC).
 - **(v0.281) Analytics**: registra eventos via `track(name, payload)` (cliente, fire-and-forget) o `trackServer(supabase, userId, name, payload)` (server). Eventos vivos en sección 10 del spec. Tabla `analytics_events` (migration 018) es solo-INSERT desde la app; SELECT solo con service_role.
 - **(v0.281) Feedback modal**: el botón "Comentarios" / "Contacto" en /registros y landing usa `<FeedbackModal>` que POSTea a `/api/feedback`. NO `mailto:`. Env `RESEND_API_KEY` requerido.
