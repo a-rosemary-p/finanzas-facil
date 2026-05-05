@@ -261,7 +261,10 @@ export default function MovimientosPage() {
               </button>
             )}
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          {/* 5 chips distribuidos al ancho completo de la columna. text-[10px]
+           * y padding mínimo para que "Recurrentes"/"Inversiones" quepan sin
+           * truncar en mobile (~360px). */}
+          <div className="grid grid-cols-5 gap-1">
             {ALL_CATEGORIES.map(cat => {
               const active = categories.has(cat)
               return (
@@ -270,7 +273,7 @@ export default function MovimientosPage() {
                   type="button"
                   onClick={() => toggleCategory(cat)}
                   className={[
-                    'text-xs font-bold px-3 py-1.5 rounded-full border transition-colors',
+                    'text-[10px] font-bold px-1 py-1.5 rounded-full border transition-colors text-center min-h-[30px]',
                     active
                       ? CATEGORY_CHIP_ACTIVE[cat]
                       : 'bg-white text-ink-300 border-brand-border',

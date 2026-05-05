@@ -35,7 +35,7 @@ const MENU_ITEMS: Array<{ label: string; href: string }> = [
 
 export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
   const { profile, logout } = useAuth()
-  const { overdueCount } = usePendings()
+  const { dueAlertCount } = usePendings()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -90,16 +90,16 @@ export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
               'relative flex items-center justify-center rounded-lg min-h-[44px] min-w-[44px] transition-colors border border-brand-border text-ink-700',
               menuOpen ? 'bg-brand-chip' : 'bg-transparent',
             ].join(' ')}
-            aria-label={overdueCount > 0 ? `Menú · ${overdueCount} pendientes vencidos` : 'Menú'}
+            aria-label={dueAlertCount > 0 ? `Menú · ${dueAlertCount} pendientes por atender` : 'Menú'}
             aria-expanded={menuOpen}
           >
             <IconList size={22} />
-            {overdueCount > 0 && (
+            {dueAlertCount > 0 && (
               <span
                 aria-hidden="true"
                 className="fz-alert-badge"
               >
-                {overdueCount > 9 ? '9+' : overdueCount}
+                {dueAlertCount > 9 ? '9+' : dueAlertCount}
               </span>
             )}
           </button>
@@ -110,7 +110,7 @@ export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
               role="menu"
             >
               {MENU_ITEMS.map(item => {
-                const showDot = item.href === '/pendientes' && overdueCount > 0
+                const showDot = item.href === '/pendientes' && dueAlertCount > 0
                 return (
                   <Link
                     key={item.label}
@@ -121,8 +121,8 @@ export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
                   >
                     <span className="flex-1">{item.label}</span>
                     {showDot && (
-                      <span aria-label={`${overdueCount} vencidos`} className="fz-menu-badge">
-                        {overdueCount > 9 ? '9+' : overdueCount}
+                      <span aria-label={`${dueAlertCount} por atender`} className="fz-menu-badge">
+                        {dueAlertCount > 9 ? '9+' : dueAlertCount}
                       </span>
                     )}
                   </Link>

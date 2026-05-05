@@ -161,16 +161,23 @@ export function usePendings() {
   // "Hoy" en CDMX (consistente con todo el resto de la app).
   const todayYMD = getAppToday()
 
-  // "Vencido" = movement_date < hoy (estrictamente). Los de HOY entran en
-  // upcoming para que aparezcan en el tope de la lista de próximos.
+  // Sección "Vencidos" en /pendientes — strict < hoy: solo los que ya pasaron
+  // su fecha. Los de HOY se muestran en la sección "Pendientes" arriba del
+  // listado, no como vencidos.
   const overdue  = pendings.filter(p => p.movementDate <  todayYMD)
   const upcoming = pendings.filter(p => p.movementDate >= todayYMD)
+
+  // Badge de alerta en el header — incluye los de HOY también. Un pendiente
+  // con fecha de hoy es accionable hoy y debe alertarse, aunque no sea
+  // "vencido" técnicamente. Diferente de overdueCount (estricto pasado).
+  const dueAlertCount = pendings.filter(p => p.movementDate <= todayYMD).length
 
   return {
     pendings,
     overdue,
     upcoming,
-    overdueCount: overdue.length,
+    overdueCount: overdue.length,  // strict past due — para la sección "Vencidos"
+    dueAlertCount,                 // <= hoy — para el badge del header
     loading,
     error,
     refresh: load,
