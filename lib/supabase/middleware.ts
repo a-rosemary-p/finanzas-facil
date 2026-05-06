@@ -70,6 +70,10 @@ export async function updateSession(request: NextRequest) {
     // El handler internamente bifurca según haya sesión o no, así que el
     // middleware no debe bloquear el caso anónimo con un 401 prematuro.
     '/api/feedback',
+    // /api/track acepta page_viewed anónimos desde landing/login (v0.292).
+    // El handler usa allowlist de eventos + service-role insert, no necesita
+    // auth a nivel middleware.
+    '/api/track',
   ])
   const PUBLIC_PREFIXES = ['/login/', '/reset-password/', '/auth/', '/api/webhooks/']
 

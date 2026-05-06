@@ -70,6 +70,23 @@ interface EntryRow {
   created_at: string
 }
 
+interface PageViewEvent {
+  user_id: string | null
+  created_at: string
+  payload: {
+    path?: string
+    visitor_id?: string
+    session_id?: string
+    referrer?: string
+    utm_source?: string
+    utm_medium?: string
+    utm_campaign?: string
+    is_first_in_session?: boolean
+    country?: string
+    device?: 'mobile' | 'tablet' | 'desktop'
+  }
+}
+
 export default async function AdminAnalyticsPage() {
   // ── 1. Auth + allowlist ─────────────────────────────────────────────
   const supabase = await createClient()
@@ -93,7 +110,12 @@ export default async function AdminAnalyticsPage() {
   const excludeFilter = `(${EXCLUDE_USER_IDS.join(',')})`
 
   // ── 3. Fetch en paralelo ────────────────────────────────────────────
-  const [profilesRes, movementsRes, entriesRes, recurringRes] = await Promise.all([
+  // Para page analytics: traemos page_viewed events de los últimos 30 días.
+  // Es OK tener TODOS en memoria — Vercel reportó ~6K/30d, postgres-rest
+  // tiene cap de 1000 por default, así que pedimos hasta 50K vía range.
+  const pvCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+
+  const [profilesRes, movementsRes, entriesRes, recurringRes, pvRes] = await Promise.all([
     admin
       .from('profiles')
       .select('id, email, display_name, plan, subscription_status, created_at, total_movements, giro')
@@ -111,16 +133,29 @@ export default async function AdminAnalyticsPage() {
       .from('recurring_movements')
       .select('user_id', { count: 'exact', head: true })
       .not('user_id', 'in', excludeFilter),
+    admin
+      .from('analytics_events')
+      .select('user_id, payload, created_at')
+      .eq('event_name', 'page_viewed')
+      .gte('created_at', pvCutoff)
+      .order('created_at', { ascending: false })
+      .range(0, 49999),
   ])
 
   if (profilesRes.error) throw profilesRes.error
   if (movementsRes.error) throw movementsRes.error
   if (entriesRes.error) throw entriesRes.error
+  if (pvRes.error) throw pvRes.error
 
   const profiles      = (profilesRes.data ?? []) as ProfileRow[]
   const movements     = (movementsRes.data ?? []) as MovementRow[]
   const entries       = (entriesRes.data ?? []) as EntryRow[]
   const recurringCount = recurringRes.count ?? 0
+  // page_viewed events (filtramos founder IDs antes de agregar)
+  const founderSet = new Set<string>(EXCLUDE_USER_IDS)
+  const pvEvents = (pvRes.data ?? []).filter(
+    (e: { user_id: string | null }) => !e.user_id || !founderSet.has(e.user_id),
+  ) as PageViewEvent[]
 
   // ── 4. Cálculos ─────────────────────────────────────────────────────
   const now      = Date.now()
@@ -211,6 +246,98 @@ export default async function AdminAnalyticsPage() {
     const cur = lastMovByUser.get(m.user_id)
     if (!cur || m.created_at > cur) lastMovByUser.set(m.user_id, m.created_at)
   }
+  // ── Page analytics (v0.292) ─────────────────────────────────────────
+  // Window de 7 días para los KPIs principales (matchea Vercel default).
+  // Trend chart cubre 30 días.
+  const ms7 = 7 * 24 * 60 * 60 * 1000
+  const cutoff7 = now - ms7
+
+  const pv7d = pvEvents.filter(e => new Date(e.created_at).getTime() >= cutoff7)
+
+  const visitors7d = new Set<string>()
+  const sessions7d = new Set<string>()
+  const pageViewsBySession = new Map<string, number>()
+  const topPagesMap = new Map<string, Set<string>>()        // path -> visitor_ids
+  const topReferrersMap = new Map<string, Set<string>>()    // domain -> visitor_ids
+  const topCountriesMap = new Map<string, Set<string>>()    // country -> visitor_ids
+  const devicesMap = new Map<string, Set<string>>()         // device -> visitor_ids
+  const utmSourcesMap = new Map<string, Set<string>>()      // utm_source -> visitor_ids
+
+  for (const ev of pv7d) {
+    const vid = ev.payload.visitor_id ?? `anon-${ev.created_at}`
+    const sid = ev.payload.session_id ?? `anon-s-${ev.created_at}`
+    visitors7d.add(vid)
+    sessions7d.add(sid)
+    pageViewsBySession.set(sid, (pageViewsBySession.get(sid) ?? 0) + 1)
+
+    const path = ev.payload.path ?? '/'
+    if (!topPagesMap.has(path)) topPagesMap.set(path, new Set())
+    topPagesMap.get(path)!.add(vid)
+
+    if (ev.payload.referrer) {
+      try {
+        const host = new URL(ev.payload.referrer).hostname.replace(/^www\./, '')
+        if (!topReferrersMap.has(host)) topReferrersMap.set(host, new Set())
+        topReferrersMap.get(host)!.add(vid)
+      } catch {
+        // ignore malformed referrers
+      }
+    }
+
+    if (ev.payload.country) {
+      const c = ev.payload.country
+      if (!topCountriesMap.has(c)) topCountriesMap.set(c, new Set())
+      topCountriesMap.get(c)!.add(vid)
+    }
+
+    if (ev.payload.device) {
+      const d = ev.payload.device
+      if (!devicesMap.has(d)) devicesMap.set(d, new Set())
+      devicesMap.get(d)!.add(vid)
+    }
+
+    if (ev.payload.utm_source) {
+      const s = ev.payload.utm_source
+      if (!utmSourcesMap.has(s)) utmSourcesMap.set(s, new Set())
+      utmSourcesMap.get(s)!.add(vid)
+    }
+  }
+
+  const totalSessions = sessions7d.size
+  let bouncedSessions = 0
+  for (const count of pageViewsBySession.values()) {
+    if (count === 1) bouncedSessions += 1
+  }
+  const bounceRate = totalSessions > 0 ? bouncedSessions / totalSessions : 0
+
+  // Trend: page_views por día últimos 30 días
+  const pageViewsByDay = bucketByDay(pvEvents.map(e => e.created_at), 30)
+  const visitorsByDay = bucketDistinctByDay(
+    pvEvents.map(e => ({ ts: e.created_at, key: e.payload.visitor_id ?? `anon-${e.created_at}` })),
+    30,
+  )
+
+  function rankSet(map: Map<string, Set<string>>, max = 8): Array<{ key: string; visitors: number }> {
+    return Array.from(map.entries())
+      .map(([key, set]) => ({ key, visitors: set.size }))
+      .sort((a, b) => b.visitors - a.visitors)
+      .slice(0, max)
+  }
+
+  const pageStats = {
+    visitors7d:  visitors7d.size,
+    pageViews7d: pv7d.length,
+    sessions7d:  totalSessions,
+    bounceRate,
+    pageViewsByDay,
+    visitorsByDay,
+    topPages:     rankSet(topPagesMap),
+    topReferrers: rankSet(topReferrersMap),
+    topCountries: rankSet(topCountriesMap),
+    devices:      rankSet(devicesMap),
+    utmSources:   rankSet(utmSourcesMap, 6),
+  }
+
   const recentUsers = profiles.slice(0, 20).map(p => ({
     id: p.id,
     email: p.email,
@@ -240,6 +367,7 @@ export default async function AdminAnalyticsPage() {
         movementsByDay,
       }}
       recentUsers={recentUsers}
+      pageStats={pageStats}
     />
   )
 }
@@ -261,6 +389,29 @@ function bucketByDay(timestamps: string[], days: number): Array<{ date: string; 
     d.setUTCDate(d.getUTCDate() - i)
     const key = d.toISOString().slice(0, 10)
     out.push({ date: key, count: counts.get(key) ?? 0 })
+  }
+  return out
+}
+
+// Como bucketByDay pero contando distintos keys por día (visitors únicos).
+function bucketDistinctByDay(
+  rows: Array<{ ts: string; key: string }>,
+  days: number,
+): Array<{ date: string; count: number }> {
+  const sets = new Map<string, Set<string>>()
+  for (const r of rows) {
+    const day = r.ts.slice(0, 10)
+    if (!sets.has(day)) sets.set(day, new Set())
+    sets.get(day)!.add(r.key)
+  }
+  const out: Array<{ date: string; count: number }> = []
+  const today = new Date()
+  today.setUTCHours(0, 0, 0, 0)
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today)
+    d.setUTCDate(d.getUTCDate() - i)
+    const key = d.toISOString().slice(0, 10)
+    out.push({ date: key, count: sets.get(key)?.size ?? 0 })
   }
   return out
 }

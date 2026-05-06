@@ -9,11 +9,12 @@
  * brand-chip, ink-300, etc.) para consistencia con el resto del app.
  */
 
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  AreaChart, Area,
 } from 'recharts'
 
 interface KPIs {
@@ -49,6 +50,20 @@ interface RecentUser {
   giro: string | null
 }
 
+interface PageStats {
+  visitors7d: number
+  pageViews7d: number
+  sessions7d: number
+  bounceRate: number
+  pageViewsByDay: Array<{ date: string; count: number }>
+  visitorsByDay: Array<{ date: string; count: number }>
+  topPages:     Array<{ key: string; visitors: number }>
+  topReferrers: Array<{ key: string; visitors: number }>
+  topCountries: Array<{ key: string; visitors: number }>
+  devices:      Array<{ key: string; visitors: number }>
+  utmSources:   Array<{ key: string; visitors: number }>
+}
+
 interface Props {
   generatedAt: string
   kpis: KPIs
@@ -57,7 +72,10 @@ interface Props {
     movementsByDay: Array<{ date: string; count: number }>
   }
   recentUsers: RecentUser[]
+  pageStats: PageStats
 }
+
+type Tab = 'usuarios' | 'pagina'
 
 const COLORS = {
   brand:    '#578466',
@@ -75,9 +93,10 @@ const INPUT_SRC_COLORS: Record<string, string> = {
   photo: COLORS.expense,
 }
 
-export function AdminAnalytics({ generatedAt, kpis, charts, recentUsers }: Props) {
+export function AdminAnalytics({ generatedAt, kpis, charts, recentUsers, pageStats }: Props) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
+  const [tab, setTab] = useState<Tab>('usuarios')
 
   function refresh() {
     startTransition(() => {
@@ -115,6 +134,33 @@ export function AdminAnalytics({ generatedAt, kpis, charts, recentUsers }: Props
           </button>
         </div>
 
+        {/* ── Tab toggle ──────────────────────────────────────────────── */}
+        <div className="flex gap-1 p-1 rounded-xl bg-brand-chip border border-brand-border self-start">
+          {([
+            { id: 'usuarios', label: 'Analítica de usuarios' },
+            { id: 'pagina',   label: 'Analítica de página'   },
+          ] as Array<{ id: Tab; label: string }>).map(t => {
+            const active = tab === t.id
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                className={[
+                  'text-xs font-bold rounded-lg min-h-[34px] px-3 transition-colors',
+                  active ? 'bg-brand text-white' : 'bg-transparent text-brand-mid',
+                ].join(' ')}
+              >
+                {t.label}
+              </button>
+            )
+          })}
+        </div>
+
+        {tab === 'pagina' ? (
+          <PageAnalyticsView stats={pageStats} />
+        ) : (
+        <>
         {/* ── Sección 1: KPIs ─────────────────────────────────────────── */}
         <section className="flex flex-col gap-4">
           <h2 className="fz-eyebrow">Usuarios</h2>
@@ -305,9 +351,174 @@ export function AdminAnalytics({ generatedAt, kpis, charts, recentUsers }: Props
             </div>
           </div>
         </section>
+        </>
+        )}
       </main>
     </div>
   )
+}
+
+// ── Page Analytics View ─────────────────────────────────────────────────
+
+function PageAnalyticsView({ stats }: { stats: PageStats }) {
+  const bounce = Math.round(stats.bounceRate * 100)
+  const avgPagesPerSession = stats.sessions7d > 0
+    ? (stats.pageViews7d / stats.sessions7d)
+    : 0
+
+  // Combinar visitors + pageViews por día para el área-chart
+  const trendData = stats.pageViewsByDay.map((d, i) => ({
+    date: d.date,
+    pageViews: d.count,
+    visitors: stats.visitorsByDay[i]?.count ?? 0,
+  }))
+
+  const DEVICE_LABEL: Record<string, string> = {
+    mobile: 'Mobile', desktop: 'Desktop', tablet: 'Tablet',
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* KPIs principales (Vercel-style) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <Stat label="Visitors (7d)"   value={stats.visitors7d}  hint="únicos" />
+        <Stat label="Page views (7d)" value={stats.pageViews7d} />
+        <Stat label="Sessions (7d)"   value={stats.sessions7d}
+              hint={`${fmt1(avgPagesPerSession)} pp avg`} />
+        <Stat label="Bounce rate"     value={`${bounce}%`}
+              hint="sessions con 1 pageview" accent="text-expense-text" />
+      </div>
+
+      {/* Trend chart */}
+      <div className="bg-white rounded-2xl border border-brand-border p-3 flex flex-col gap-2">
+        <p className="text-xs font-bold uppercase tracking-wide text-brand-mid">
+          Tendencia (30 días)
+        </p>
+        <div className="h-56">
+          <ResponsiveContainer>
+            <AreaChart data={trendData} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="pvGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"   stopColor={COLORS.brand} stopOpacity={0.3} />
+                  <stop offset="100%" stopColor={COLORS.brand} stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="vGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"   stopColor={COLORS.netoStrong} stopOpacity={0.25} />
+                  <stop offset="100%" stopColor={COLORS.netoStrong} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="2 4" stroke="var(--ink-100)" vertical={false} />
+              <XAxis dataKey="date" tick={{ fontSize: 9, fill: COLORS.ink300 }}
+                axisLine={false} tickLine={false}
+                tickFormatter={shortDate} interval="preserveStartEnd" />
+              <YAxis tick={{ fontSize: 10, fill: COLORS.ink300 }}
+                axisLine={false} tickLine={false} width={28} allowDecimals={false} />
+              <Tooltip {...tooltipStyle} labelFormatter={(v) => shortDate(String(v ?? ''))} />
+              <Area type="monotone" dataKey="pageViews" name="Page views"
+                stroke={COLORS.brand} fill="url(#pvGrad)" strokeWidth={2} />
+              <Area type="monotone" dataKey="visitors" name="Visitors"
+                stroke={COLORS.netoStrong} fill="url(#vGrad)" strokeWidth={2} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Listas tipo Vercel — top pages, referrers, countries, devices, UTMs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <RankList title="Top pages"
+          rows={stats.topPages.map(r => ({ key: r.key, value: r.visitors }))}
+          headerRight="VISITORS"
+          emptyText="Sin datos" />
+        <RankList title="Top referrers"
+          rows={stats.topReferrers.map(r => ({ key: r.key, value: r.visitors }))}
+          headerRight="VISITORS"
+          emptyText="Sin referrers (acceso directo o self-referrer)" />
+        <RankList title="Países"
+          rows={stats.topCountries.map(r => ({ key: r.key, value: r.visitors, label: countryLabel(r.key) }))}
+          headerRight="VISITORS"
+          emptyText="Sin datos de país" />
+        <RankList title="Devices"
+          rows={stats.devices.map(r => ({ key: r.key, value: r.visitors, label: DEVICE_LABEL[r.key] ?? r.key }))}
+          headerRight="VISITORS"
+          emptyText="Sin datos" />
+      </div>
+
+      {stats.utmSources.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <RankList title="UTM source"
+            rows={stats.utmSources.map(r => ({ key: r.key, value: r.visitors }))}
+            headerRight="VISITORS"
+            emptyText="Sin tráfico UTM" />
+        </div>
+      )}
+
+      <p className="text-[11px] text-brand-mid">
+        Datos calculados desde nuestra propia tabla <code className="bg-brand-chip px-1 rounded">analytics_events</code>.
+        Visitors = visitor_id único en localStorage. Sessions = session_id único en sessionStorage (por pestaña).
+        Bounce = sessions con un solo pageview.
+      </p>
+    </div>
+  )
+}
+
+function RankList({
+  title, rows, headerRight, emptyText,
+}: {
+  title: string
+  rows: Array<{ key: string; value: number; label?: string }>
+  headerRight: string
+  emptyText: string
+}) {
+  const total = rows.reduce((s, r) => s + r.value, 0)
+  return (
+    <div className="bg-white rounded-2xl border border-brand-border overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-2 bg-brand-chip">
+        <p className="text-xs font-bold uppercase tracking-wide text-brand">{title}</p>
+        <p className="text-[10px] font-bold uppercase tracking-wide text-brand-mid">{headerRight}</p>
+      </div>
+      {rows.length === 0 ? (
+        <p className="text-xs text-brand-mid px-3 py-6 text-center">{emptyText}</p>
+      ) : (
+        <ul className="divide-y divide-brand-border">
+          {rows.map(r => {
+            const pct = total > 0 ? (r.value / total) * 100 : 0
+            return (
+              <li key={r.key} className="relative px-3 py-2">
+                {/* Barra de progreso de fondo */}
+                <div
+                  className="absolute inset-y-0 left-0 bg-brand-chip"
+                  style={{ width: `${pct}%`, opacity: 0.5 }}
+                  aria-hidden="true"
+                />
+                <div className="relative flex items-center justify-between gap-3">
+                  <span className="text-xs text-ink-700 truncate" title={r.key}>
+                    {r.label ?? r.key}
+                  </span>
+                  <span className="text-xs font-bold tabular-nums text-brand">
+                    {r.value}
+                  </span>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+function countryLabel(code: string): string {
+  // ISO-2 → emoji bandera + código. Sin lookup table completa para evitar
+  // bloat — el código es suficiente; emoji opcional si el browser soporta.
+  if (code.length === 2) {
+    const A = 0x1F1E6
+    const flag = String.fromCodePoint(
+      A + code.toUpperCase().charCodeAt(0) - 65,
+      A + code.toUpperCase().charCodeAt(1) - 65,
+    )
+    return `${flag} ${code.toUpperCase()}`
+  }
+  return code
 }
 
 // ── Sub-components ─────────────────────────────────────────────────────────
