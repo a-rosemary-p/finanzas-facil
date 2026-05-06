@@ -130,10 +130,14 @@ export default async function AdminAnalyticsPage() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   )
 
-  // PostgREST `not.in.()` requiere paréntesis y comma-separated.
-  const excludeFilter = `(${EXCLUDE_USER_IDS.join(',')})`
+  // Filtramos founder IDs **client-side** después del fetch — el .not('in')
+  // server-side con UUIDs literales no estaba aplicando confiablemente
+  // (PostgREST quería formato distinto y los founders se colaban en los
+  // conteos). JS filter es trivial dado el volumen y es 100% seguro.
+  const founderSet = new Set<string>(EXCLUDE_USER_IDS)
+  const isFounder = (id: string | null | undefined) => !!id && founderSet.has(id)
 
-  // ── 3. Fetch en paralelo ────────────────────────────────────────────
+  // ── 3. Fetch en paralelo (sin .not server-side; filtramos abajo) ─────
   // Para page analytics: traemos page_viewed events de los últimos 30 días.
   // Es OK tener TODOS en memoria — Vercel reportó ~6K/30d, postgres-rest
   // tiene cap de 1000 por default, así que pedimos hasta 50K vía range.
@@ -143,20 +147,18 @@ export default async function AdminAnalyticsPage() {
     admin
       .from('profiles')
       .select('id, email, display_name, plan, subscription_status, created_at, total_movements, giro')
-      .not('id', 'in', excludeFilter)
       .order('created_at', { ascending: false }),
     admin
       .from('movements')
       .select('user_id, movement_date, created_at')
-      .not('user_id', 'in', excludeFilter),
+      .range(0, 99999),
     admin
       .from('entries')
       .select('user_id, input_source, created_at')
-      .not('user_id', 'in', excludeFilter),
+      .range(0, 99999),
     admin
       .from('recurring_movements')
-      .select('user_id', { count: 'exact', head: true })
-      .not('user_id', 'in', excludeFilter),
+      .select('user_id'),
     admin
       .from('analytics_events')
       .select('user_id, payload, created_at')
@@ -169,16 +171,20 @@ export default async function AdminAnalyticsPage() {
   if (profilesRes.error) throw profilesRes.error
   if (movementsRes.error) throw movementsRes.error
   if (entriesRes.error) throw entriesRes.error
+  if (recurringRes.error) throw recurringRes.error
   if (pvRes.error) throw pvRes.error
 
-  const profiles      = (profilesRes.data ?? []) as ProfileRow[]
-  const movements     = (movementsRes.data ?? []) as MovementRow[]
-  const entries       = (entriesRes.data ?? []) as EntryRow[]
-  const recurringCount = recurringRes.count ?? 0
-  // page_viewed events (filtramos founder IDs antes de agregar)
-  const founderSet = new Set<string>(EXCLUDE_USER_IDS)
+  // Filtrado client-side de founders en TODAS las tablas. Defense-in-depth:
+  // si por algún motivo un founder ID nuevo se cuela, el conteo se mantiene
+  // limpio.
+  const profiles  = (profilesRes.data ?? []).filter(p => !isFounder(p.id)) as ProfileRow[]
+  const movements = (movementsRes.data ?? []).filter(m => !isFounder(m.user_id)) as MovementRow[]
+  const entries   = (entriesRes.data ?? []).filter(e => !isFounder(e.user_id)) as EntryRow[]
+  const recurringCount = (recurringRes.data ?? []).filter(
+    (r: { user_id: string | null }) => !isFounder(r.user_id),
+  ).length
   const pvEvents = (pvRes.data ?? []).filter(
-    (e: { user_id: string | null }) => !e.user_id || !founderSet.has(e.user_id),
+    (e: { user_id: string | null }) => !isFounder(e.user_id),
   ) as PageViewEvent[]
 
   // ── 4. Cálculos ─────────────────────────────────────────────────────
