@@ -1,36 +1,72 @@
 @AGENTS.md
 
-## Changelog protocol (project-level rule)
+## Idioma del proyecto (regla a nivel proyecto)
 
-There is a **changelog file outside the repo** at:
+**Todo se hace en español.** Esto incluye:
+
+- **Toda la comunicación con el usuario** en chat: respuestas, explicaciones,
+  preguntas, resúmenes de lo que hiciste, propuestas de plan. No mezclar idiomas
+  ni traducir términos técnicos universales (ej: "build", "deploy", "commit",
+  "push", "merge", "type", "endpoint" se quedan en inglés porque ese es su
+  nombre real — pero las oraciones que los rodean van en español).
+- **Mensajes de commit**: en español. Subject line corto y claro, body con
+  bullets si hay varios cambios. Los términos técnicos que ya están en inglés
+  en el código (nombres de archivos, funciones, tipos) se quedan tal cual.
+- **Comentarios en código** (`//` y `/* */`): en español. Los `JSDoc`/docstrings
+  de funciones también. Los nombres de variables, tipos, funciones siguen siendo
+  en inglés (convención del lenguaje).
+- **Documentación markdown** dentro del repo (READMEs, specs, notas): en español.
+- **Mensajes de error y UI**: en español, ya es el caso por convención del
+  producto. Mantener.
+- **Changelog file** (ver sección de abajo): en español, como ya está.
+
+**Por qué:** el dueño del proyecto es hispanohablante; mezclar idiomas genera
+ruido y obliga a re-leer. Mantener español consistente reduce ambigüedad y
+hace que cuando alguien busque algo en logs/diffs/comentarios, encuentre el
+término que esperaba.
+
+Excepciones razonables:
+- Logs técnicos hacia consola (`console.error`, `console.warn`) pueden quedar
+  en inglés porque van a herramientas que no son user-facing.
+- Texto de error que viene de librerías third-party se queda como viene.
+- Mensajes de commit con prefijos de convención (ej: `fix:`, `feat:`) si los
+  hubiera — no aplican aquí pero por si en el futuro.
+
+---
+
+## Protocolo de changelog (regla a nivel proyecto)
+
+Hay un **archivo de changelog fuera del repo** en:
 
 ```
 C:\Users\arome\Documents - Local\App Finanzas Pymes\Fiza_CHANGELOG.md
 ```
 
-**You must update it** every time you ship a meaningful change to the product
-or the spec. "Meaningful" = anything that would be worth mentioning if a teammate
-asked "what changed since last week?". Bug fixes that move user-visible behavior
-count. Pure typo fixes don't.
+**Hay que actualizarlo** cada vez que se shipea un cambio relevante al producto
+o al spec. "Relevante" = cualquier cosa que valdría la pena mencionar si un
+compañero de equipo preguntara "qué cambió desde la semana pasada?". Bug fixes
+que mueven el comportamiento user-visible cuentan. Fixes de typo puro no.
 
-When to write to it:
-- After landing a feature or refactor (post-push is fine; before push is fine).
-- When iterating on something that's still WIP, append to the in-progress
-  version block. Don't wait for a final spec bump to record entries — the
-  changelog is the running memory.
-- When bumping the spec to a new version, finalize the in-progress block and
-  start a fresh one for the next version.
+Cuándo escribir:
+- Después de aterrizar una feature o refactor (después de push está bien;
+  antes de push también).
+- Cuando se está iterando en algo que sigue WIP, append al bloque de la
+  versión en progreso. No esperar al final del bump de spec para registrar
+  entradas — el changelog es la memoria corriente.
+- Al bumpear el spec a una nueva versión, finalizar el bloque en progreso y
+  empezar uno nuevo para la siguiente versión.
 
-Format:
-- Top of file shows the current published spec version + the in-progress
-  version (if any).
-- Each version has sub-blocks by area (Navigation, Charts, IA endpoints, etc.).
-- Bullets concise. Reference file paths and feature names; don't re-explain
-  decisions already in commit messages or the spec.
-- Do not commit this file. It lives on the user's machine and is intentionally
-  not tracked. Path is outside the repo so `git add` won't pick it up by
-  default; keep it that way.
+Formato:
+- Arriba del archivo se muestra la versión publicada actual del spec + la
+  versión en progreso (si hay).
+- Cada versión tiene sub-bloques por área (Navegación, Charts, Endpoints
+  de IA, etc.).
+- Bullets concisos. Referenciar paths de archivos y nombres de features;
+  no re-explicar decisiones que ya están en mensajes de commit o en el spec.
+- No commitear este archivo. Vive en la máquina del usuario y deliberadamente
+  no está tracked. El path está fuera del repo para que `git add` no lo recoja
+  por default; mantenerlo así.
 
-Why it lives outside the repo: it's project-internal memory for the engineer
-+ agent, not product. Mixing it into the repo would confuse future contributors
-into thinking it's a public release notes document.
+Por qué vive fuera del repo: es memoria interna del proyecto para el ingeniero
++ agente, no producto. Mezclarlo al repo confundiría a futuros contribuidores
+haciéndoles pensar que es un documento público de release notes.
