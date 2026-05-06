@@ -121,49 +121,61 @@ export default function ExcelDownloadButton({
         { width: 14 }, // E: Monto
       ]
 
-      // ── Banner Fiza horizontal (filas 1-2) ────────────────────────────
-      ws.mergeCells('A1:E2')
-      const banner = ws.getCell('A1')
-      banner.value = `Fiza · Reporte ${periodLabel}`
-      banner.font = { name: 'Calibri', size: 18, bold: true, color: { argb: 'FFFFFFFF' } }
-      banner.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 }
-      banner.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: BRAND_DEEP },
+      // Helper: "center across selection" — el equivalente correcto a merge+
+      // center sin los problemas de merge (ordenar/filtrar/copiar). El valor
+      // vive solo en la primera celda; las demás llevan la misma alineación
+      // (`centerContinuous`) y el mismo fill para que el bg no se corte.
+      type FillSpec = { type: 'pattern'; pattern: 'solid'; fgColor: { argb: string } }
+      type FontSpec = NonNullable<ReturnType<typeof ws.getCell>['font']>
+      function centerAcross(row: number, value: string, font: FontSpec, fill?: FillSpec) {
+        for (let c = 1; c <= 5; c++) {
+          const cell = ws.getCell(row, c)
+          if (c === 1) cell.value = value
+          cell.font = font
+          cell.alignment = { vertical: 'middle', horizontal: 'centerContinuous' }
+          if (fill) cell.fill = fill
+        }
       }
-      ws.getRow(1).height = 26
-      ws.getRow(2).height = 14
 
-      // ── Subtitle (fila 3): user · giro · generado ─────────────────────
-      ws.mergeCells('A3:E3')
-      const sub = ws.getCell('A3')
+      // ── Banner Fiza horizontal (fila 1) ───────────────────────────────
+      // Antes era A1:E2 merged. Ahora un solo row alto + centerContinuous.
+      centerAcross(
+        1,
+        `Fiza · Reporte de ingresos y gastos · ${periodLabel}`,
+        { name: 'Calibri', size: 16, bold: true, color: { argb: 'FFFFFFFF' } },
+        { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_DEEP } },
+      )
+      ws.getRow(1).height = 36
+
+      // ── Subtitle (fila 2): user · giro · generado ─────────────────────
       const generated = new Date().toLocaleDateString('es-MX', {
         day: '2-digit', month: 'long', year: 'numeric',
       })
-      sub.value = `${displayName}${giro ? ` · ${giro}` : ''}  ·  Generado: ${generated}`
-      sub.font = { name: 'Calibri', size: 10, color: { argb: 'FF7A8B82' } }
-      sub.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 }
-      ws.getRow(3).height = 18
+      centerAcross(
+        2,
+        `${displayName}${giro ? ` · ${giro}` : ''}  ·  Generado: ${generated}`,
+        { name: 'Calibri', size: 10, color: { argb: 'FF7A8B82' } },
+      )
+      ws.getRow(2).height = 18
 
-      // Fila 4 vacía
-      ws.getRow(4).height = 8
+      // Fila 3 vacía (espacio respiro)
+      ws.getRow(3).height = 8
 
       // ── TOTALES ───────────────────────────────────────────────────────
-      const totalsHeader = ws.getCell('A5')
-      totalsHeader.value = 'TOTALES'
-      totalsHeader.font = { name: 'Calibri', size: 11, bold: true, color: { argb: BRAND } }
-      ws.mergeCells('A5:E5')
-      ws.getCell('A5').alignment = { vertical: 'middle', horizontal: 'left' }
-      ws.getCell('A5').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_CHIP } }
-      ws.getRow(5).height = 22
+      centerAcross(
+        4,
+        'TOTALES',
+        { name: 'Calibri', size: 11, bold: true, color: { argb: BRAND } },
+        { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_CHIP } },
+      )
+      ws.getRow(4).height = 22
 
       const totalsRows: Array<[string, number, string]> = [
         ['Ingresos', totalIncome,                INCOME_TEXT],
         ['Gastos',   totalExpenses,              EXPENSE_TEXT],
         ['Neto',     totalIncome - totalExpenses, NETO_STRONG],
       ]
-      let r = 6
+      let r = 5
       for (const [label, value, color] of totalsRows) {
         const labelCell = ws.getCell(`A${r}`)
         labelCell.value = label
@@ -181,14 +193,13 @@ export default function ExcelDownloadButton({
 
       // ── DESGLOSE POR CATEGORÍA ────────────────────────────────────────
       if (sortedCats.length > 0) {
-        const catHeaderRow = r
-        ws.mergeCells(`A${catHeaderRow}:E${catHeaderRow}`)
-        const catHeader = ws.getCell(`A${catHeaderRow}`)
-        catHeader.value = 'DESGLOSE POR CATEGORÍA'
-        catHeader.font = { name: 'Calibri', size: 11, bold: true, color: { argb: BRAND } }
-        catHeader.alignment = { vertical: 'middle', horizontal: 'left' }
-        catHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_CHIP } }
-        ws.getRow(catHeaderRow).height = 22
+        centerAcross(
+          r,
+          'DESGLOSE POR CATEGORÍA',
+          { name: 'Calibri', size: 11, bold: true, color: { argb: BRAND } },
+          { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_CHIP } },
+        )
+        ws.getRow(r).height = 22
         r++
 
         const colsRow = r
@@ -228,14 +239,13 @@ export default function ExcelDownloadButton({
       }
 
       // ── MOVIMIENTOS ───────────────────────────────────────────────────
-      const movsHeaderRow = r
-      ws.mergeCells(`A${movsHeaderRow}:E${movsHeaderRow}`)
-      const movsHeader = ws.getCell(`A${movsHeaderRow}`)
-      movsHeader.value = 'MOVIMIENTOS'
-      movsHeader.font = { name: 'Calibri', size: 11, bold: true, color: { argb: BRAND } }
-      movsHeader.alignment = { vertical: 'middle', horizontal: 'left' }
-      movsHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_CHIP } }
-      ws.getRow(movsHeaderRow).height = 22
+      centerAcross(
+        r,
+        'MOVIMIENTOS',
+        { name: 'Calibri', size: 11, bold: true, color: { argb: BRAND } },
+        { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_CHIP } },
+      )
+      ws.getRow(r).height = 22
       r++
 
       // Headers de columnas
