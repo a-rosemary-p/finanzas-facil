@@ -1,5 +1,11 @@
 // Todos los prompts separados del código de negocio.
 // Fáciles de iterar sin tocar lógica.
+//
+// v0.292: prompts de extracción son ahora funciones que reciben un
+// `categoriesSection` (construido vía `lib/giro-categories.ts`) para
+// inyectar las categorías personalizadas del giro del user. Los handlers
+// (entry/text, entry/photo) leen `profile.giro` y arman el bloque antes de
+// llamar al modelo.
 
 // Paso 1 del pipeline OCR+LLM:
 // Extrae texto crudo de la imagen, sin interpretar ni estructurar.
@@ -11,7 +17,12 @@ No interpretes, no reformatees, no traduzcas. Solo transcribe el texto.
 Si no hay texto legible, responde únicamente: [SIN TEXTO]
 `.trim()
 
-export const PHOTO_EXTRACTION_PROMPT = `
+/**
+ * Prompt para extracción desde imagen (foto/PDF). Antes era una constante;
+ * ahora es función para inyectar las categorías del giro del user.
+ */
+export function buildPhotoExtractionPrompt(categoriesSection: string): string {
+  return `
 IDIOMA:
 El usuario puede escribir en español, inglés, o cualquier otro idioma.
 Siempre entiende el input sin importar el idioma.
@@ -26,25 +37,7 @@ TIPOS DE MOVIMIENTO:
 - "gasto": dinero que SALIÓ del negocio (compras, pagos, gastos)
 - "pendiente": dinero que se debe cobrar o pagar
 
-CATEGORÍAS (elige la más apropiada — usa SOLO una de esta lista exacta):
-Ingresos:
-  - "Ventas": venta de productos físicos o digitales.
-  - "Honorarios": pago por trabajo o servicios profesionales prestados (proyectos, consultorías, freelance).
-  - "Comisiones recibidas": % por venta de terceros o referidos cobrados.
-  - "Reembolsos": dinero devuelto por proveedores o devoluciones a favor.
-Operación:
-  - "Insumos y materiales": materia prima, ingredientes, papelería, mercancía para revender.
-  - "Software y suscripciones": apps, SaaS, hosting, dominios, herramientas digitales.
-  - "Comisiones de plataforma": cargos cobrados por procesadores de pago, marketplaces, apps de delivery.
-  - "Marketing y publicidad": ads digitales, impresos, campañas, redes sociales pagadas.
-  - "Equipo y herramientas": laptops, cámaras, herramientas físicas, mobiliario operativo (bajo costo; los activos grandes van como inversión).
-Negocio:
-  - "Renta": local, oficina, coworking, almacén.
-  - "Servicios básicos": luz, agua, gas, internet, telefonía.
-  - "Transporte": gasolina, casetas, transporte público, envíos, mensajería.
-  - "Honorarios profesionales": pagos a contador, abogado, asesores externos, otros freelancers contratados.
-  - "Impuestos": pagos al SAT, declaraciones, retenciones.
-  - "Otro": cualquier cosa que no encaje claramente arriba.
+${categoriesSection}
 
 CONVERSIÓN DE MONEDA:
 Si el usuario menciona montos en USD o dólares, conviértelos a MXN usando $17 MXN por $1 USD.
@@ -103,8 +96,14 @@ RESPONDE SOLO CON JSON VÁLIDO (sin texto extra, sin markdown):
   ]
 }
 `.trim()
+}
 
-export const EXTRACTION_SYSTEM_PROMPT = `
+/**
+ * Prompt para extracción de texto/dictado. v0.292: ahora función con
+ * `categoriesSection` inyectado.
+ */
+export function buildExtractionSystemPrompt(categoriesSection: string): string {
+  return `
 IDIOMA:
 El usuario puede escribir en español, inglés, o cualquier otro idioma.
 Siempre entiende el input sin importar el idioma.
@@ -123,25 +122,7 @@ TIPOS DE MOVIMIENTO:
 - "gasto": dinero que SALIÓ del negocio (compras, pagos, gastos)
 - "pendiente": dinero que se DEBE cobrar o pagar en el futuro (menciona "debo", "me deben", "voy a pagar", "próximo", "mañana pago", etc.)
 
-CATEGORÍAS (elige la más apropiada — usa SOLO una de esta lista exacta):
-Ingresos:
-  - "Ventas": venta de productos físicos o digitales.
-  - "Honorarios": pago por trabajo o servicios profesionales prestados (proyectos, consultorías, freelance).
-  - "Comisiones recibidas": % por venta de terceros o referidos cobrados.
-  - "Reembolsos": dinero devuelto por proveedores o devoluciones a favor.
-Operación:
-  - "Insumos y materiales": materia prima, ingredientes, papelería, mercancía para revender.
-  - "Software y suscripciones": apps, SaaS, hosting, dominios, herramientas digitales.
-  - "Comisiones de plataforma": cargos cobrados por procesadores de pago, marketplaces, apps de delivery.
-  - "Marketing y publicidad": ads digitales, impresos, campañas, redes sociales pagadas.
-  - "Equipo y herramientas": laptops, cámaras, herramientas físicas, mobiliario operativo (bajo costo; los activos grandes van como inversión).
-Negocio:
-  - "Renta": local, oficina, coworking, almacén.
-  - "Servicios básicos": luz, agua, gas, internet, telefonía.
-  - "Transporte": gasolina, casetas, transporte público, envíos, mensajería.
-  - "Honorarios profesionales": pagos a contador, abogado, asesores externos, otros freelancers contratados.
-  - "Impuestos": pagos al SAT, declaraciones, retenciones.
-  - "Otro": cualquier cosa que no encaje claramente arriba.
+${categoriesSection}
 
 CONVERSIÓN DE MONEDA:
 Si el usuario menciona montos en USD o dólares, conviértelos a MXN usando $17 MXN por $1 USD.
@@ -226,3 +207,4 @@ RESPONDE SOLO CON JSON VÁLIDO (sin texto extra, sin markdown):
   ]
 }
 `.trim()
+}

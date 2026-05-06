@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { CATEGORIES_ALL } from '@/lib/constants'
+import { isValidCategoryName } from '@/lib/constants'
 import { materializeNextPending } from '@/lib/recurring/materialize'
 
 const FREQUENCIES = new Set(['week', 'month', 'year'])
@@ -46,8 +46,7 @@ export async function PATCH(
     patch['description'] = desc
   }
   if (body['category'] !== undefined) {
-    patch['category'] = CATEGORIES_ALL.includes(body['category'] as (typeof CATEGORIES_ALL)[number])
-      ? body['category'] : 'Otro'
+    patch['category'] = isValidCategoryName(body['category']) ? body['category'] : 'Otro'
   }
   if (body['frequency'] !== undefined) {
     if (!FREQUENCIES.has(String(body['frequency']))) {

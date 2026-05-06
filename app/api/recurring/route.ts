@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { CATEGORIES_ALL } from '@/lib/constants'
+import { isValidCategoryName } from '@/lib/constants'
 import { materializeNextPending } from '@/lib/recurring/materialize'
 import type { RecurringMovement, RecurringFrequency } from '@/types'
 
@@ -73,8 +73,7 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Descripción requerida' }, { status: 400 })
   }
   const rawCategory = String(body['category'] ?? '')
-  const category = CATEGORIES_ALL.includes(rawCategory as (typeof CATEGORIES_ALL)[number])
-    ? rawCategory : 'Otro'
+  const category = isValidCategoryName(rawCategory) ? rawCategory : 'Otro'
   const frequency = body['frequency']
   if (typeof frequency !== 'string' || !FREQUENCIES.has(frequency as RecurringFrequency)) {
     return Response.json({ error: 'frequency inválida (week|month|year)' }, { status: 400 })

@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { CATEGORIES_ALL, MOVEMENT_TYPES } from '@/lib/constants'
+import { MOVEMENT_TYPES, isValidCategoryName } from '@/lib/constants'
 import { materializeNextPending } from '@/lib/recurring/materialize'
 import type { Movement } from '@/types'
 
@@ -42,11 +42,10 @@ export async function PATCH(
     patch['is_investment'] = Boolean(body['isInvestment'])
   }
   if (body['category'] !== undefined) {
-    // Acepta nuevas + legacy: editar un mov viejo con 'Ingredientes' no debe
-    // forzar pasar a 'Otro' si el user no tocó la categoría.
-    patch['category'] = CATEGORIES_ALL.includes(body['category'] as (typeof CATEGORIES_ALL)[number])
-      ? body['category']
-      : 'Otro'
+    // Acepta nuevas + legacy + categorías de cualquier giro (v0.292).
+    // Editar un mov viejo con 'Ingredientes' no debe forzar 'Otro' si el user
+    // no tocó la categoría.
+    patch['category'] = isValidCategoryName(body['category']) ? body['category'] : 'Otro'
   }
 
   if (Object.keys(patch).length === 0) {

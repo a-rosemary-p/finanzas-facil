@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { PLANS } from '@/lib/constants'
-import { CATEGORIES, MOVEMENT_TYPES } from '@/lib/constants'
+import { MOVEMENT_TYPES, isValidCategoryName } from '@/lib/constants'
 import { materializeNextPending } from '@/lib/recurring/materialize'
 import { getAppToday } from '@/lib/cdmx-date'
 import { trackServer } from '@/lib/analytics-server'
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
           type,
           amount: Math.round((m['amount'] as number) * 100) / 100,
           description: (m['description'] as string).trim().slice(0, 60),
-          category: CATEGORIES.includes(m['category'] as (typeof CATEGORIES)[number])
+          category: isValidCategoryName(m['category'])
             ? (m['category'] as Movement['category'])
             : ('Otro' as const),
           movementDate:

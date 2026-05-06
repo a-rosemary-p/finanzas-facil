@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { extractTextFromImage, extractFromText, extractFromImage, extractFromPdf } from '@/lib/openai/client'
-import { OCR_TRANSCRIPTION_PROMPT, PHOTO_EXTRACTION_PROMPT, EXTRACTION_SYSTEM_PROMPT } from '@/lib/ai/prompts'
+import { OCR_TRANSCRIPTION_PROMPT, buildPhotoExtractionPrompt, buildExtractionSystemPrompt } from '@/lib/ai/prompts'
+import { getCategoriesForGiro, buildCategoriesSection } from '@/lib/giro-categories'
 import { parseGeminiResponse } from '@/lib/ai/parser'
 import { PLANS, PHOTO_LIMITS, OCR_MIN_TEXT_LENGTH } from '@/lib/constants'
 import { consumeRateLimit } from '@/lib/rate-limit'
@@ -73,10 +74,11 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Fecha inválida' }, { status: 400 })
     }
 
-    // 3. Verificar límite del plan Free
+    // 3. Verificar límite del plan Free + leer giro para categorías
+    //    personalizadas en el prompt (v0.292).
     const { data: profile } = await supabase
       .from('profiles')
-      .select('plan, movements_today, movements_today_date')
+      .select('plan, movements_today, movements_today_date, giro')
       .eq('id', user.id)
       .single()
 
@@ -114,11 +116,17 @@ export async function POST(request: Request) {
     //   imagen detail:high por página (la mayoría de tickets/facturas son 1-3 págs).
     // ─────────────────────────────────────────────────────────────────────────────
 
+    // Categorías personalizadas según el giro del user (o genéricas).
+    const cats = getCategoriesForGiro(profile?.giro as string | null | undefined)
+    const categoriesSection = buildCategoriesSection(cats)
+    const photoPromptBase = buildPhotoExtractionPrompt(categoriesSection)
+    const textPromptBase  = buildExtractionSystemPrompt(categoriesSection)
+
     let movements: PendingMovement[] = []
 
     if (isPdf) {
       // ── Path PDF: extracción en una sola llamada ───────────────────────────
-      const prompt = `${PHOTO_EXTRACTION_PROMPT}\n\nFecha base: ${fecha}`
+      const prompt = `${photoPromptBase}\n\nFecha base: ${fecha}`
       const raw = await extractFromPdf(prompt, b64, 'documento.pdf')
       movements = parseGeminiResponse(raw, fecha)
     } else {
@@ -143,13 +151,13 @@ export async function POST(request: Request) {
           ocrText,
         ].join('\n')
 
-        const raw = await extractFromText(EXTRACTION_SYSTEM_PROMPT, userContent)
+        const raw = await extractFromText(textPromptBase, userContent)
         movements = parseGeminiResponse(raw, fecha)
       }
 
       // Si el OCR falló o no se encontraron movimientos → fallback visión directa
       if (movements.length === 0) {
-        const prompt = `${PHOTO_EXTRACTION_PROMPT}\n\nFecha base: ${fecha}`
+        const prompt = `${photoPromptBase}\n\nFecha base: ${fecha}`
         const raw = await extractFromImage(prompt, b64, mime)
         movements = parseGeminiResponse(raw, fecha)
       }

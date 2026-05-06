@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { extractFromText } from '@/lib/openai/client'
-import { EXTRACTION_SYSTEM_PROMPT } from '@/lib/ai/prompts'
+import { buildExtractionSystemPrompt } from '@/lib/ai/prompts'
+import { getCategoriesForGiro, buildCategoriesSection } from '@/lib/giro-categories'
 import { parseGeminiResponse } from '@/lib/ai/parser'
 import { PLANS } from '@/lib/constants'
 import { consumeRateLimit } from '@/lib/rate-limit'
@@ -46,10 +47,12 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Fecha inválida' }, { status: 400 })
     }
 
-    // 3. Verificar límite del plan Free ANTES de llamar a Gemini
+    // 3. Verificar límite del plan Free ANTES de llamar a Gemini.
+    //    También leemos `giro` para resolver las categorías personalizadas
+    //    que pasamos al system prompt (v0.292).
     const { data: profile } = await supabase
       .from('profiles')
-      .select('plan, movements_today, movements_today_date')
+      .select('plan, movements_today, movements_today_date, giro')
       .eq('id', user.id)
       .single()
 
@@ -72,9 +75,13 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4. Llamar a OpenAI para extraer movimientos
+    // 4. Llamar a OpenAI para extraer movimientos.
+    //    Inyectamos las categorías del giro del user (o las genéricas si no
+    //    tiene giro) en el system prompt.
+    const cats = getCategoriesForGiro(profile?.giro as string | null | undefined)
+    const systemPrompt = buildExtractionSystemPrompt(buildCategoriesSection(cats))
     const userContent = `Fecha base: ${fechaMovimiento}\n\nTexto del usuario:\n${texto.trim()}`
-    const raw = await extractFromText(EXTRACTION_SYSTEM_PROMPT, userContent)
+    const raw = await extractFromText(systemPrompt, userContent)
 
     // 5. Parsear y validar respuesta
     const movements = parseGeminiResponse(raw, fechaMovimiento)
