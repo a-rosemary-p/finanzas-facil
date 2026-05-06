@@ -5,6 +5,8 @@ import { useAuth } from '@/hooks/use-auth'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import type { SettingsUpdate } from '@/types'
 import { AppHeader } from '@/components/app-header'
+import { WaveSection } from '@/components/ui/wave'
+import { FeedbackModal } from '@/components/feedback-modal'
 import { startProCheckout } from '@/lib/upgrade-to-pro'
 import { translateAuthError } from '@/lib/auth-errors'
 
@@ -136,6 +138,9 @@ export default function AjustesPage() {
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
 
+  // Modal de comentarios — mismo patrón que /inicio.
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
+
   useEffect(() => {
     if (!pwSuccess) return
     const t = setTimeout(() => setPwSuccess(''), 3000)
@@ -238,84 +243,19 @@ export default function AjustesPage() {
 
       <main className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-4 fz-pad-safe-bottom">
 
-        {/* ── 1. Preferencias ── */}
-        <SectionCard title="Preferencias" editing={false}
-          onEdit={() => {}} onSave={() => {}} onCancel={() => {}} noEdit>
-          <div className="flex flex-col pt-1">
-            {/* Moneda preferida */}
-            <div className="flex flex-col gap-2 pt-3">
-              <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">
-                Moneda preferida
-              </p>
-              <div className="flex gap-2">
-                <div className="flex-1 py-2.5 rounded-xl text-sm font-bold border flex items-center justify-center min-h-[44px] bg-brand text-white border-brand">
-                  MXN
-                </div>
-                <div className="flex-1 py-2.5 rounded-xl text-sm font-bold border flex flex-col items-center justify-center min-h-[44px] gap-0.5 bg-paper-2 text-ink-300 border-ink-100">
-                  <span>USD</span>
-                  <span className="text-[10px] font-medium text-ink-300">Próximamente</span>
-                </div>
-              </div>
-            </div>
-
-            <ToggleRow
-              label="Mostrar inversiones por default"
-              description="Activos a largo plazo. Si está apagado, puedes activarlos temporalmente en el dashboard."
-              checked={profile.mostrarInversiones ?? false}
-              onChange={v => toggleSetting({ mostrarInversiones: v })}
-            />
-            <ToggleRow
-              label="Mostrar pendientes por default"
-              description="Compromisos futuros. Si está apagado, no aparecen en el historial al ver 'Todos'."
-              checked={profile.mostrarPendientes ?? true}
-              onChange={v => toggleSetting({ mostrarPendientes: v })}
-            />
+        {/* Título + subtítulo + wave divider — patrón compartido con /pendientes. */}
+        <div>
+          <h1 className="font-bold text-lg text-brand">Ajustes</h1>
+          <p className="text-sm mt-0.5 text-brand-mid">
+            Tu cuenta, tu suscripción y tus preferencias.
+          </p>
+          <div className="mt-3">
+            <WaveSection />
           </div>
-        </SectionCard>
+        </div>
 
-        {/* ── 2. Cuenta ── */}
-        <SectionCard
-          title="Cuenta"
-          editing={isCuentaEditing}
-          onEdit={() => openSection('cuenta')}
-          onSave={saveEmail}
-          onCancel={closeSection}
-          saving={saving}
-        >
-          {isCuentaEditing ? (
-            <div className="flex flex-col gap-4 pt-2">
-              <EditInput
-                label="Contraseña actual"
-                type="password"
-                value={emailPasswordDraft}
-                onChange={setEmailPasswordDraft}
-                placeholder="••••••••"
-              />
-              <EditInput
-                label="Nuevo correo electrónico"
-                type="email"
-                value={emailDraft}
-                onChange={setEmailDraft}
-                placeholder="nuevo@correo.com"
-                error={emailError}
-              />
-            </div>
-          ) : (
-            <div>
-              <div className="flex flex-col gap-1 py-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">
-                  Correo electrónico
-                </p>
-                <p className="text-sm text-brand">{profile.email}</p>
-              </div>
-              {emailSuccess && (
-                <p className="text-xs py-2 text-brand">{emailSuccess}</p>
-              )}
-            </div>
-          )}
-        </SectionCard>
-
-        {/* ── 3. Suscripción ── */}
+        {/* ── 1. Suscripción (movida al tope en v0.3 — es lo más
+             accionable) ── */}
         <SectionCard title="Suscripción" editing={false}
           onEdit={() => {}} onSave={() => {}} onCancel={() => {}} noEdit>
           {profile.plan === 'free' ? (
@@ -361,6 +301,86 @@ export default function AjustesPage() {
               <p className="text-xs text-center text-brand-muted">
                 Cancela cuando quieras desde el portal de Stripe.
               </p>
+            </div>
+          )}
+        </SectionCard>
+
+        {/* ── 2. Preferencias ── */}
+        <SectionCard title="Preferencias" editing={false}
+          onEdit={() => {}} onSave={() => {}} onCancel={() => {}} noEdit>
+          <div className="flex flex-col pt-1">
+            {/* Moneda preferida */}
+            <div className="flex flex-col gap-2 pt-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">
+                Moneda preferida
+              </p>
+              <div className="flex gap-2">
+                <div className="flex-1 py-2.5 rounded-xl text-sm font-bold border flex items-center justify-center min-h-[44px] bg-brand text-white border-brand">
+                  MXN
+                </div>
+                <div className="flex-1 py-2.5 rounded-xl text-sm font-bold border flex flex-col items-center justify-center min-h-[44px] gap-0.5 bg-paper-2 text-ink-300 border-ink-100">
+                  <span>USD</span>
+                  <span className="text-[10px] font-medium text-ink-300">Próximamente</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Defaults para los chips de filtro de /movimientos. Cuando el
+             * user entra a /movimientos, los chips de "Inversiones" y
+             * "Pendientes" arrancan activos/inactivos según estos toggles. */}
+            <ToggleRow
+              label="Incluir inversiones por default"
+              description="En Movimientos, el chip de Inversiones empieza activo."
+              checked={profile.mostrarInversiones ?? false}
+              onChange={v => toggleSetting({ mostrarInversiones: v })}
+            />
+            <ToggleRow
+              label="Incluir pendientes por default"
+              description="En Movimientos, el chip de Pendientes empieza activo."
+              checked={profile.mostrarPendientes ?? true}
+              onChange={v => toggleSetting({ mostrarPendientes: v })}
+            />
+          </div>
+        </SectionCard>
+
+        {/* ── 3. Cuenta ── */}
+        <SectionCard
+          title="Cuenta"
+          editing={isCuentaEditing}
+          onEdit={() => openSection('cuenta')}
+          onSave={saveEmail}
+          onCancel={closeSection}
+          saving={saving}
+        >
+          {isCuentaEditing ? (
+            <div className="flex flex-col gap-4 pt-2">
+              <EditInput
+                label="Contraseña actual"
+                type="password"
+                value={emailPasswordDraft}
+                onChange={setEmailPasswordDraft}
+                placeholder="••••••••"
+              />
+              <EditInput
+                label="Nuevo correo electrónico"
+                type="email"
+                value={emailDraft}
+                onChange={setEmailDraft}
+                placeholder="nuevo@correo.com"
+                error={emailError}
+              />
+            </div>
+          ) : (
+            <div>
+              <div className="flex flex-col gap-1 py-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">
+                  Correo electrónico
+                </p>
+                <p className="text-sm text-brand">{profile.email}</p>
+              </div>
+              {emailSuccess && (
+                <p className="text-xs py-2 text-brand">{emailSuccess}</p>
+              )}
             </div>
           )}
         </SectionCard>
@@ -412,15 +432,23 @@ export default function AjustesPage() {
           )}
         </SectionCard>
 
-        {/* Volver */}
-        <a
-          href="/inicio"
-          className="text-sm font-medium py-3 rounded-xl min-h-[44px] flex items-center justify-center transition-colors text-brand-mid bg-paper-soft"
-        >
-          ← Volver a inicio
-        </a>
+        {/* Comentarios — abre FeedbackModal. Mismo patrón que /inicio. */}
+        <div className="flex justify-center pt-3">
+          <button
+            type="button"
+            onClick={() => setFeedbackOpen(true)}
+            className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg text-brand-mid"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            Comentarios
+          </button>
+        </div>
 
       </main>
+
+      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </div>
   )
 }

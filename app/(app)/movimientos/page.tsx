@@ -66,9 +66,29 @@ export default function MovimientosPage() {
   const isPro = profile?.plan === 'pro'
 
   const [dateFilter, setDateFilter] = useState<DateFilter>('month')
-  const [categories, setCategories] = useState<Set<Category>>(() => new Set(ALL_CATEGORIES))
+  // Inicializamos en null para esperar al profile y aplicar los defaults
+  // de Ajustes (mostrarInversiones / mostrarPendientes). Si arrancáramos con
+  // todas las categorías y luego ajustáramos en un useEffect, el primer fetch
+  // se dispararía con un set incorrecto y luego se descartaría — gasto inútil.
+  const [categories, setCategories] = useState<Set<Category> | null>(null)
   const [customFrom, setCustomFrom] = useState('')
   const [customTo, setCustomTo] = useState('')
+
+  // Aplica los toggles de /ajustes como estado inicial de los chips.
+  // mostrarInversiones=false ⇒ chip Inversiones empieza apagado.
+  // mostrarPendientes=false ⇒ chip Pendientes empieza apagado.
+  // Los recurrentes / ingresos / gastos siempre arrancan activos.
+  useEffect(() => {
+    if (!profile || categories) return
+    const next = new Set<Category>(ALL_CATEGORIES)
+    if (profile.mostrarInversiones === false) next.delete('inversiones')
+    if (profile.mostrarPendientes === false) next.delete('pendientes')
+    // Edge: si los dos toggles están off, nos quedan 3 categorías (ingresos,
+    // gastos, recurrentes). Si por alguna razón quedaran 0, fallback a todas
+    // (la UI no permite 0).
+    if (next.size === 0) ALL_CATEGORIES.forEach(c => next.add(c))
+    setCategories(next)
+  }, [profile, categories])
 
   const [movements, setMovements] = useState<Movement[]>([])
   const [total, setTotal] = useState(0)
@@ -77,7 +97,7 @@ export default function MovimientosPage() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState('')
 
-  const categoriesArr = useMemo(() => Array.from(categories), [categories])
+  const categoriesArr = useMemo(() => categories ? Array.from(categories) : [], [categories])
 
   const buildUrl = useCallback((newOffset: number) => {
     const params = new URLSearchParams()
@@ -96,7 +116,7 @@ export default function MovimientosPage() {
 
   // Fetch inicial (offset 0) cuando cambian filtros
   useEffect(() => {
-    if (!profile) return
+    if (!profile || !categories) return
     if (dateFilter === 'custom' && (!customFrom || !customTo)) return
     let cancelled = false
     setLoading(true)
@@ -150,6 +170,7 @@ export default function MovimientosPage() {
 
   function toggleCategory(cat: Category) {
     setCategories(prev => {
+      if (!prev) return prev
       const next = new Set(prev)
       if (next.has(cat)) next.delete(cat)
       else next.add(cat)
@@ -164,7 +185,7 @@ export default function MovimientosPage() {
     setCategories(new Set(ALL_CATEGORIES))
   }
 
-  if (authLoading) {
+  if (authLoading || !categories) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-sm text-brand-mid">Cargando...</p>
