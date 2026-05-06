@@ -44,6 +44,7 @@ import { MetricsCard } from '@/components/inicio/metrics-card'
 import { InputCard } from '@/components/inicio/input-card'
 import { RecentMovements } from '@/components/inicio/recent-movements'
 import { Onboarding, type OnboardingHighlight } from '@/components/onboarding/onboarding'
+import { ProfilePromptModal } from '@/components/onboarding/profile-prompt-modal'
 import type { RegistrosPeriod } from '@/components/inicio/period-dropdown'
 import type { Entry, PendingMovement } from '@/types'
 
@@ -92,6 +93,18 @@ function RegistrosInner() {
     !profile.onboardedAt &&
     !onboardingDismissed &&
     mode === 'dashboard' // No lo mostramos sobre el ConfirmationScreen real
+
+  // Profile prompt (v0.292): después del primer movimiento confirmado, modal
+  // pidiendo ciudad/estado/giro como datos opcionales. Se dispara una vez —
+  // `profile_prompt_seen_at` queda seteado al cerrar (haya llenado o no).
+  const [profilePromptDismissed, setProfilePromptDismissed] = useState(false)
+  const showProfilePrompt =
+    !!profile &&
+    profile.totalMovements >= 1 &&
+    !profile.profilePromptSeenAt &&
+    !profilePromptDismissed &&
+    !showOnboarding &&
+    mode === 'dashboard'
 
   // Insight: fire-and-forget; no se loguea error si falla.
   useEffect(() => {
@@ -322,6 +335,17 @@ function RegistrosInner() {
             // Sin await — visual cierra inmediato. El profile se refresca
             // en el próximo mount; en este sesión, onboardingDismissed local
             // mantiene la página normal.
+            void refreshProfile()
+          }}
+        />
+      )}
+
+      {/* Profile prompt — modal post-primer-movimiento. Se cierra al
+       * submit/dismiss y marca seen_at en DB para no volver. */}
+      {showProfilePrompt && (
+        <ProfilePromptModal
+          onComplete={() => {
+            setProfilePromptDismissed(true)
             void refreshProfile()
           }}
         />

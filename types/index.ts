@@ -62,6 +62,10 @@ export interface Profile {
   /** Timestamp ISO cuando el user terminó/saltó el onboarding. NULL = no lo
    * ha visto, dispara el flow inline en /inicio. */
   onboardedAt?: string | null
+  /** Timestamp ISO cuando el user vio el modal de "completa tu perfil"
+   * post-primer-movimiento (v0.292). NULL = todavía no se le ha mostrado;
+   * después del primer mov se dispara una vez. */
+  profilePromptSeenAt?: string | null
 }
 
 export interface ProfileUpdate {
