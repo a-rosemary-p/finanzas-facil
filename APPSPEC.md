@@ -2,10 +2,10 @@
 
 > **La spec viva está fuera del repo**, en la carpeta del proyecto.
 >
-> Versión actual: **v0.29** (mayo 1, 2026)
-> Archivo: `C:\Users\arome\Documents - Local\App Finanzas Pymes\Fiza_APP_SPEC v0.29. 010526.md`
+> Versión actual: **v0.292** (mayo 6, 2026)
+> Archivo: `C:\Users\arome\Documents - Local\App Finanzas Pymes\Fiza_APP_SPEC v0.292. 060526.md`
 >
-> Contiene: rutas (incl. `/inicio` rename + `/movimientos` nueva), API routes (incl. `/api/movimientos`, `/api/reports/period-summary`, `/api/reports/insights`, `/api/track`, `/api/feedback`), schema DB (migrations 001–018), hooks (usePendings con `dueAlertCount`, useRecurring), componentes (inicio/, pendientes/, reports/ con este-periodo + como-voy + charts, FeedbackModal, PageViewTracker), tipos, constantes, flujos, enforcement Base vs Pro, AI insights endpoint con prompt adaptativo a giro, analytics events, CDMX timezone, style system Tailwind v4, security headers, rate limiting, audit trail, recurrentes, onboarding, y changelogs v0.21 → v0.29.
+> Contiene: rutas (incl. `/inicio`, `/movimientos`, `/admin/analytics`), API routes (incl. `/api/movimientos`, `/api/reports/period-summary`, `/api/reports/insights`, `/api/track` ahora público, `/api/onboarding/profile-prompt`, `/api/feedback`), schema DB (migrations 001–019), hooks (usePendings con `dueAlertCount`, useRecurring), componentes (inicio/, pendientes/, reports/ con este-periodo + como-voy + charts, FeedbackModal, PageViewTracker en root, onboarding/ con Onboarding tour + ProfilePromptModal), tipos, constantes (24 giros + GIRO_CATEGORIES), flujos, enforcement Base vs Pro, AI insights endpoint con prompt adaptativo a giro + categorías personalizadas, analytics events, page analytics propia, dashboard interno admin, CDMX timezone, style system Tailwind v4, security headers, rate limiting, audit trail, recurrentes, onboarding, y changelogs v0.21 → v0.292.
 
 ---
 
@@ -14,10 +14,10 @@
 - **Next.js 16.2.4** tiene breaking changes. Ver `AGENTS.md` — leer `node_modules/next/dist/docs/` antes de escribir código. El archivo raíz es `proxy.ts`, no `middleware.ts`.
 - **Sin emojis en la UI** — usar íconos SVG inline. Catálogo central en `components/icons.tsx`. No agregues `@phosphor-icons/react` ni similares.
 - **Tipos** centralizados en `types/index.ts`. **Constantes** en `lib/constants.ts`. No hard-codear inline.
-- **Categorías**: `CATEGORIES` (15 activas) para inserts nuevos. `CATEGORIES_ALL` (= activas + 2 legacy `Ingredientes`/`Servicios`) para validators de PATCH — preserva movs viejos al editar. La columna `movements.category` es TEXT libre desde migration 009.
+- **Categorías**: `CATEGORIES` (15 genéricas) para fallback cuando el user no tiene giro. **(v0.292) `GIRO_CATEGORIES`** mapea cada giro a `{ ingresos[], gastos[] }`. Los handlers de extracción (`/api/entry`, `/api/entry/photo`) leen `profile.giro` y arman el system prompt con las cats del giro vía `lib/giro-categories.ts`. Validators server-side usan **`isValidCategoryName()`** (cubre genéricas + legacy + todas las cats de todos los giros) — NO uses `CATEGORIES.includes()` ni `CATEGORIES_ALL.includes()` para nuevos checks. La columna `movements.category` es TEXT libre desde migration 009.
 - **Enforcement Free vs Pro va server-side.** Si una restricción depende del plan, NO usar el Supabase client directo desde el browser — usar una API route. Excepción: `/api/reports/compare` ahora es Free + Pro (la diferenciación de tiers vive en cliente con preview difuminado).
 - **`profiles` tiene column-level GRANT UPDATE.** Si agregas un campo nuevo editable por el usuario, actualiza la GRANT de migration 007 — de lo contrario los UPDATE del cliente fallan silenciosamente en ese campo.
-- **`@react-pdf/renderer`, `recharts`, y `xlsx` solo client-side**: import via `dynamic({ ssr: false })` o `await import()` dentro de un handler. Son libs gordas, no las quieres en el bundle inicial.
+- **`@react-pdf/renderer`, `recharts`, y `exceljs` solo client-side**: import via `dynamic({ ssr: false })` o `await import()` dentro de un handler. Son libs gordas, no las quieres en el bundle inicial. (v0.291: `xlsx` sheetjs reemplazada por `exceljs` porque la community edition no escribe estilos.)
 - **Webhook de Stripe** usa `SUPABASE_SERVICE_ROLE_KEY` (admin client) — no usar ese cliente en otra parte, salvo `/api/city-stats`. Cada evento entra a `stripe_events` para idempotencia. Si UPDATE matchea 0 filas → fallback por `metadata.supabase_user_id` (parche post-v0.26 integrado a v0.27).
 - **`<AppHeader />` es el único header.** No vuelvas a poner uno inline. Si necesitas variar, usa props.
 - **CTAs de upgrade van directo a Stripe via `startProCheckout()`** (`lib/upgrade-to-pro.ts`). Nunca rebotes al user con `<a href="/ajustes">`. Excepción: la landing pública (sin sesión).
@@ -25,6 +25,10 @@
 - **Recurrentes son next-only (v0.28):** un pendiente vivo a la vez. `materializeNextPending()` es idempotente. Crear/pausar/borrar via `/api/recurring`. Editar template afecta los próximos, NO el activo.
 - **Audit trail (v0.28):** `movement_events` con `event_type` ('created'/'paid'/'edited'/'recurring_materialized') sin CHECK (drop en migration 011). Inmutable (UPDATE/DELETE revocados). CASCADE con movements al borrar.
 - **Onboarding (v0.28):** flag `profiles.onboarded_at`. NO uses `total_movements===0` solo. Set via `POST /api/onboarding/complete`.
+- **(v0.292) Profile prompt:** segundo paso del onboarding después del primer movimiento. Modal `<ProfilePromptModal>` pide ciudad/estado/giro (todos opcionales). Si user elige giro válido, segundo step muestra las cats personalizadas para confirmar. Trigger en `inicio/page.tsx`: `totalMovements >= 1 && !profilePromptSeenAt && !showOnboarding && mode==='dashboard'`. Persistencia: `POST /api/onboarding/profile-prompt` setea `profile_prompt_seen_at` (migration 019) — "Continuar" y "Ahora no" tienen mismo efecto en DB, solo difiere el evento de analytics.
+- **(v0.292) `/admin/analytics`:** dashboard interno protegido por allowlist hardcoded de emails founders. 6 user IDs internos excluidos de TODOS los conteos (filter client-side en `app/admin/analytics/page.tsx`). 2 tabs: Analítica de usuarios + Analítica de página. Sin link en menú — URL directa.
+- **(v0.292) Page analytics propia:** `<PageViewTracker>` en ROOT layout (cubre landing/login). Payload con `visitor_id` (localStorage), `session_id` (sessionStorage), `referrer`, UTMs. `/api/track` acepta anónimos via service-role insert; allowlist `ALLOWED_EVENTS` defense-in-depth. Inyecta `country` desde `x-vercel-ip-country` y `device`/`ua` parseados.
+- **(v0.292) Excel:** `exceljs` (NO `xlsx`/sheetjs — sin estilos al escribir). NUNCA uses `mergeCells` — preferir `centerContinuous` para que sort/filter no se rompa. Banner brand-deep arriba, "Tipo" celda coloreada por movimiento, borde brand alrededor del área formateada.
 - **Nunca construir URLs desde `req.url` / `Host`** para redirects cross-origin. Usar `NEXT_PUBLIC_APP_URL` u otra env confiable.
 - **Rate limiting** via `lib/rate-limit.ts`. Cualquier endpoint que llame OpenAI u otro servicio caro debe llamar `consumeRateLimit(supabase, user.id, 'bucket')`. Buckets actuales: `entry`, `entry_photo`, `transcribe`. Agregar uno nuevo no requiere migration.
 - **Open redirects**: ningún endpoint debe aceptar un `next` / `redirect` param sin allow-list. Ver `app/auth/confirm/route.ts:safeNext` como patrón.
