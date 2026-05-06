@@ -61,6 +61,7 @@ interface PageStats {
   topReferrers: Array<{ key: string; visitors: number }>
   topCountries: Array<{ key: string; visitors: number }>
   devices:      Array<{ key: string; visitors: number }>
+  os:           Array<{ key: string; visitors: number }>
   utmSources:   Array<{ key: string; visitors: number }>
 }
 
@@ -441,6 +442,15 @@ function PageAnalyticsView({ stats }: { stats: PageStats }) {
           rows={stats.devices.map(r => ({ key: r.key, value: r.visitors, label: DEVICE_LABEL[r.key] ?? r.key }))}
           headerRight="VISITORS"
           emptyText="Sin datos" />
+      </div>
+
+      {/* Sistema operativo — derivado del user-agent. Va en su propia fila
+       * para no apretar la grid de 4 listas anteriores. */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <RankList title="Sistema operativo"
+          rows={stats.os.map(r => ({ key: r.key, value: r.visitors }))}
+          headerRight="VISITORS"
+          emptyText="Sin datos de OS" />
       </div>
 
       {stats.utmSources.length > 0 && (

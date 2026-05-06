@@ -84,7 +84,31 @@ interface PageViewEvent {
     is_first_in_session?: boolean
     country?: string
     device?: 'mobile' | 'tablet' | 'desktop'
+    ua?: string
   }
+}
+
+/**
+ * Parsea el sistema operativo del user-agent. Usado en /admin/analytics
+ * (page tab) para mostrar la distribución de OS — no lo guardamos como
+ * campo separado en analytics_events porque se puede derivar del `ua`
+ * que ya guardamos truncado a 200 chars.
+ *
+ * El orden de checks importa: iPadOS reporta "Macintosh" en Safari 13+ pero
+ * con touch points; lo aproximamos por presencia de "iPad" o "Mobile" en UA.
+ * Para Android verificamos antes de Linux porque Android es Linux también.
+ */
+function parseOS(ua: string): string {
+  const u = ua
+  if (!u) return 'desconocido'
+  if (/iPhone|iPod/.test(u)) return 'iOS'
+  if (/iPad/.test(u))         return 'iPadOS'
+  if (/Android/.test(u))      return 'Android'
+  if (/Windows NT/.test(u))   return 'Windows'
+  if (/Mac OS X|Macintosh/.test(u)) return 'macOS'
+  if (/CrOS/.test(u))         return 'ChromeOS'
+  if (/Linux/.test(u))        return 'Linux'
+  return 'Otro'
 }
 
 export default async function AdminAnalyticsPage() {
@@ -261,6 +285,7 @@ export default async function AdminAnalyticsPage() {
   const topReferrersMap = new Map<string, Set<string>>()    // domain -> visitor_ids
   const topCountriesMap = new Map<string, Set<string>>()    // country -> visitor_ids
   const devicesMap = new Map<string, Set<string>>()         // device -> visitor_ids
+  const osMap      = new Map<string, Set<string>>()         // os     -> visitor_ids
   const utmSourcesMap = new Map<string, Set<string>>()      // utm_source -> visitor_ids
 
   for (const ev of pv7d) {
@@ -294,6 +319,12 @@ export default async function AdminAnalyticsPage() {
       const d = ev.payload.device
       if (!devicesMap.has(d)) devicesMap.set(d, new Set())
       devicesMap.get(d)!.add(vid)
+    }
+
+    if (ev.payload.ua) {
+      const os = parseOS(ev.payload.ua)
+      if (!osMap.has(os)) osMap.set(os, new Set())
+      osMap.get(os)!.add(vid)
     }
 
     if (ev.payload.utm_source) {
@@ -335,6 +366,7 @@ export default async function AdminAnalyticsPage() {
     topReferrers: rankSet(topReferrersMap),
     topCountries: rankSet(topCountriesMap),
     devices:      rankSet(devicesMap),
+    os:           rankSet(osMap),
     utmSources:   rankSet(utmSourcesMap, 6),
   }
 
