@@ -184,7 +184,7 @@ export default function ExcelDownloadButton({
         valCell.value = value
         valCell.numFmt = '"$"#,##0.00'
         valCell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: color } }
-        valCell.alignment = { horizontal: 'right' }
+        valCell.alignment = { horizontal: 'center' }
         r++
       }
 
@@ -204,11 +204,18 @@ export default function ExcelDownloadButton({
 
         const colsRow = r
         const colHeaders = ['Categoría', 'Ingresos', 'Gastos', 'Neto', '#']
+        // Alineación por columna del Desglose:
+        //   Categoría  → left (texto largo, lectura natural)
+        //   Ingresos   → right (queda alineado con números)
+        //   Gastos / Neto / # → center (per request del user)
+        const desgloseAlign: Array<'left' | 'right' | 'center'> = [
+          'left', 'right', 'center', 'center', 'center',
+        ]
         colHeaders.forEach((label, i) => {
           const cell = ws.getCell(colsRow, i + 1)
           cell.value = label
           cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: INK_TEXT } }
-          cell.alignment = { horizontal: i === 0 ? 'left' : 'right' }
+          cell.alignment = { horizontal: desgloseAlign[i] }
           cell.border = { bottom: { style: 'thin', color: { argb: 'FFE3E7DC' } } }
         })
         r++
@@ -230,7 +237,7 @@ export default function ExcelDownloadButton({
           }
           ws.getCell(r, 1).font = { name: 'Calibri', size: 10, color: { argb: INK_TEXT } }
           for (let c = 2; c <= 5; c++) {
-            ws.getCell(r, c).alignment = { horizontal: 'right' }
+            ws.getCell(r, c).alignment = { horizontal: desgloseAlign[c - 1] }
           }
           r++
         }
@@ -248,39 +255,53 @@ export default function ExcelDownloadButton({
       ws.getRow(r).height = 22
       r++
 
-      // Headers de columnas
+      // Headers de columnas — Fecha y Descripción left (matchean el data row);
+      // Tipo / Categoría / Monto center (matchean el data row).
       const movsColRow = r
       const movsCols = ['Fecha', 'Descripción', 'Tipo', 'Categoría', 'Monto']
+      const movsHeaderAlign: Array<'left' | 'right' | 'center'> = [
+        'left', 'left', 'center', 'center', 'center',
+      ]
       movsCols.forEach((label, i) => {
         const cell = ws.getCell(movsColRow, i + 1)
         cell.value = label
         cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: INK_TEXT } }
-        cell.alignment = { horizontal: i === 4 ? 'right' : 'left' }
+        cell.alignment = { horizontal: movsHeaderAlign[i] }
         cell.border = { bottom: { style: 'thin', color: { argb: 'FFE3E7DC' } } }
       })
       r++
 
-      // Data rows — ordenadas por fecha desc
+      // Data rows — ordenadas por fecha desc.
+      // Alineación por columna:
+      //   Fecha       → left
+      //   Descripción → left (texto largo)
+      //   Tipo        → center
+      //   Categoría   → center
+      //   Monto       → center
       const sortedMovs = filtered.slice().sort((a, b) => b.movementDate.localeCompare(a.movementDate))
       for (const m of sortedMovs) {
         ws.getCell(r, 1).value = m.movementDate
         ws.getCell(r, 1).font = { name: 'Calibri', size: 10, color: { argb: INK_TEXT } }
+        ws.getCell(r, 1).alignment = { horizontal: 'left' }
 
         const descLabel = m.isInvestment ? `${m.description} (Inversión)` : m.description
         ws.getCell(r, 2).value = descLabel
         ws.getCell(r, 2).font = { name: 'Calibri', size: 10, color: { argb: INK_TEXT } }
+        ws.getCell(r, 2).alignment = { horizontal: 'left' }
 
         const tipoCell = ws.getCell(r, 3)
         tipoCell.value = tipoLabel(m)
         tipoCell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: tipoColor(m) } }
+        tipoCell.alignment = { horizontal: 'center' }
 
         ws.getCell(r, 4).value = m.category
         ws.getCell(r, 4).font = { name: 'Calibri', size: 10, color: { argb: INK_TEXT } }
+        ws.getCell(r, 4).alignment = { horizontal: 'center' }
 
         const amount = ws.getCell(r, 5)
         amount.value = m.amount
         amount.numFmt = '"$"#,##0.00'
-        amount.alignment = { horizontal: 'right' }
+        amount.alignment = { horizontal: 'center' }
         amount.font = { name: 'Calibri', size: 10, color: { argb: INK_TEXT } }
 
         r++
@@ -296,6 +317,24 @@ export default function ExcelDownloadButton({
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PAPER } }
           }
         }
+      }
+
+      // Borde brand alrededor del área formateada (A1:E[lastRow]). Encierra
+      // todo el reporte para que se vea como una unidad cohesiva contra el
+      // fondo gris del Excel default. Solo perímetro — sin grid interno
+      // para no agregar ruido visual.
+      const borderStyle = { style: 'medium' as const, color: { argb: BRAND_DEEP } }
+      for (let col = 1; col <= 5; col++) {
+        const top = ws.getCell(1, col)
+        top.border = { ...(top.border ?? {}), top: borderStyle }
+        const bottom = ws.getCell(lastRow, col)
+        bottom.border = { ...(bottom.border ?? {}), bottom: borderStyle }
+      }
+      for (let row = 1; row <= lastRow; row++) {
+        const left = ws.getCell(row, 1)
+        left.border = { ...(left.border ?? {}), left: borderStyle }
+        const right = ws.getCell(row, 5)
+        right.border = { ...(right.border ?? {}), right: borderStyle }
       }
 
       if (myId !== reqIdRef.current) return
