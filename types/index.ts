@@ -30,17 +30,6 @@ export type Category =
   | 'Servicios'
 export type DateFilter = 'today' | '7days' | 'month' | 'year' | 'all' | 'custom'
 export type TypeFilter = 'all' | 'ingreso' | 'gasto' | 'pendiente'
-
-export interface FilterState {
-  type: DateFilter
-  selectedMonth?: Date   // para 'month': qué mes específico (null = mes actual)
-  customRange?: { from: Date; to: Date } // para 'custom' (futuro)
-}
-
-export interface DashboardFilters {
-  dateFilter: FilterState
-  showInvestments: boolean
-}
 export type InputMode = 'text' | 'voice' | 'photo'
 
 export interface Profile {
