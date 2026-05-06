@@ -79,8 +79,11 @@ export function IconMicrophone(p: IconProps) {
 }
 
 export function IconPencil(p: IconProps) {
+  // viewBox extendido: el path original llega a ~y=24.16 (la curva del tip
+  // del lápiz) lo cual se salía del viewBox 0 0 24 24 y la punta se veía
+  // recortada. 0 0 25 25 da ~1px de margen para que la curva respire.
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" {...svgProps(p)}>
+    <svg viewBox="0 0 25 25" fill="currentColor" {...svgProps(p)}>
       <path d="M21.71 5.63 18.37 2.29a1 1 0 0 0-1.41 0L3.29 15.96a1 1 0 0 0-.27.49l-1.5 6.5a1 1 0 0 0 1.21 1.21l6.5-1.5a1 1 0 0 0 .49-.27L21.71 7.04a1 1 0 0 0 0-1.41zm-13 14.78L4.6 21.4l.99-4.11 9.91-9.91 3.13 3.13z" />
     </svg>
   )

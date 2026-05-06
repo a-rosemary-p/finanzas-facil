@@ -298,16 +298,16 @@ export function InputCard({ onMovementsExtracted, onboardingHighlight = null }: 
           <div className="text-xs font-semibold mb-1.5 text-ink-500">
             ¿Cuándo ocurrió?
           </div>
-          <label className="flex items-center justify-between rounded-xl bg-paper-2 border border-brand-border px-3 py-2 cursor-pointer">
+          <label className="relative flex items-center justify-between rounded-xl bg-paper-2 border border-brand-border px-3 py-2 cursor-pointer">
             <input
               type="date"
               value={fecha}
               max={getTodayString()}
               onChange={e => setFecha(e.target.value)}
               disabled={busy}
-              className="text-sm font-medium bg-transparent focus:outline-none flex-1 min-w-0 text-ink-700"
+              className="fz-date-clean text-sm font-medium bg-transparent focus:outline-none flex-1 min-w-0 text-ink-700"
             />
-            <IconCalendar size={20} className="text-brand-muted" />
+            <IconCalendar size={20} className="text-brand-muted relative pointer-events-none" />
           </label>
         </div>
       </div>

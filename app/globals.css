@@ -565,6 +565,23 @@ label,
 }
 
 /* Wrapper textarea/fecha del modo Escribir — fondo paper-2 con borde */
+/* Date input "limpio" — oculta el ícono nativo del calendar picker para que
+   solo se vea nuestro IconCalendar al lado. El indicador sigue siendo
+   clickable (cubre todo el input) para que tap en cualquier parte abra el
+   picker. */
+.fz-date-clean::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  cursor: pointer;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.fz-date-clean::-webkit-inner-spin-button,
+.fz-date-clean::-webkit-clear-button {
+  display: none;
+}
+
 .fz-write-input {
   background: var(--paper-2);
   border: 1px solid var(--brand-border);
