@@ -372,14 +372,9 @@ export default function AjustesPage() {
             </div>
           ) : (
             <div>
-              <div className="flex flex-col gap-1 py-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">
-                  Correo electrónico
-                </p>
-                <p className="text-sm text-brand">{profile.email}</p>
-              </div>
+              <p className="text-sm py-2 text-brand">{profile.email}</p>
               {emailSuccess && (
-                <p className="text-xs py-2 text-brand">{emailSuccess}</p>
+                <p className="text-xs pb-2 text-brand">{emailSuccess}</p>
               )}
             </div>
           )}
@@ -420,13 +415,10 @@ export default function AjustesPage() {
               />
             </div>
           ) : (
-            <div className="flex flex-col gap-1 py-3">
-              <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">
-                Contraseña
-              </p>
-              <p className="text-sm text-brand">••••••••••••</p>
+            <div>
+              <p className="text-sm py-2 text-brand">••••••••••••</p>
               {pwSuccess && (
-                <p className="text-xs mt-1 text-brand">{pwSuccess}</p>
+                <p className="text-xs pb-2 text-brand">{pwSuccess}</p>
               )}
             </div>
           )}
