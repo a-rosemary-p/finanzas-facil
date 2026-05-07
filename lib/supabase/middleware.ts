@@ -66,6 +66,9 @@ export async function updateSession(request: NextRequest) {
   // (terminan en `/`) para que `/login-admin` o `/logins` no cuenten como públicas.
   const PUBLIC_EXACT = new Set([
     '/', '/login', '/reset-password', '/og', '/og.png', '/robots.txt', '/sitemap.xml',
+    // Páginas legales públicas (v0.3) — requeridas por LFPDPPP México y por
+    // OAuth providers (Google, Stripe) que piden URL de privacy + terms.
+    '/privacidad', '/terminos',
     // /api/feedback acepta posts anónimos desde la landing (modo público).
     // El handler internamente bifurca según haya sesión o no, así que el
     // middleware no debe bloquear el caso anónimo con un 401 prematuro.

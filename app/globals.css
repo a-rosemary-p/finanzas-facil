@@ -649,3 +649,45 @@ label,
   justify-content: center;
   line-height: 1;
 }
+
+/* Estilos de "prose" para páginas legales (privacidad, términos). Tailwind v4
+ * no incluye un plugin típography por default — definimos lo mínimo aquí
+ * para que el contenido editorial se vea legible sin depender de @tailwindcss/typography. */
+.fz-prose h2 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--brand);
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+}
+.fz-prose p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--ink-700);
+  margin: 0 0 12px;
+}
+.fz-prose p:last-child { margin-bottom: 0; }
+.fz-prose ul {
+  list-style: disc;
+  padding-left: 22px;
+  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fz-prose li {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-700);
+}
+.fz-prose strong {
+  color: var(--ink-900);
+  font-weight: 600;
+}
+.fz-prose a {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.fz-prose a:hover { opacity: 0.75; }
+
