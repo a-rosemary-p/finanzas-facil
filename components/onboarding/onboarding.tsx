@@ -37,12 +37,18 @@ interface Props {
   /** Callback con el target a resaltar (o null) para que el InputCard
    *  aplique el halo en el botón correcto. */
   onHighlightChange: (target: OnboardingHighlight) => void
-  /** Nombre del user para el welcome. */
+  /** Nombre del user para el welcome. Si llegó vacío (ej. caso edge),
+   *  el step `name` lo va a llenar. */
   displayName: string
+  /** Persiste el nombre que el user escribe/confirma en el step `name`.
+   *  El padre recibe el string y llama updateProfile({ displayName }).
+   *  Si truena, capturamos el error y dejamos que el user reintente.  */
+  onSaveName: (name: string) => Promise<void>
 }
 
 type Step =
   | 'welcome'
+  | 'name'
   | 'highlight-foto'
   | 'highlight-dictar'
   | 'highlight-escribir'
@@ -52,6 +58,7 @@ type Step =
 
 const STEP_ORDER: Step[] = [
   'welcome',
+  'name',
   'highlight-foto',
   'highlight-dictar',
   'highlight-escribir',
@@ -60,13 +67,19 @@ const STEP_ORDER: Step[] = [
   'done',
 ]
 
-export function Onboarding({ onComplete, onHighlightChange, displayName }: Props) {
+export function Onboarding({ onComplete, onHighlightChange, displayName, onSaveName }: Props) {
   const [step, setStep] = useState<Step>('welcome')
+  // Estado del input de nombre. Pre-fill con lo que ya hay (signup
+  // email/password puso el nombre escrito; OAuth Google puso el full_name).
+  const [nameDraft, setNameDraft] = useState(displayName)
+  const [savingName, setSavingName] = useState(false)
+  const [nameError, setNameError] = useState('')
 
   // Cuando cambia el step, le avisamos al InputCard cuál botón resaltar.
   useEffect(() => {
     const map: Record<Step, OnboardingHighlight> = {
       'welcome':            null,
+      'name':               null,
       'highlight-foto':     'foto',
       'highlight-dictar':   'dictar',
       'highlight-escribir': 'escribir',
@@ -85,6 +98,32 @@ export function Onboarding({ onComplete, onHighlightChange, displayName }: Props
   function next() {
     const idx = STEP_ORDER.indexOf(step)
     if (idx < STEP_ORDER.length - 1) setStep(STEP_ORDER[idx + 1])
+  }
+
+  async function saveNameAndContinue() {
+    const trimmed = nameDraft.trim()
+    if (!trimmed) {
+      setNameError('Escribe tu nombre o el nombre de tu negocio.')
+      return
+    }
+    if (trimmed.length > 50) {
+      setNameError('Máximo 50 caracteres.')
+      return
+    }
+    setSavingName(true)
+    setNameError('')
+    try {
+      // Solo persistimos si cambió respecto a lo que ya tenía. Evita un PATCH
+      // gratis para users email/password que ya pusieron su nombre en signup.
+      if (trimmed !== displayName) {
+        await onSaveName(trimmed)
+      }
+      next()
+    } catch {
+      setNameError('No pudimos guardar. Intenta de nuevo.')
+    } finally {
+      setSavingName(false)
+    }
   }
 
   async function finish(reason: 'completed' | 'skipped' = 'completed') {
@@ -169,6 +208,53 @@ export function Onboarding({ onComplete, onHighlightChange, displayName }: Props
           <PrimaryButton onClick={next}>
             Empecemos
             <IconArrowRight size={18} />
+          </PrimaryButton>
+        </CenterCard>
+      )}
+
+      {step === 'name' && (
+        <CenterCard>
+          <p
+            className="text-xs font-bold uppercase mb-2"
+            style={{ color: 'var(--brand-mid)', letterSpacing: '0.1em' }}
+          >
+            Tu nombre en Fiza
+          </p>
+          <h2
+            className="font-bold mb-2"
+            style={{ color: 'var(--brand)', fontSize: 20, lineHeight: 1.25 }}
+          >
+            ¿Cómo te ponemos?
+          </h2>
+          <p
+            className="text-sm mb-4"
+            style={{ color: 'var(--ink-700)', lineHeight: 1.5 }}
+          >
+            Puedes usar tu nombre o el de tu negocio. Lo cambias cuando quieras
+            desde Perfil.
+          </p>
+
+          <label className="flex flex-col gap-1.5 mb-1">
+            <span className="fz-input-label">Nombre</span>
+            <input
+              type="text"
+              value={nameDraft}
+              onChange={e => { setNameDraft(e.target.value); setNameError('') }}
+              onKeyDown={e => { if (e.key === 'Enter') void saveNameAndContinue() }}
+              placeholder="Ej: Juan, Taquería El Güero"
+              maxLength={50}
+              autoFocus
+              className="fz-input"
+            />
+          </label>
+          {nameError && (
+            <p className="text-xs mt-1 mb-2" style={{ color: 'var(--danger)' }}>
+              {nameError}
+            </p>
+          )}
+
+          <PrimaryButton onClick={saveNameAndContinue} disabled={savingName}>
+            {savingName ? 'Guardando…' : (<>Continuar <IconArrowRight size={18} /></>)}
           </PrimaryButton>
         </CenterCard>
       )}
@@ -299,12 +385,19 @@ function ModeHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
   )
 }
 
-function PrimaryButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+function PrimaryButton({
+  onClick, children, disabled,
+}: {
+  onClick: () => void
+  children: React.ReactNode
+  disabled?: boolean
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="w-full rounded-xl text-white text-sm font-bold flex items-center justify-center gap-2"
+      disabled={disabled}
+      className="w-full rounded-xl text-white text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-70"
       style={{ background: 'var(--brand)', minHeight: 48 }}
     >
       {children}

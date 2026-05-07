@@ -68,7 +68,7 @@ function getFechaFormateada(): string {
 // ─── Inner ───────────────────────────────────────────────────────────────────
 
 function RegistrosInner() {
-  const { profile, loading: authLoading, refreshProfile } = useAuth()
+  const { profile, loading: authLoading, refreshProfile, updateProfile } = useAuth()
   const searchParams = useSearchParams()
 
   const [mode, setMode] = useState<Mode>('dashboard')
@@ -329,6 +329,9 @@ function RegistrosInner() {
         <Onboarding
           displayName={profile?.displayName ?? ''}
           onHighlightChange={setOnboardingHighlight}
+          onSaveName={async name => {
+            await updateProfile({ displayName: name })
+          }}
           onComplete={() => {
             setOnboardingDismissed(true)
             setOnboardingHighlight(null)
