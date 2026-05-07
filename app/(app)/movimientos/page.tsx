@@ -23,6 +23,7 @@ import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import { useAuth } from '@/hooks/use-auth'
 import { startProCheckout } from '@/lib/upgrade-to-pro'
 import { track } from '@/lib/analytics'
+import { getDateRange, formatRangeShort } from '@/lib/utils'
 import type { Movement, DateFilter } from '@/types'
 
 type Category = 'ingresos' | 'gastos' | 'inversiones' | 'pendientes' | 'recurrentes'
@@ -98,6 +99,19 @@ export default function MovimientosPage() {
   const [error, setError] = useState('')
 
   const categoriesArr = useMemo(() => categories ? Array.from(categories) : [], [categories])
+
+  // Rango activo formateado para mostrar debajo del toggle. Calculado
+  // client-side para feedback inmediato; el server aplica el mismo cálculo
+  // (más cap Free de 30d) y devuelve enforcedRange en la respuesta.
+  // Para `custom` solo lo mostramos si ambos pickers tienen valor.
+  const rangoLabel = useMemo(() => {
+    if (dateFilter === 'custom') {
+      if (!customFrom || !customTo) return null
+      return formatRangeShort(customFrom, customTo)
+    }
+    const { start, end } = getDateRange(dateFilter, undefined, undefined, undefined)
+    return formatRangeShort(start, end)
+  }, [dateFilter, customFrom, customTo])
 
   const buildUrl = useCallback((newOffset: number) => {
     const params = new URLSearchParams()
@@ -241,6 +255,15 @@ export default function MovimientosPage() {
               )
             })}
           </div>
+
+          {/* Rango activo — debajo del toggle, alinea a la izquierda. Hace
+            * inequívoco qué fechas cubre el filtro elegido (especialmente
+            * para "Mes" que es rolling 30d, no calendario). */}
+          {rangoLabel && (
+            <p className="text-xs text-brand-muted px-1 mt-0.5">
+              {rangoLabel}
+            </p>
+          )}
 
           {/* Pickers de rango custom */}
           {dateFilter === 'custom' && isPro && (

@@ -137,11 +137,24 @@ export function getDateRange(
       range = { start: fmt(start), end }; break
     }
     case 'month': {
-      const target = selectedMonth ?? today
-      const y = target.getFullYear()
-      const mo = target.getMonth()
-      const lastDay = new Date(y, mo + 1, 0)
-      range = { start: `${y}-${pad(mo + 1)}-01`, end: fmt(lastDay) }; break
+      // v0.3: rolling 30 días en lugar de mes calendario.
+      // Razón: el copy de marketing dice "30 días de historial" y los users
+      // esperaban ver 30 días. Antes (calendario) si era 7 mayo, "Mes" mostraba
+      // 7 días y confundía. Ahora "Mes" = [hoy - 29, hoy], consistente con
+      // /inicio MetricsCard y con el copy. Si el caller pasa selectedMonth
+      // específico, respetamos calendario para back-compat de cualquier flow
+      // legacy (hoy ningún caller activo lo hace).
+      if (selectedMonth) {
+        const y = selectedMonth.getFullYear()
+        const mo = selectedMonth.getMonth()
+        const lastDay = new Date(y, mo + 1, 0)
+        range = { start: `${y}-${pad(mo + 1)}-01`, end: fmt(lastDay) }
+      } else {
+        const start = new Date(today)
+        start.setDate(today.getDate() - 29)
+        range = { start: fmt(start), end }
+      }
+      break
     }
     case 'year':
       range = { start: `${today.getFullYear()}-01-01`, end: `${today.getFullYear()}-12-31` }; break
@@ -164,6 +177,30 @@ export function getDateRange(
   }
 
   return range
+}
+
+// Formatea un rango YYYY-MM-DD → texto humano corto en español.
+//   - Mismo día                  → "7 may"
+//   - Mismo mes (rango)          → "1 — 7 may"
+//   - Distinto mes (mismo año)   → "8 abr — 7 may"
+//   - Distintos años             → "8 abr 2025 — 7 may 2026"
+// Pensado para mostrar bajo el toggle de fechas en /movimientos.
+export function formatRangeShort(start: string, end: string): string {
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
+  const parse = (ymd: string) => {
+    const [y, m, d] = ymd.split('-').map(Number)
+    return { y, m: m - 1, d }
+  }
+  const s = parse(start)
+  const e = parse(end)
+  const fmtDay = (p: { d: number }) => String(p.d)
+  const fmtDayMon = (p: { m: number; d: number }) => `${p.d} ${meses[p.m]}`
+  const fmtFull = (p: { y: number; m: number; d: number }) => `${p.d} ${meses[p.m]} ${p.y}`
+
+  if (start === end) return fmtDayMon(s)
+  if (s.y !== e.y) return `${fmtFull(s)} — ${fmtFull(e)}`
+  if (s.m === e.m) return `${fmtDay(s)} — ${fmtDayMon(e)}`
+  return `${fmtDayMon(s)} — ${fmtDayMon(e)}`
 }
 
 // Agrupa movimientos por movement_date → { 'YYYY-MM-DD': Movement[] }
