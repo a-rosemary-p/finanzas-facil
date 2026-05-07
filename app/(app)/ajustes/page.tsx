@@ -119,9 +119,24 @@ function EditInput({ label, value, onChange, type = 'text', placeholder, error }
 
 // ── Página ──────────────────────────────────────────────────
 export default function AjustesPage() {
-  const { profile, loading, updateSettings, updateEmail, updatePassword } = useAuth()
+  const {
+    profile, identities, loading,
+    updateSettings, updateEmail, updatePassword, sendPasswordSetupEmail,
+  } = useAuth()
   const [editingSection, setEditingSection] = useState<EditingSection>(null)
   const [saving, setSaving] = useState(false)
+
+  // Identity providers del user — el UI condicional de Cuenta/Contraseña
+  // depende de si el user tiene identity 'email' (signup con password) o
+  // solo OAuth (ej. solo Google). Sin password seteado, el flow tradicional
+  // de cambio de correo/password no aplica — ofrecemos rutas alternativas.
+  const hasPassword = identities.includes('email')
+  const hasGoogle   = identities.includes('google')
+
+  // Estado del envío del magic link "configurar contraseña" para users solo-Google.
+  const [pwSetupSending, setPwSetupSending] = useState(false)
+  const [pwSetupSent, setPwSetupSent] = useState(false)
+  const [pwSetupError, setPwSetupError] = useState('')
 
   // Cuenta
   const [emailDraft, setEmailDraft] = useState('')
@@ -208,6 +223,19 @@ export default function AjustesPage() {
       setSaving(false)
     }
   }, [pwDraft, updatePassword])
+
+  const handleSendPasswordSetup = useCallback(async () => {
+    setPwSetupSending(true)
+    setPwSetupError('')
+    try {
+      await sendPasswordSetupEmail()
+      setPwSetupSent(true)
+    } catch {
+      setPwSetupError('No pudimos enviar el correo. Intenta de nuevo.')
+    } finally {
+      setPwSetupSending(false)
+    }
+  }, [sendPasswordSetupEmail])
 
   const handleUpgrade = useCallback(async () => {
     setCheckoutLoading(true)
@@ -344,6 +372,10 @@ export default function AjustesPage() {
         </SectionCard>
 
         {/* ── 3. Cuenta ── */}
+        {/* Para users con identity 'email' (tienen password): card editable
+         *  como siempre. Para users solo-Google: sin botón Editar — cambiar
+         *  el correo en Supabase requiere password (que no tienen). Mostramos
+         *  el correo + sugerencia de gestionarlo desde Google. */}
         <SectionCard
           title="Cuenta"
           editing={isCuentaEditing}
@@ -351,8 +383,9 @@ export default function AjustesPage() {
           onSave={saveEmail}
           onCancel={closeSection}
           saving={saving}
+          noEdit={!hasPassword}
         >
-          {isCuentaEditing ? (
+          {hasPassword && isCuentaEditing ? (
             <div className="flex flex-col gap-4 pt-2">
               <EditInput
                 label="Contraseña actual"
@@ -373,6 +406,20 @@ export default function AjustesPage() {
           ) : (
             <div>
               <p className="text-sm py-2 text-brand">{profile.email}</p>
+              {!hasPassword && hasGoogle && (
+                <p className="text-xs pb-2 text-brand-muted leading-relaxed">
+                  Tu correo viene de Google. Si lo quieres cambiar, hazlo desde tu{' '}
+                  <a
+                    href="https://myaccount.google.com/email"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline text-brand"
+                  >
+                    cuenta Google
+                  </a>{' '}
+                  y vuelve a entrar.
+                </p>
+              )}
               {emailSuccess && (
                 <p className="text-xs pb-2 text-brand">{emailSuccess}</p>
               )}
@@ -381,6 +428,11 @@ export default function AjustesPage() {
         </SectionCard>
 
         {/* ── 4. Contraseña ── */}
+        {/* Para users con password: card editable normal.
+         *  Para users solo-Google: card "Sin contraseña" + botón
+         *  "Configurar contraseña" que envía magic link al correo. Al
+         *  confirmar, el user setea password y queda con identity 'email'
+         *  adicional al 'google' que ya tenía. */}
         <SectionCard
           title="Contraseña"
           editing={isPwEditing}
@@ -388,8 +440,9 @@ export default function AjustesPage() {
           onSave={savePassword}
           onCancel={closeSection}
           saving={saving}
+          noEdit={!hasPassword}
         >
-          {isPwEditing ? (
+          {hasPassword && isPwEditing ? (
             <div className="flex flex-col gap-4 pt-2">
               <EditInput
                 label="Contraseña actual"
@@ -414,11 +467,43 @@ export default function AjustesPage() {
                 error={pwError}
               />
             </div>
-          ) : (
+          ) : hasPassword ? (
             <div>
               <p className="text-sm py-2 text-brand">••••••••••••</p>
               {pwSuccess && (
                 <p className="text-xs pb-2 text-brand">{pwSuccess}</p>
+              )}
+            </div>
+          ) : (
+            // Solo-Google: sin password seteado todavía.
+            <div className="flex flex-col gap-3 pt-2">
+              <p className="text-sm text-brand-mid leading-relaxed">
+                Aún no tienes contraseña — entras con Google.
+                Configura una para tener un respaldo y poder entrar también
+                con correo y contraseña.
+              </p>
+              {pwSetupSent ? (
+                <div className="rounded-xl bg-brand-chip border border-brand-light px-3 py-2.5">
+                  <p className="text-xs text-brand">
+                    Te enviamos un correo a <strong>{profile.email}</strong> con
+                    el link para configurar tu contraseña. Revisa tu bandeja
+                    (o spam).
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleSendPasswordSetup}
+                    disabled={pwSetupSending}
+                    className="w-full text-white rounded-xl py-3 font-bold text-sm min-h-[44px] transition-opacity disabled:opacity-60 bg-brand"
+                  >
+                    {pwSetupSending ? 'Enviando…' : 'Configurar contraseña'}
+                  </button>
+                  {pwSetupError && (
+                    <p className="text-xs text-danger">{pwSetupError}</p>
+                  )}
+                </>
               )}
             </div>
           )}

@@ -10,6 +10,15 @@ import type { Profile, ProfileUpdate, SettingsUpdate } from '@/types'
 export function useAuth() {
   const router = useRouter()
   const [profile, setProfile] = useState<Profile | null>(null)
+  // Lista de identity providers vinculados al user (v0.3, OAuth + email).
+  //   ['email']           — signup tradicional con password.
+  //   ['google']          — solo entra con Google, no tiene password seteado.
+  //   ['email','google']  — ambos disponibles (auto-link verified, o user
+  //                          configuró password después de entrar con Google).
+  // Lo usa /ajustes para decidir si los cards de Cuenta/Contraseña permiten
+  // edit (necesitan password) o si muestran flow alternativo "Configurar
+  // contraseña" / "Gestiona en Google".
+  const [identities, setIdentities] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
 
   async function loadProfile(supabase: ReturnType<typeof createClient>, userId: string) {
@@ -60,6 +69,14 @@ export function useAuth() {
         return
       }
 
+      // user.identities es Identity[] o undefined (depende del SDK version
+      // y de si la sesión incluyó identities). Mapeamos a string[] de providers
+      // únicos, ordenados para que la UI sea determinista.
+      const providers = Array.from(
+        new Set((user.identities ?? []).map(i => i.provider))
+      ).sort()
+      setIdentities(providers)
+
       await loadProfile(supabase, user.id)
 
       setProfile(prev => prev ?? {
@@ -81,9 +98,15 @@ export function useAuth() {
     load()
 
     // Recargar perfil cuando Supabase confirma cambios (email change, etc.)
+    // También re-leer identities para reflejar identity nueva (ej. agregar
+    // password a una cuenta que solo era Google → aparece 'email' en la lista).
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'USER_UPDATED' && session?.user) {
         loadProfile(supabase, session.user.id)
+        const providers = Array.from(
+          new Set((session.user.identities ?? []).map(i => i.provider))
+        ).sort()
+        setIdentities(providers)
       }
     })
 
@@ -199,5 +222,31 @@ export function useAuth() {
     router.replace('/login')
   }
 
-  return { profile, loading, logout, refreshProfile, updateProfile, updateSettings, updateEmail, updatePassword }
+  // Helper para enviar magic link de "configurar contraseña" cuando el
+  // user entró con Google y no tiene password seteado. Reusa el flow de
+  // resetPasswordForEmail — al confirmar, cae en /reset-password donde
+  // setea su nueva contraseña, y a partir de ahí queda con identity 'email'
+  // adicional al 'google' que ya tenía.
+  async function sendPasswordSetupEmail() {
+    if (!profile) throw new Error('No hay perfil cargado')
+    const supabase = createClient()
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      profile.email,
+      { redirectTo: `${window.location.origin}/auth/confirm?next=/reset-password` }
+    )
+    if (error) throw error
+  }
+
+  return {
+    profile,
+    identities,
+    loading,
+    logout,
+    refreshProfile,
+    updateProfile,
+    updateSettings,
+    updateEmail,
+    updatePassword,
+    sendPasswordSetupEmail,
+  }
 }
