@@ -36,8 +36,8 @@ export default function TerminosPage() {
             </p>
             <p>
               El Servicio lo opera <strong>Víctor Alonso Hernández González</strong>,
-              persona física con actividad empresarial, RFC <strong>HEGV940308881</strong>,
-              con domicilio en Tecate, Baja California, México (en adelante &ldquo;Fiza&rdquo;).
+              persona física con actividad empresarial, con domicilio en Tecate, Baja
+              California, México (en adelante &ldquo;Fiza&rdquo;).
             </p>
           </section>
 

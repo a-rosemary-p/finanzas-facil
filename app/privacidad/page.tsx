@@ -32,10 +32,11 @@ export default function PrivacidadPage() {
             <h2>1. Identidad del Responsable</h2>
             <p>
               <strong>Víctor Alonso Hernández González</strong> (en adelante &ldquo;Fiza&rdquo;,
-              &ldquo;nosotros&rdquo;), con RFC <strong>HEGV940308881</strong>, persona física
-              con actividad empresarial bajo el régimen de Plataformas Tecnológicas, con
-              domicilio fiscal en Tecate, Baja California, México, es el responsable del
-              tratamiento de tus datos personales.
+              &ldquo;nosotros&rdquo;), persona física con actividad empresarial, con
+              domicilio en Tecate, Baja California, México, es el responsable del
+              tratamiento de tus datos personales. Para cualquier asunto relacionado
+              con este Aviso, el medio de contacto es{' '}
+              <a href="mailto:admin@fiza.mx">admin@fiza.mx</a>.
             </p>
             <p>
               Fiza opera la aplicación web <strong>fiza.mx</strong>, una herramienta para
