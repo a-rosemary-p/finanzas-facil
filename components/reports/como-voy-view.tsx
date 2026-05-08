@@ -229,11 +229,10 @@ function AICard({ state, onAnalyze }: AICardProps) {
                 </li>
               ))}
             </ul>
-            {state.data.cheer && (
-              <p className="text-sm font-medium italic text-income-text mt-auto pt-2">
-                {state.data.cheer}
-              </p>
-            )}
+            {/* (v0.292) Cheer escondido — se sentía como porra abajo de
+             * insights. El campo sigue viviendo en la respuesta de la API
+             * por si lo queremos volver a mostrar después; el componente
+             * simplemente no lo renderiza. */}
           </div>
         )}
       </div>
