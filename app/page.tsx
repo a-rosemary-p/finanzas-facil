@@ -499,10 +499,12 @@ export default function HomePage() {
           <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left">
             {/* Main headline */}
             <h1
-              className="font-bold mb-2"
+              className="font-bold mb-4"
               style={{
                 color: '#fff',
-                fontSize: 'clamp(3rem, 9vw, 5.5rem)',
+                /* clamp un step más chico que antes (era 3rem→5.5rem).
+                 * Floor cerca de text-4xl, ceiling cerca de text-7xl. */
+                fontSize: 'clamp(2.5rem, 8vw, 4.5rem)',
                 lineHeight: 0.92,
                 letterSpacing: '-0.03em',
                 maxWidth: '520px',
@@ -514,9 +516,9 @@ export default function HomePage() {
             {/* Wave underline — Light weight (v2 design system) */}
             <WaveUnderline color="rgba(255,255,255,0.42)" />
 
-            {/* Subtitle */}
+            {/* Subtitle (mt-4: respiro entre wave y subtitle) */}
             <p
-              className="leading-relaxed mb-4"
+              className="leading-relaxed mt-4 mb-4"
               style={{
                 color: 'rgba(255,255,255,0.88)',
                 fontSize: '17px',
