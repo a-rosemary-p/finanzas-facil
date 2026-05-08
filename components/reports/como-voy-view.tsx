@@ -124,15 +124,18 @@ function ProView({ period }: { period: PeriodSelection }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Card IA — tamaño fijo, no se mueve cuando llega la respuesta */}
-      <AICard state={insightsState} onAnalyze={runAnalysis} />
-
-      {/* Gráfica comparativa actual vs anterior */}
+      {/* Gráfica comparativa actual vs anterior — primero (v0.292):
+       * la lectura visual de período actual vs anterior es lo que
+       * orienta antes de leer la narrativa de IA. */}
       <PeriodComparisonChart
         buckets={summary?.buckets ?? []}
         previousBuckets={summary?.previousBuckets ?? []}
         loading={summaryLoading}
       />
+
+      {/* Card IA debajo — el análisis textual complementa lo que ya
+       * se vio en la gráfica. */}
+      <AICard state={insightsState} onAnalyze={runAnalysis} />
     </div>
   )
 }
@@ -278,8 +281,8 @@ function FreePreview() {
     <div className="relative">
       <div className="fz-blur-preview">
         <div className="flex flex-col gap-4">
-          <AICard state={{ kind: 'ready', data: mockInsights }} onAnalyze={() => {}} />
           <PeriodComparisonChart buckets={mockBuckets} previousBuckets={mockPrev} loading={false} />
+          <AICard state={{ kind: 'ready', data: mockInsights }} onAnalyze={() => {}} />
         </div>
       </div>
 
