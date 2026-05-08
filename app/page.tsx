@@ -515,14 +515,14 @@ export default function HomePage() {
       </header>
 
       {/* ── Hero ──────────────────────────────────────────────────────────────
-          v0.292: gradient verde sólido (más oscuro que el de antes que
-          usaba var(--brand-hero) → var(--brand-deep)). Ahora usa los
-          tokens del brand que vive in-app: --brand (#578466) → --brand-deep
-          (#3d6050). Dark bg → texto en white/* (ya seteado abajo). */}
+          v0.292: gradient diagonal con MÁS contraste — brand-deep (top-left
+          donde vive el headline, contrasta bien con texto blanco) →
+          brand-light (mint, bottom-right donde vive el mockup del iPhone).
+          135deg = top-left → bottom-right. */}
       <section
         className="relative overflow-hidden"
         style={{
-          background: 'linear-gradient(180deg, var(--brand) 0%, var(--brand-deep) 100%)',
+          background: 'linear-gradient(135deg, var(--brand-deep) 0%, var(--brand-light) 100%)',
         }}
       >
         <div className="max-w-5xl mx-auto px-5 pt-10 pb-20 md:pt-14 md:pb-24 flex flex-col md:flex-row items-center gap-10 md:gap-14">
