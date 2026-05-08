@@ -57,7 +57,7 @@ export function RecentMovements({ refreshKey = 0 }: Props) {
 
   return (
     <div>
-      <div className="text-[13px] font-bold uppercase tracking-[0.08em] text-ink-500">
+      <div className="text-sm font-bold uppercase tracking-[0.08em] text-ink-500">
         Últimos movimientos
       </div>
 
