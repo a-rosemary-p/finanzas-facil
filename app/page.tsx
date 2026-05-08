@@ -515,16 +515,18 @@ export default function HomePage() {
       </header>
 
       {/* ── Hero ──────────────────────────────────────────────────────────────
-          v0.292 (segundo paso): gradient pastel diagonal — verde mint a
-          lima muy claros. Light bg → texto cambia a brand-deep / ink-* en
-          vez de white. */}
+          v0.292: gradient pastel con los colores del brand —
+          --brand-light (mint #92C3A5) → --brand-lime (#DAE68F).
+          Dirección 225deg = mint top-right, lime bottom-left, igual que
+          el PNG de referencia del logo. Light bg → texto en
+          brand-deep / ink-* (ya seteado abajo). */}
       <section
         className="relative overflow-hidden"
         style={{
-          background: 'linear-gradient(115deg, #BFDACB 25%, #E8F0B9 75%)',
+          background: 'linear-gradient(225deg, var(--brand-light) 25%, var(--brand-lime) 75%)',
         }}
       >
-        <div className="max-w-5xl mx-auto px-5 pt-16 pb-28 md:py-20 md:pb-32 flex flex-col md:flex-row items-center gap-10 md:gap-14">
+        <div className="max-w-5xl mx-auto px-5 pt-10 pb-20 md:pt-14 md:pb-24 flex flex-col md:flex-row items-center gap-10 md:gap-14">
 
           {/* Text */}
           <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left">
@@ -653,7 +655,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Cómo funciona ───────────────────────────────────────────────────── */}
-      <section id="como-funciona" className="py-14 px-4" style={{ background: 'var(--paper-2)', position: 'relative', overflow: 'hidden' }}>
+      <section id="como-funciona" className="pt-9 pb-14 px-4" style={{ background: 'var(--paper-2)', position: 'relative', overflow: 'hidden' }}>
         <div className="max-w-4xl mx-auto">
           <p className="text-center mb-3" style={eyebrowStyle}>Cómo funciona</p>
           <h2 className="text-center mb-3" style={secTitleStyle}>
@@ -682,7 +684,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Para negocios ───────────────────────────────────────────────────── */}
-      <section id="para-quien" className="py-14 px-4" style={{ background: 'var(--paper)', position: 'relative', overflow: 'hidden' }}>
+      <section id="para-quien" className="pt-9 pb-14 px-4" style={{ background: 'var(--paper)', position: 'relative', overflow: 'hidden' }}>
         <div className="max-w-4xl mx-auto">
           <p className="text-center mb-3" style={eyebrowStyle}>Para quién es</p>
           <h2 className="text-center mb-9" style={secTitleStyle}>
@@ -736,7 +738,7 @@ export default function HomePage() {
       {/* ── Features destacados ─────────────────────────────────────────────── */}
       <section
         id="que-hace"
-        className="py-14 px-4"
+        className="pt-9 pb-14 px-4"
         /* v0.292: bg sólido brand-deep en vez de gradient. El gradient
          * (145deg brand-deep → #578466) hacía que la WaveDivider de la
          * sección anterior (fill brand-deep solid) NO matcheara el bg
@@ -813,7 +815,7 @@ export default function HomePage() {
       </section>
 
       {/* ── CTA intermedio ──────────────────────────────────────────────────── */}
-      <section className="py-16 px-4" style={{ background: 'var(--paper-2)', position: 'relative', overflow: 'hidden' }}>
+      <section className="pt-10 pb-16 px-4" style={{ background: 'var(--paper-2)', position: 'relative', overflow: 'hidden' }}>
         <div className="max-w-xl mx-auto text-center">
           <h2 className="mb-3" style={secTitleStyle}>
             Empieza ahora — toma menos de un minuto
@@ -847,7 +849,7 @@ export default function HomePage() {
       </section>
 
       {/* ── FAQ ─────────────────────────────────────────────────────────────── */}
-      <section id="faq" className="py-14 px-4" style={{ background: 'var(--paper)', position: 'relative', overflow: 'hidden' }}>
+      <section id="faq" className="pt-9 pb-14 px-4" style={{ background: 'var(--paper)', position: 'relative', overflow: 'hidden' }}>
         <div className="max-w-xl mx-auto">
           <p className="text-center mb-3" style={eyebrowStyle}>Preguntas frecuentes</p>
           <h2 className="text-center mb-8" style={secTitleStyle}>
