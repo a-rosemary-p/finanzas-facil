@@ -595,8 +595,9 @@ export default function HomePage() {
           </div>
 
           {/* iPhone mockup — screenshot real de /inicio (v0.292: reemplazó
-           * el video animado abstracto). Mismo styling de drop-shadow para
-           * que flote sobre el fondo verde del hero. */}
+           * el video animado abstracto). drop-shadow removido — el PNG no
+           * tenía bleed transparente lo suficientemente limpio en los
+           * bordes y el filter dibujaba un rectángulo visible en mobile. */}
           <div className="flex-shrink-0 w-full md:w-auto flex justify-center">
             <img
               src="/inicio.png"
@@ -607,7 +608,6 @@ export default function HomePage() {
                 maxWidth: '391px',
                 height: 'auto',
                 display: 'block',
-                filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.35))',
               }}
             />
           </div>
@@ -723,49 +723,56 @@ export default function HomePage() {
           >
             Más que registrar — fiza trabaja para ti
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {FEATURE_HIGHLIGHTS.map(f => (
-              <div
-                key={f.title}
-                className="relative rounded-2xl p-6 flex flex-col gap-4"
-                style={{
-                  background: 'rgba(255,255,255,0.09)',
-                  border: '1px solid rgba(255,255,255,0.14)',
-                }}
-              >
-                {f.isPro && (
-                  <span
-                    className="absolute top-3 right-3 text-[9px] font-bold px-2 py-0.5 rounded-full"
-                    style={{ background: 'rgba(255,255,255,0.18)', color: '#fff', letterSpacing: '0.08em' }}
-                  >
-                    PRO
-                  </span>
-                )}
-                <img
-                  src={f.image}
-                  alt={f.title}
-                  draggable={false}
-                  className="mx-auto mb-4"
+          {/* Mobile: carousel horizontal con snap, cada card al ~70% del
+           * viewport para que la siguiente "asome" y sea obvio que se
+           * desliza. Desktop: grid 3 cols. El bleed -mx-4 + px-4 deja que
+           * los cards lleguen al borde de la pantalla en mobile sin que
+           * salgan del padding del padre. */}
+          <div className="-mx-4 px-4 md:mx-0 md:px-0">
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-3 no-scrollbar md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:pb-0">
+              {FEATURE_HIGHLIGHTS.map(f => (
+                <div
+                  key={f.title}
+                  className="relative rounded-2xl p-4 md:p-5 flex flex-col gap-3 shrink-0 snap-start w-[72%] sm:w-[55%] md:w-auto"
                   style={{
-                    width: '100%',
-                    maxWidth: '240px',
-                    height: 'auto',
-                    display: 'block',
+                    background: 'rgba(255,255,255,0.09)',
+                    border: '1px solid rgba(255,255,255,0.14)',
                   }}
-                />
-                <div>
-                  <p
-                    className="font-bold mb-2"
-                    style={{ color: '#fff', fontSize: '16px', letterSpacing: '-0.01em' }}
-                  >
-                    {f.title}
-                  </p>
-                  <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '14px', lineHeight: 1.55 }}>
-                    {f.body}
-                  </p>
+                >
+                  {f.isPro && (
+                    <span
+                      className="absolute top-3 right-3 text-[9px] font-bold px-2 py-0.5 rounded-full z-10"
+                      style={{ background: 'rgba(255,255,255,0.18)', color: '#fff', letterSpacing: '0.08em' }}
+                    >
+                      PRO
+                    </span>
+                  )}
+                  <img
+                    src={f.image}
+                    alt={f.title}
+                    draggable={false}
+                    className="mx-auto"
+                    style={{
+                      width: '100%',
+                      maxWidth: '320px',
+                      height: 'auto',
+                      display: 'block',
+                    }}
+                  />
+                  <div>
+                    <p
+                      className="font-bold mb-1.5"
+                      style={{ color: '#fff', fontSize: '16px', letterSpacing: '-0.01em' }}
+                    >
+                      {f.title}
+                    </p>
+                    <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '14px', lineHeight: 1.5 }}>
+                      {f.body}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
         <WaveDivider fill="var(--paper-2)" />
