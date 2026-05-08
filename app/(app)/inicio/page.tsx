@@ -203,13 +203,9 @@ function RegistrosInner() {
             />
           </div>
 
-{/* Wave divisor */}
-          <div className="px-4 pt-3.5 pb-1.5">
-            <WaveSection />
-          </div>
-
-          {/* Recent movements */}
-          <div className="px-3.5 pb-4">
+          {/* Recent movements (incluye su propio Wave divider debajo del
+           * subheader, ver components/inicio/recent-movements.tsx) */}
+          <div className="px-3.5 pt-3 pb-4">
             <RecentMovements refreshKey={refreshKey} />
           </div>
 

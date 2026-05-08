@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import { IconArrowRight } from '@/components/icons'
 import { MovementCard } from '@/components/entries/entry-card'
+import { WaveSection } from '@/components/ui/wave'
 import type { Movement } from '@/types'
 
 interface Props {
@@ -56,8 +57,15 @@ export function RecentMovements({ refreshKey = 0 }: Props) {
 
   return (
     <div>
-      <div className="text-xs font-bold uppercase mb-2.5 tracking-[0.08em] text-ink-500">
+      <div className="text-[13px] font-bold uppercase tracking-[0.08em] text-ink-500">
         Últimos movimientos
+      </div>
+
+      {/* Wave divisor entre el subheader y el contenido — antes vivía
+       * arriba del componente en inicio/page.tsx; lo movimos acá para que
+       * el subheader respire encima del divisor. */}
+      <div className="py-2">
+        <WaveSection />
       </div>
 
       {loading ? (
