@@ -515,15 +515,14 @@ export default function HomePage() {
       </header>
 
       {/* ── Hero ──────────────────────────────────────────────────────────────
-          v0.292: gradient pastel con los colores del brand —
-          --brand-light (mint #92C3A5) → --brand-lime (#DAE68F).
-          Dirección 225deg = mint top-right, lime bottom-left, igual que
-          el PNG de referencia del logo. Light bg → texto en
-          brand-deep / ink-* (ya seteado abajo). */}
+          v0.292: gradient verde sólido (más oscuro que el de antes que
+          usaba var(--brand-hero) → var(--brand-deep)). Ahora usa los
+          tokens del brand que vive in-app: --brand (#578466) → --brand-deep
+          (#3d6050). Dark bg → texto en white/* (ya seteado abajo). */}
       <section
         className="relative overflow-hidden"
         style={{
-          background: 'linear-gradient(225deg, var(--brand-light) 25%, var(--brand-lime) 75%)',
+          background: 'linear-gradient(180deg, var(--brand) 0%, var(--brand-deep) 100%)',
         }}
       >
         <div className="max-w-5xl mx-auto px-5 pt-10 pb-20 md:pt-14 md:pb-24 flex flex-col md:flex-row items-center gap-10 md:gap-14">
@@ -534,7 +533,7 @@ export default function HomePage() {
             <h1
               className="font-bold mb-4"
               style={{
-                color: 'var(--brand-deep)',
+                color: '#fff',
                 /* clamp un step más chico que antes (era 3rem→5.5rem).
                  * Floor cerca de text-4xl, ceiling cerca de text-7xl. */
                 fontSize: 'clamp(2.5rem, 8vw, 4.5rem)',
@@ -546,15 +545,14 @@ export default function HomePage() {
               Lo que cobras<br />no es lo que ganas.
             </h1>
 
-            {/* Wave underline — sobre bg pastel necesita color brand para
-             * verse, no white. */}
-            <WaveUnderline color="rgba(61,96,80,0.4)" />
+            {/* Wave underline — Light weight (v2 design system) */}
+            <WaveUnderline color="rgba(255,255,255,0.42)" />
 
             {/* Subtitle (mt-4: respiro entre wave y subtitle) */}
             <p
               className="leading-relaxed mt-4 mb-4"
               style={{
-                color: 'var(--ink-700)',
+                color: 'rgba(255,255,255,0.88)',
                 fontSize: '17px',
                 lineHeight: 1.55,
                 maxWidth: '420px',
@@ -567,7 +565,7 @@ export default function HomePage() {
             <p
               className="mb-6"
               style={{
-                color: 'var(--ink-500)',
+                color: 'rgba(255,255,255,0.72)',
                 fontSize: '15px',
                 lineHeight: 1.55,
                 letterSpacing: '-0.01em',
@@ -606,21 +604,21 @@ export default function HomePage() {
              * precio visible. */}
             <p
               className="mt-3 text-sm text-center md:text-left"
-              style={{ color: 'var(--ink-500)' }}
+              style={{ color: 'rgba(255,255,255,0.7)' }}
             >
               Sin tarjeta. Listo en 60 segundos.
             </p>
 
             <p
               className="mt-4 text-sm text-center md:text-left"
-              style={{ color: 'var(--ink-500)', fontStyle: 'italic' }}
+              style={{ color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}
             >
               Tan rápido como mandar un WhatsApp.
             </p>
 
             <p
               className="mt-2 text-sm font-medium text-center md:text-left"
-              style={{ color: 'var(--brand-deep)' }}
+              style={{ color: 'rgba(255,255,255,0.85)' }}
             >
               Gratis hasta 10 movimientos al día · Pro $49 MXN/mes
             </p>
