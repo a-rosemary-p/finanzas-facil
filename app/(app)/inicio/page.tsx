@@ -13,7 +13,6 @@
  *   Wave divisor (alta frecuencia, brand-mid 50%)
  *   MetricsCard — período (Hoy/Semana/Mes/Año) + 3 sub-cards con sparkline+delta
  *   InputCard — 3 botones (Foto/Dictar/Escribir), textarea expandible cuando Escribir
- *   Insight chip (centrado)
  *   Wave divisor
  *   RecentMovements — últimos 5 por created_at, "Mostrar más" → 10 → /reportes
  *   Upgrade banner (welcome) si ?upgraded=1
@@ -76,7 +75,9 @@ function RegistrosInner() {
   const [period, setPeriod] = useState<RegistrosPeriod>('global')
   const [refreshKey, setRefreshKey] = useState(0)
 
-  const [insight, setInsight] = useState<string | null>(null)
+  // (v0.292) Insight chip removido — el copy era confuso ("te dice algo en
+  // general"). El endpoint `/api/insights` sigue vivo y el state se puede
+  // restaurar acá cuando rediseñemos qué decirle al user en ese spot.
   const [upgradedBanner, setUpgradedBanner] = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
@@ -106,16 +107,7 @@ function RegistrosInner() {
     !showOnboarding &&
     mode === 'dashboard'
 
-  // Insight: fire-and-forget; no se loguea error si falla.
-  useEffect(() => {
-    if (!profile?.id) return
-    fetchWithAuthRetry('/api/insights')
-      .then(r => r.json())
-      .then((d: { insight?: string }) => { if (d.insight) setInsight(d.insight) })
-      .catch(() => { /* non-critical */ })
-  }, [profile?.id])
-
-  // Banner de bienvenida tras checkout exitoso.
+// Banner de bienvenida tras checkout exitoso.
   useEffect(() => {
     if (searchParams.get('upgraded') === '1') {
       setUpgradedBanner(true)
@@ -211,16 +203,7 @@ function RegistrosInner() {
             />
           </div>
 
-          {/* Insight chip */}
-          {insight && (
-            <div className="flex justify-center px-[18px] pt-3.5 pb-1">
-              <span className="inline-block rounded-full text-xs px-3 py-1.5 bg-paper border border-expense-border text-ink-700 max-w-[320px] text-center">
-                {insight}
-              </span>
-            </div>
-          )}
-
-          {/* Wave divisor */}
+{/* Wave divisor */}
           <div className="px-4 pt-3.5 pb-1.5">
             <WaveSection />
           </div>
