@@ -436,9 +436,9 @@ export default function HomePage() {
           background: scrolled ? 'rgba(252,253,248,0.92)' : 'var(--paper)',
           backdropFilter: scrolled ? 'blur(12px)' : 'none',
           WebkitBackdropFilter: scrolled ? 'blur(12px)' : 'none',
-          borderBottom: scrolled ? '1px solid var(--brand-border)' : '1px solid transparent',
-          transition: `background var(--dur-std) var(--ease-standard),
-                       border-color var(--dur-std) var(--ease-standard)`,
+          /* v0.292: borderBottom removido a favor del wavy divider que
+           * matchea el AppHeader in-app. */
+          transition: `background var(--dur-std) var(--ease-standard)`,
         }}
       >
         <img src="/logo-green.png" alt="fiza" style={{ height: '26px', width: 'auto', display: 'block' }} />
@@ -487,17 +487,41 @@ export default function HomePage() {
             Empieza gratis
           </Link>
         </div>
+
+        {/* Wave cutoff inferior — mismo patrón que el AppHeader in-app
+         * (componente y CSS class fz-app-header__wave en globals.css).
+         * Aquí inline porque el header del landing tiene geometría
+         * propia (height 60px, paddingTop safe-area) distinta del
+         * .fz-app-header. fill matchea var(--paper) del bg unscrolled. */}
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 390 12"
+          preserveAspectRatio="none"
+          style={{
+            display: 'block',
+            width: '100%',
+            height: '12px',
+            position: 'absolute',
+            bottom: '-11px',
+            left: 0,
+            zIndex: 1,
+          }}
+        >
+          <path
+            d="M 0 0 L 0 6 C 48 12, 97 0, 146 6 S 243 12, 292 6 S 350 2, 390 6 L 390 0 Z"
+            fill={scrolled ? 'rgba(252,253,248,0.92)' : 'var(--paper)'}
+          />
+        </svg>
       </header>
 
       {/* ── Hero ──────────────────────────────────────────────────────────────
-          v0.292: regresamos a gradient bg ahora que el mockup es <img>
-          estática y no <video>. El video no se podía poner sobre un
-          gradient (su backgroundColor sólido tapaba la transición).
-          --brand-hero (verde claro) → --brand-deep (verde profundo). */}
+          v0.292 (segundo paso): gradient pastel diagonal — verde mint a
+          lima muy claros. Light bg → texto cambia a brand-deep / ink-* en
+          vez de white. */}
       <section
         className="relative overflow-hidden"
         style={{
-          background: 'linear-gradient(180deg, var(--brand-hero) 0%, var(--brand-deep) 100%)',
+          background: 'linear-gradient(115deg, #BFDACB 25%, #E8F0B9 75%)',
         }}
       >
         <div className="max-w-5xl mx-auto px-5 pt-16 pb-28 md:py-20 md:pb-32 flex flex-col md:flex-row items-center gap-10 md:gap-14">
@@ -508,7 +532,7 @@ export default function HomePage() {
             <h1
               className="font-bold mb-4"
               style={{
-                color: '#fff',
+                color: 'var(--brand-deep)',
                 /* clamp un step más chico que antes (era 3rem→5.5rem).
                  * Floor cerca de text-4xl, ceiling cerca de text-7xl. */
                 fontSize: 'clamp(2.5rem, 8vw, 4.5rem)',
@@ -520,14 +544,15 @@ export default function HomePage() {
               Lo que cobras<br />no es lo que ganas.
             </h1>
 
-            {/* Wave underline — Light weight (v2 design system) */}
-            <WaveUnderline color="rgba(255,255,255,0.42)" />
+            {/* Wave underline — sobre bg pastel necesita color brand para
+             * verse, no white. */}
+            <WaveUnderline color="rgba(61,96,80,0.4)" />
 
             {/* Subtitle (mt-4: respiro entre wave y subtitle) */}
             <p
               className="leading-relaxed mt-4 mb-4"
               style={{
-                color: 'rgba(255,255,255,0.88)',
+                color: 'var(--ink-700)',
                 fontSize: '17px',
                 lineHeight: 1.55,
                 maxWidth: '420px',
@@ -540,7 +565,7 @@ export default function HomePage() {
             <p
               className="mb-6"
               style={{
-                color: 'rgba(255,255,255,0.72)',
+                color: 'var(--ink-500)',
                 fontSize: '15px',
                 lineHeight: 1.55,
                 letterSpacing: '-0.01em',
@@ -579,21 +604,21 @@ export default function HomePage() {
              * precio visible. */}
             <p
               className="mt-3 text-sm text-center md:text-left"
-              style={{ color: 'rgba(255,255,255,0.7)' }}
+              style={{ color: 'var(--ink-500)' }}
             >
               Sin tarjeta. Listo en 60 segundos.
             </p>
 
             <p
               className="mt-4 text-sm text-center md:text-left"
-              style={{ color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}
+              style={{ color: 'var(--ink-500)', fontStyle: 'italic' }}
             >
               Tan rápido como mandar un WhatsApp.
             </p>
 
             <p
               className="mt-2 text-sm font-medium text-center md:text-left"
-              style={{ color: 'rgba(255,255,255,0.85)' }}
+              style={{ color: 'var(--brand-deep)' }}
             >
               Gratis hasta 10 movimientos al día · Pro $49 MXN/mes
             </p>
@@ -619,14 +644,12 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Hero wave — filled solid transition to paper.
-            Deliberate exception to the stroke-only rule: the filled shape
-            creates a smooth gradient→paper flow that the hairline can't achieve. */}
-        <div className="absolute bottom-0 left-0 right-0" aria-hidden="true">
-          <svg viewBox="0 0 1200 52" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: '52px' }}>
-            <path d="M0,32 C200,52 400,12 600,28 C800,44 1000,8 1200,28 L1200,52 L0,52 Z" fill="var(--paper-2)"/>
-          </svg>
-        </div>
+        {/* Hero wave — filled solid transition al fondo paper-2. Antes era
+         * un SVG inline con bottom:0 + height:52px que dejaba un hairline
+         * gap visible en mobile por sub-pixel rounding. <WaveDivider fill>
+         * usa bottom:-2px + height:54px para sangrar a la siguiente sección
+         * y eliminar ese gap. */}
+        <WaveDivider fill="var(--paper-2)" />
       </section>
 
       {/* ── Cómo funciona ───────────────────────────────────────────────────── */}
@@ -714,7 +737,12 @@ export default function HomePage() {
       <section
         id="que-hace"
         className="py-14 px-4"
-        style={{ background: 'linear-gradient(145deg, var(--brand-deep) 0%, #578466 100%)', position: 'relative', overflow: 'hidden' }}
+        /* v0.292: bg sólido brand-deep en vez de gradient. El gradient
+         * (145deg brand-deep → #578466) hacía que la WaveDivider de la
+         * sección anterior (fill brand-deep solid) NO matcheara el bg
+         * superior de esta sección, dejando una franjita de "mini gradient"
+         * justo bajo el wave. Con bg sólido el wave se funde sin línea. */
+        style={{ background: 'var(--brand-deep)', position: 'relative', overflow: 'hidden' }}
       >
         <div className="max-w-4xl mx-auto">
           <p
