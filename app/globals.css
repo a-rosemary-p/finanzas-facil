@@ -516,11 +516,13 @@ label,
   height: 280px;
 }
 
-/* Card de análisis IA en /reportes ¿Cómo voy? — min-height fijo para que el
-   layout NO salte cuando llega la respuesta del modelo. El user pidió
-   explícitamente que ni el botón ni la tendencia se muevan. */
+/* Card de análisis IA en /reportes ¿Cómo voy?.
+   v0.292: tightened — bajamos el min-height para que el card hugue el
+   contenido cuando la respuesta del modelo está lista (~6 líneas de texto
+   con 2 insights). 180px es suficiente para que los estados idle / loading
+   / error no se vean aplastados antes de generar. */
 .fz-ai-card {
-  min-height: 320px;
+  min-height: 180px;
 }
 
 /* Honeypot input — invisible para humanos. Sin display:none ni

@@ -217,7 +217,10 @@ function AICard({ state, onAnalyze }: AICardProps) {
         )}
 
         {state.kind === 'ready' && (
-          <div className="flex-1 flex flex-col gap-3">
+          /* Sin flex-1 — el contenido hugue su altura natural en vez de
+           * estirarse a llenar el card. Combinado con el min-height bajo
+           * de .fz-ai-card, el card termina justo del tamaño del texto. */
+          <div className="flex flex-col gap-3">
             <p className="text-base font-bold text-ink-900 leading-snug">
               {state.data.headline}
             </p>
