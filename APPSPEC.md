@@ -2,10 +2,10 @@
 
 > **La spec viva está fuera del repo**, en la carpeta del proyecto.
 >
-> Versión actual: **v0.292** (mayo 6, 2026)
-> Archivo: `C:\Users\arome\Documents - Local\App Finanzas Pymes\Fiza_APP_SPEC v0.292. 060526.md`
+> Versión actual: **v0.31** (mayo 8, 2026)
+> Archivo: `C:\Users\arome\Documents - Local\App Finanzas Pymes\Fiza_APP_SPEC v0.31. 080526.md`
 >
-> Contiene: rutas (incl. `/inicio`, `/movimientos`, `/admin/analytics`), API routes (incl. `/api/movimientos`, `/api/reports/period-summary`, `/api/reports/insights`, `/api/track` ahora público, `/api/onboarding/profile-prompt`, `/api/feedback`), schema DB (migrations 001–019), hooks (usePendings con `dueAlertCount`, useRecurring), componentes (inicio/, pendientes/, reports/ con este-periodo + como-voy + charts, FeedbackModal, PageViewTracker en root, onboarding/ con Onboarding tour + ProfilePromptModal), tipos, constantes (24 giros + GIRO_CATEGORIES), flujos, enforcement Base vs Pro, AI insights endpoint con prompt adaptativo a giro + categorías personalizadas, analytics events, page analytics propia, dashboard interno admin, CDMX timezone, style system Tailwind v4, security headers, rate limiting, audit trail, recurrentes, onboarding, y changelogs v0.21 → v0.292.
+> Contiene: rutas (incl. `/inicio`, `/movimientos`, `/admin/analytics`, `/privacidad`, `/terminos`), API routes, schema DB (migrations 001–022), hooks (`useAuth` con `identities` + `sendPasswordSetupEmail`, `usePendings` con `dueAlertCount`, useRecurring), componentes (inicio/, pendientes/, reports/, FeedbackModal, PageViewTracker en root, onboarding/ con tour + step `name` + ProfilePromptModal + GiroCategoriesConfirmModal), tipos, constantes (24 giros + GIRO_CATEGORIES), enforcement Base vs Pro, AI insights endpoint adaptativo a giro + categorías personalizadas, analytics events, page analytics propia con OS breakdown, dashboard interno admin con tabs usuarios/página, CDMX timezone, style system Tailwind v4, OAuth Google con auto-link, páginas legales LFPDPPP MX, landing reposicionada para freelancers con mockups reales + carousel mobile, hero gradient 135deg deep→light, /reportes ¿Cómo voy? con 2 insights y card autosize, security headers, rate limiting, audit trail, recurrentes, onboarding, y changelogs v0.21 → v0.31.
 
 ---
 
