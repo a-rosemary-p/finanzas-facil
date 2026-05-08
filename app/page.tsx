@@ -489,10 +489,16 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* ── Hero ────────────────────────────────────────────────────────────── */}
+      {/* ── Hero ──────────────────────────────────────────────────────────────
+          v0.292: regresamos a gradient bg ahora que el mockup es <img>
+          estática y no <video>. El video no se podía poner sobre un
+          gradient (su backgroundColor sólido tapaba la transición).
+          --brand-hero (verde claro) → --brand-deep (verde profundo). */}
       <section
         className="relative overflow-hidden"
-        style={{ background: 'var(--brand-hero)' }}
+        style={{
+          background: 'linear-gradient(180deg, var(--brand-hero) 0%, var(--brand-deep) 100%)',
+        }}
       >
         <div className="max-w-5xl mx-auto px-5 pt-16 pb-28 md:py-20 md:pb-32 flex flex-col md:flex-row items-center gap-10 md:gap-14">
 
