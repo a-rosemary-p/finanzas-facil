@@ -4,7 +4,9 @@
  * Genera análisis comparativo en lenguaje natural para la pestaña
  * "¿Cómo voy?" de /reportes. Adaptado al giro del usuario.
  *
- * Devuelve 3-4 insights + 1 mensaje de aliento, todo en una sola llamada
+ * Devuelve 2 insights + 1 mensaje de aliento, todo en una sola llamada
+ * (v0.292: bajamos de 3 a 2 — uno general ingresos/egresos, uno de drivers
+ * principales — para que ocupe menos espacio vertical en /reportes ¿Cómo voy?).
  * a gpt-4.1-mini para mantener costo bajo y latencia razonable (~3-4s).
  *
  * Caching: response headers `Cache-Control: private, max-age=3600` —
@@ -64,13 +66,12 @@ REGLAS DE ESTILO:
 - Tono: como un amigo que sabe de números. Honesto, no condescendiente.
 - Adaptado al giro: si es restaurante, habla de tickets/comidas; si es servicios profesionales, de proyectos/clientes; si es retail, de ventas/inventario.
 
-OUTPUT: JSON válido con esta estructura exacta:
+OUTPUT: JSON válido con esta estructura exacta. EXACTAMENTE 2 insights (ni más ni menos):
 {
   "headline": "Una frase principal con la lectura más importante. Incluye un número concreto comparativo.",
   "insights": [
-    "Insight 1 — comparativa o observación.",
-    "Insight 2 — otro ángulo (margen, categoría, ritmo).",
-    "Insight 3 — recomendación específica si aplica."
+    "Insight 1 — lectura GENERAL de ingresos y egresos del período (cómo se compararon vs el período anterior, dirección del neto, ritmo). Sin entrar a categorías individuales todavía.",
+    "Insight 2 — los DRIVERS principales que movieron la aguja: qué categoría(s) de ingreso o gasto explican el cambio del período. Específico, con nombre de categoría."
   ],
   "cheer": "Frase corta de cierre, honesta. Si vas mal, no inventes optimismo. Si vas bien, reconócelo sin exageraciones."
 }
@@ -180,7 +181,7 @@ export async function GET(request: Request) {
     parsed = {
       headline: typeof obj['headline'] === 'string' ? obj['headline'] as string : '',
       insights: Array.isArray(obj['insights'])
-        ? (obj['insights'] as unknown[]).filter((s): s is string => typeof s === 'string').slice(0, 4)
+        ? (obj['insights'] as unknown[]).filter((s): s is string => typeof s === 'string').slice(0, 2)
         : [],
       cheer: typeof obj['cheer'] === 'string' ? obj['cheer'] as string : '',
     }
