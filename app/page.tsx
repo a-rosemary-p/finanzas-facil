@@ -560,7 +560,7 @@ export default function HomePage() {
                 maxWidth: '420px',
               }}
             >
-              Fiza descuenta comisiones, gastos y pendientes. Te dice qué quedó libre — al instante.
+              Háblale, escríbele o mándale foto. La IA descuenta comisiones, gastos y pendientes — te dice qué quedó libre.
             </p>
 
             {/* Example */}
