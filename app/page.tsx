@@ -322,7 +322,7 @@ const BUSINESSES: Array<{
   type: string
   quote: string
 }> = [
-  { Icon: IconBriefcase, type: 'Freelancers y consultores',     quote: '"Cobro proyectos y comisiones, todo junto"' },
+  { Icon: IconBriefcase, type: 'Freelancers y consultores',     quote: '"Cobré $15K del proyecto. Después de comisiones, neto $13,200. Listo."' },
   { Icon: IconLightbulb, type: 'Emprendedores y founders',       quote: '"Sé en qué se va cada peso del negocio"' },
   { Icon: IconLaptop,    type: 'Creadores y vendedores online',  quote: '"Pagos por web, transferencia y efectivo — todo en uno"' },
   { Icon: IconScissors,  type: 'Estéticas y salones',            quote: '"Los pendientes de pago nunca se me olvidan"' },
@@ -352,22 +352,18 @@ const FEATURE_HIGHLIGHTS: Array<{
   },
 ]
 
-const CITIES = [
-  { city: 'CDMX',        count: 11 },
-  { city: 'Guadalajara', count: 24 },
-  { city: 'Tijuana',     count: 14 },
-  { city: 'Puebla',      count: 12 },
-  { city: 'Monterrey',   count: 14 },
-]
-
 const FAQ = [
+  {
+    q: '¿Cuánto cuesta?',
+    a: 'Gratis hasta 10 movimientos por día — para siempre. Plan Pro $49 MXN/mes con movimientos ilimitados, historial completo, rangos personalizados y reportes avanzados. Puedes cancelar cuando quieras.',
+  },
   {
     q: '¿Necesito saber de contabilidad?',
     a: 'Para nada. Fiza está diseñada para dueños de negocio, no para contadores. Solo dile lo que pasó en tu día en tus propias palabras — la IA se encarga de clasificar todo.',
   },
   {
     q: '¿Funciona en celular?',
-    a: 'Sí, está optimizada para móvil desde el primer día. Funciona en cualquier navegador moderno — sin descargar nada de la App Store ni Google Play.',
+    a: 'Sí, funciona perfecto en celular desde cualquier navegador. Pronto disponible también en Google Play.',
   },
   {
     q: '¿Es seguro guardar mis finanzas aquí?',
@@ -512,7 +508,7 @@ export default function HomePage() {
                 maxWidth: '520px',
               }}
             >
-              Tus cuentas,<br />sin cuentos.
+              Lo que cobras<br />no es lo que ganas.
             </h1>
 
             {/* Wave underline — Light weight (v2 design system) */}
@@ -528,7 +524,7 @@ export default function HomePage() {
                 maxWidth: '420px',
               }}
             >
-              Solo cuéntale lo que pasó en tu negocio.
+              Fiza descuenta comisiones, gastos y pendientes. Te dice qué quedó libre — al instante.
             </p>
 
             {/* Example */}
@@ -568,50 +564,30 @@ export default function HomePage() {
               <span aria-hidden="true">→</span>
             </Link>
 
-            {/* Social proof — negocios y ciudades */}
-            <div className="mt-5 w-full sm:w-auto">
-              <p
-                className="mb-2.5 text-center md:text-left"
-                style={{
-                  color: 'rgba(255,255,255,0.82)',
-                  fontSize: '14px',
-                  lineHeight: 1.5,
-                }}
-              >
-                {CITIES.reduce((s, c) => s + c.count, 0)} negocios llevando sus cuentas en{' '}
-                {CITIES.length} ciudades
-              </p>
-              <div className="flex flex-wrap justify-center md:justify-start gap-1.5">
-                {CITIES.map(c => (
-                  <div
-                    key={c.city}
-                    className="flex items-center gap-1.5 rounded-lg px-2.5 py-1"
-                    style={{
-                      background: 'rgba(255,255,255,0.14)',
-                      border: '1px solid rgba(255,255,255,0.22)',
-                    }}
-                  >
-                    <span
-                      className="text-xs font-semibold"
-                      style={{ color: '#fff', letterSpacing: '-0.01em' }}
-                    >
-                      {c.city}
-                    </span>
-                    <span
-                      className="text-[11px] font-bold px-1.5 py-0.5 rounded-full"
-                      style={{
-                        background: 'rgba(255,255,255,0.9)',
-                        color: 'var(--brand)',
-                        minWidth: '18px',
-                        textAlign: 'center',
-                      }}
-                    >
-                      {c.count}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* Microcopy bajo CTA + posicionamiento (v0.292 — landing reposicionada
+             * para freelancers). Antes vivía aquí el counter de "X negocios en Y
+             * ciudades"; lo quitamos para enfocar el mensaje en velocidad +
+             * precio visible. */}
+            <p
+              className="mt-3 text-sm text-center md:text-left"
+              style={{ color: 'rgba(255,255,255,0.7)' }}
+            >
+              Sin tarjeta. Listo en 60 segundos.
+            </p>
+
+            <p
+              className="mt-4 text-sm text-center md:text-left"
+              style={{ color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}
+            >
+              Tan rápido como mandar un WhatsApp.
+            </p>
+
+            <p
+              className="mt-2 text-sm font-medium text-center md:text-left"
+              style={{ color: 'rgba(255,255,255,0.85)' }}
+            >
+              Gratis hasta 10 movimientos al día · Pro $49 MXN/mes
+            </p>
 
           </div>
 
@@ -699,7 +675,7 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto">
           <p className="text-center mb-3" style={eyebrowStyle}>Para quién es</p>
           <h2 className="text-center mb-9" style={secTitleStyle}>
-            Para negocios como el tuyo
+            Hecha pensando en freelancers. Lista para cualquier negocio chico.
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {BUSINESSES.map(b => (
