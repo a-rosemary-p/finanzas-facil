@@ -357,7 +357,7 @@ const FEATURE_HIGHLIGHTS: Array<{
 const FAQ = [
   {
     q: '¿Cuánto cuesta?',
-    a: 'Gratis hasta 10 movimientos por día — para siempre. Plan Pro $49 MXN/mes con movimientos ilimitados, historial completo, rangos personalizados y reportes avanzados. Puedes cancelar cuando quieras.',
+    a: 'Gratis hasta 10 movimientos por día — para siempre y sin anuncios. Plan Pro $49 MXN/mes con movimientos ilimitados, historial completo, rangos personalizados y reportes avanzados. Puedes cancelar cuando quieras.',
   },
   {
     q: '¿Necesito saber de contabilidad?',
@@ -620,7 +620,7 @@ export default function HomePage() {
               className="mt-2 text-sm font-medium text-center md:text-left"
               style={{ color: 'rgba(255,255,255,0.85)' }}
             >
-              Gratis hasta 10 movimientos al día · Pro $49 MXN/mes
+              Gratis hasta 10 movimientos, por siempre y sin anuncios · Pro $49 MXN/mes
             </p>
 
           </div>
