@@ -331,24 +331,26 @@ const BUSINESSES: Array<{
 ]
 
 const FEATURE_HIGHLIGHTS: Array<{
-  Icon: React.ComponentType<{ size?: number }>
+  image: string
   title: string
   body: string
+  isPro?: boolean
 }> = [
   {
-    Icon: IconFileText,
-    title: 'Reportes PDF mensuales',
-    body: 'Genera tu estado de resultados con un tap. Compártelo por WhatsApp o descárgalo — sin Excel, sin formatos raros.',
+    image: '/recurrentes.png',
+    title: 'Pendientes y compromisos',
+    body: 'Lo que te deben, lo que debes, lo que se vence. Todo en un solo lugar — antes de que se te pase.',
   },
   {
-    Icon: IconClock,
-    title: 'Pendientes y vencimientos',
-    body: 'Registra lo que debes o te deben. Fiza te los muestra en el dashboard antes de que se te pasen.',
+    image: '/como-voy.png',
+    title: 'Análisis con IA',
+    body: 'Fiza compara tus períodos y te explica qué cambió en lenguaje claro. Sin gráficas que no entiendes.',
+    isPro: true,
   },
   {
-    Icon: IconHistory,
-    title: 'Historial completo con filtros',
-    body: 'Filtra por hoy, semana, mes, año o rangos exactos. Consulta cómo ibas en cualquier período.',
+    image: '/reportes-base.png',
+    title: 'Tus números, claros',
+    body: 'Gráficas y desglose por categoría. Entiende en segundos a dónde se va tu dinero.',
   },
 ]
 
@@ -414,7 +416,6 @@ const secSubStyle: React.CSSProperties = {
 export default function HomePage() {
   const [scrolled, setScrolled] = useState(false)
   const [openFAQ, setOpenFAQ]   = useState<number | null>(0)
-  const [videoFailed, setVideoFailed] = useState(false)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
 
   useEffect(() => {
@@ -593,43 +594,22 @@ export default function HomePage() {
 
           </div>
 
-          {/* iPhone mockup — video; falls back to static PNG (with drop-shadow) if decode fails */}
+          {/* iPhone mockup — screenshot real de /inicio (v0.292: reemplazó
+           * el video animado abstracto). Mismo styling de drop-shadow para
+           * que flote sobre el fondo verde del hero. */}
           <div className="flex-shrink-0 w-full md:w-auto flex justify-center">
-            {videoFailed ? (
-              <img
-                src="/iphone-hero.png"
-                alt="App fiza en iPhone"
-                draggable={false}
-                style={{
-                  width: '100%',
-                  maxWidth: '391px',
-                  height: 'auto',
-                  display: 'block',
-                  filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.35))',
-                }}
-              />
-            ) : (
-              <video
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="auto"
-                onError={() => setVideoFailed(true)}
-                aria-label="App fiza en iPhone"
-                style={{
-                  width: '100%',
-                  maxWidth: '391px',
-                  height: 'auto',
-                  display: 'block',
-                  // Pinta el fondo del <video> con el verde del hero para tapar
-                  // cualquier sub-pixel gap que se asome al hacer scroll.
-                  backgroundColor: 'var(--brand-hero)',
-                }}
-              >
-                <source src="/iphone-hero.mp4" type="video/mp4" />
-              </video>
-            )}
+            <img
+              src="/inicio.png"
+              alt="Pantalla principal de Fiza mostrando ingresos, gastos y neto"
+              draggable={false}
+              style={{
+                width: '100%',
+                maxWidth: '391px',
+                height: 'auto',
+                display: 'block',
+                filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.35))',
+              }}
+            />
           </div>
         </div>
 
@@ -747,18 +727,32 @@ export default function HomePage() {
             {FEATURE_HIGHLIGHTS.map(f => (
               <div
                 key={f.title}
-                className="rounded-2xl p-6 flex flex-col gap-4"
+                className="relative rounded-2xl p-6 flex flex-col gap-4"
                 style={{
                   background: 'rgba(255,255,255,0.09)',
                   border: '1px solid rgba(255,255,255,0.14)',
                 }}
               >
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center"
-                  style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}
-                >
-                  <f.Icon size={22} />
-                </div>
+                {f.isPro && (
+                  <span
+                    className="absolute top-3 right-3 text-[9px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ background: 'rgba(255,255,255,0.18)', color: '#fff', letterSpacing: '0.08em' }}
+                  >
+                    PRO
+                  </span>
+                )}
+                <img
+                  src={f.image}
+                  alt={f.title}
+                  draggable={false}
+                  className="mx-auto mb-4"
+                  style={{
+                    width: '100%',
+                    maxWidth: '240px',
+                    height: 'auto',
+                    display: 'block',
+                  }}
+                />
                 <div>
                   <p
                     className="font-bold mb-2"
