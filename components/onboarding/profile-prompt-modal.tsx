@@ -25,7 +25,7 @@
 
 import { useState } from 'react'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
-import { GIROS, ESTADOS_MX, GIRO_CATEGORIES } from '@/lib/constants'
+import { GIROS, ESTADOS_MX, GIRO_DEFAULTS } from '@/lib/constants'
 import { IconArrowRight } from '@/components/icons'
 
 interface Props {
@@ -67,14 +67,17 @@ export function ProfilePromptModal({ onComplete }: Props) {
   // Click en "Continuar" del form: si eligió giro válido, pasa al step de
   // confirmación de categorías. Si no, persiste directo y cierra.
   function handleFormContinue() {
-    if (giro && GIRO_CATEGORIES[giro]) {
+    if (giro && GIRO_DEFAULTS[giro]) {
       setStep('categories')
       return
     }
     void persistAndClose('submitted')
   }
 
-  const giroData = giro && GIRO_CATEGORIES[giro] ? GIRO_CATEGORIES[giro] : null
+  // v0.32: lista flat de categorías sugeridas para el giro (antes era
+  // { ingresos, gastos }). El step de confirmación las muestra como pills
+  // — el picker completo con add/remove/custom vive en CategoryPickerModal.
+  const giroData = giro && GIRO_DEFAULTS[giro] ? GIRO_DEFAULTS[giro] : null
 
   return (
     <>
@@ -211,58 +214,37 @@ export function ProfilePromptModal({ onComplete }: Props) {
             </p>
 
             {giroData && (
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div
-                  className="rounded-xl p-3"
-                  style={{
-                    background: 'var(--income-bg)',
-                    border: '1px solid var(--income-border)',
-                  }}
+              <div
+                className="rounded-xl p-3 mb-4"
+                style={{
+                  background: 'var(--brand-chip)',
+                  border: '1px solid var(--brand-border)',
+                }}
+              >
+                <p
+                  className="text-[10px] font-bold uppercase mb-2"
+                  style={{ color: 'var(--brand)', letterSpacing: '0.1em' }}
                 >
-                  <p
-                    className="text-[10px] font-bold uppercase mb-2"
-                    style={{ color: 'var(--income-text)', letterSpacing: '0.1em' }}
-                  >
-                    Ingresos
-                  </p>
-                  <ul className="flex flex-col gap-1.5">
-                    {giroData.ingresos.map(c => (
-                      <li
-                        key={c}
-                        className="text-xs leading-snug"
-                        style={{ color: 'var(--ink-900)' }}
-                      >
-                        · {c}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div
-                  className="rounded-xl p-3"
-                  style={{
-                    background: 'var(--expense-bg)',
-                    border: '1px solid var(--expense-border)',
-                  }}
-                >
-                  <p
-                    className="text-[10px] font-bold uppercase mb-2"
-                    style={{ color: 'var(--expense-text)', letterSpacing: '0.1em' }}
-                  >
-                    Gastos
-                  </p>
-                  <ul className="flex flex-col gap-1.5">
-                    {giroData.gastos.map(c => (
-                      <li
-                        key={c}
-                        className="text-xs leading-snug"
-                        style={{ color: 'var(--ink-900)' }}
-                      >
-                        · {c}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                  Categorías pre-seleccionadas
+                </p>
+                <ul className="flex flex-wrap gap-1.5">
+                  {giroData.map((c: string) => (
+                    <li
+                      key={c}
+                      className="text-xs px-2 py-1 rounded-full"
+                      style={{
+                        background: 'var(--paper)',
+                        border: '1px solid var(--brand-border)',
+                        color: 'var(--ink-900)',
+                      }}
+                    >
+                      {c}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-[11px] mt-2.5" style={{ color: 'var(--ink-500)' }}>
+                  Puedes agregar o quitar desde Ajustes después.
+                </p>
               </div>
             )}
 

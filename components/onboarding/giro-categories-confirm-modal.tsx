@@ -16,7 +16,7 @@
  * debería detectar el caso y persistir directo sin abrir el modal).
  */
 
-import { GIRO_CATEGORIES } from '@/lib/constants'
+import { GIRO_DEFAULTS } from '@/lib/constants'
 
 interface Props {
   giro: string
@@ -27,7 +27,10 @@ interface Props {
 }
 
 export function GiroCategoriesConfirmModal({ giro, submitting, onConfirm, onCancel }: Props) {
-  const giroData = GIRO_CATEGORIES[giro]
+  // v0.32: GIRO_DEFAULTS reemplazó a GIRO_CATEGORIES (flat list por giro
+  // en vez de split ingresos/gastos). Si el giro no está mapeado, no
+  // renderiza nada.
+  const giroData = GIRO_DEFAULTS[giro]
   if (!giroData) return null
 
   return (
@@ -81,58 +84,40 @@ export function GiroCategoriesConfirmModal({ giro, submitting, onConfirm, onCanc
           automáticamente desde ahora. Los movimientos viejos no cambian.
         </p>
 
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div
-            className="rounded-xl p-3"
-            style={{
-              background: 'var(--income-bg)',
-              border: '1px solid var(--income-border)',
-            }}
+        {/* v0.32: lista plana en vez de 2 cols ingresos/gastos. Las
+         * categorías son dirección-neutra ahora — Renta se cobra o se
+         * paga, Servicios se vende o se contrata, etc. */}
+        <div
+          className="rounded-xl p-3 mb-4"
+          style={{
+            background: 'var(--brand-chip)',
+            border: '1px solid var(--brand-border)',
+          }}
+        >
+          <p
+            className="text-[10px] font-bold uppercase mb-2"
+            style={{ color: 'var(--brand)', letterSpacing: '0.1em' }}
           >
-            <p
-              className="text-[10px] font-bold uppercase mb-2"
-              style={{ color: 'var(--income-text)', letterSpacing: '0.1em' }}
-            >
-              Ingresos
-            </p>
-            <ul className="flex flex-col gap-1.5">
-              {giroData.ingresos.map(c => (
-                <li
-                  key={c}
-                  className="text-xs leading-snug"
-                  style={{ color: 'var(--ink-900)' }}
-                >
-                  · {c}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div
-            className="rounded-xl p-3"
-            style={{
-              background: 'var(--expense-bg)',
-              border: '1px solid var(--expense-border)',
-            }}
-          >
-            <p
-              className="text-[10px] font-bold uppercase mb-2"
-              style={{ color: 'var(--expense-text)', letterSpacing: '0.1em' }}
-            >
-              Gastos
-            </p>
-            <ul className="flex flex-col gap-1.5">
-              {giroData.gastos.map(c => (
-                <li
-                  key={c}
-                  className="text-xs leading-snug"
-                  style={{ color: 'var(--ink-900)' }}
-                >
-                  · {c}
-                </li>
-              ))}
-            </ul>
-          </div>
+            Categorías pre-seleccionadas
+          </p>
+          <ul className="flex flex-wrap gap-1.5">
+            {giroData.map((c: string) => (
+              <li
+                key={c}
+                className="text-xs px-2 py-1 rounded-full"
+                style={{
+                  background: 'var(--paper)',
+                  border: '1px solid var(--brand-border)',
+                  color: 'var(--ink-900)',
+                }}
+              >
+                {c}
+              </li>
+            ))}
+          </ul>
+          <p className="text-[11px] mt-2.5" style={{ color: 'var(--ink-500)' }}>
+            Puedes agregar o quitar desde Ajustes después.
+          </p>
         </div>
 
         <button

@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { extractTextFromImage, extractFromText, extractFromImage, extractFromPdf } from '@/lib/openai/client'
 import { OCR_TRANSCRIPTION_PROMPT, buildPhotoExtractionPrompt, buildExtractionSystemPrompt } from '@/lib/ai/prompts'
-import { getCategoriesForGiro, buildCategoriesSection } from '@/lib/giro-categories'
+import { getUserCategories, buildCategoriesSection } from '@/lib/giro-categories'
 import { parseGeminiResponse } from '@/lib/ai/parser'
 import { PLANS, PHOTO_LIMITS, OCR_MIN_TEXT_LENGTH } from '@/lib/constants'
 import { consumeRateLimit } from '@/lib/rate-limit'
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
     //    personalizadas en el prompt (v0.292).
     const { data: profile } = await supabase
       .from('profiles')
-      .select('plan, movements_today, movements_today_date, giro')
+      .select('plan, movements_today, movements_today_date, giro, categories')
       .eq('id', user.id)
       .single()
 
@@ -117,7 +117,10 @@ export async function POST(request: Request) {
     // ─────────────────────────────────────────────────────────────────────────────
 
     // Categorías personalizadas según el giro del user (o genéricas).
-    const cats = getCategoriesForGiro(profile?.giro as string | null | undefined)
+    const cats = getUserCategories({
+      categories: profile?.categories as string[] | null | undefined,
+      giro: profile?.giro as string | null | undefined,
+    })
     const categoriesSection = buildCategoriesSection(cats)
     const photoPromptBase = buildPhotoExtractionPrompt(categoriesSection)
     const textPromptBase  = buildExtractionSystemPrompt(categoriesSection)

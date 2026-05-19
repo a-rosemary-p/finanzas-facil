@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/hooks/use-auth'
-import { GIROS, ESTADOS_MX, GIRO_CATEGORIES } from '@/lib/constants'
+import { GIROS, ESTADOS_MX, GIRO_DEFAULTS } from '@/lib/constants'
 import type { ProfileUpdate } from '@/types'
 import { AppHeader } from '@/components/app-header'
 import { WaveSection } from '@/components/ui/wave'
@@ -88,11 +88,11 @@ export default function PerfilPage() {
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
 
-  // Confirmación de cambio de giro (v0.3):
-  //   Cuando el user cambia su giro a uno mapeado en GIRO_CATEGORIES, antes
-  //   de persistir mostramos las nuevas categorías y le pedimos confirmar.
-  //   `pendingGiroChange` guarda el draft completo a aplicar; `null` = no hay
-  //   confirmación pendiente.
+  // Confirmación de cambio de giro (v0.3, actualizado v0.32):
+  //   Cuando el user cambia su giro a uno mapeado en GIRO_DEFAULTS, antes
+  //   de persistir mostramos las nuevas categorías (flat list) y le pedimos
+  //   confirmar. `pendingGiroChange` guarda el draft completo a aplicar;
+  //   `null` = no hay confirmación pendiente.
   const [pendingGiroChange, setPendingGiroChange] = useState<Required<ProfileUpdate> | null>(null)
 
   async function handleUpgrade() {
@@ -136,7 +136,7 @@ export default function PerfilPage() {
     // del giro actual, abrimos el modal de confirmación. Cualquier otro caso
     // (sin cambio de giro, o cambio a giro no mapeado / vacío) persiste directo.
     const giroChanged = draft.giro !== (profile?.giro ?? '')
-    const giroIsMapped = !!draft.giro && !!GIRO_CATEGORIES[draft.giro]
+    const giroIsMapped = !!draft.giro && !!GIRO_DEFAULTS[draft.giro]
     if (giroChanged && giroIsMapped) {
       setPendingGiroChange(draft)
       return
@@ -310,7 +310,7 @@ export default function PerfilPage() {
       <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
 
       {/* Modal de confirmación de categorías cuando el user cambia el giro
-       *  a uno mapeado en GIRO_CATEGORIES. Si confirma, persistimos el draft;
+       *  a uno mapeado en GIRO_DEFAULTS. Si confirma, persistimos el draft;
        *  si cancela, dejamos el draft tal cual para que pueda ajustar y volver
        *  a darle Guardar. */}
       {pendingGiroChange && (

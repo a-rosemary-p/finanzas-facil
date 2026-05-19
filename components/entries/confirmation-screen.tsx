@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from 'react'
 import { formatCurrency, getTodayString } from '@/lib/utils'
-import { CATEGORIES, MOVEMENT_TYPES, MOVEMENT_TYPE_CONFIG } from '@/lib/constants'
-import { getCategoriesForGiro } from '@/lib/giro-categories'
+import { MOVEMENT_TYPES, MOVEMENT_TYPE_CONFIG } from '@/lib/constants'
+import { getUserCategories } from '@/lib/giro-categories'
 import { useAuth } from '@/hooks/use-auth'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import type { PendingMovement, Entry } from '@/types'
@@ -50,21 +50,24 @@ export function ConfirmationScreen({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Categorías para el dropdown de edición — del giro del user (v0.292) o
-  // las genéricas si no tiene giro. Si la IA devolvió una categoría que no
-  // está en este set (porque el user editó su giro a uno con menos cats),
-  // la incluimos como primera opción para que no quede inconsistente.
+  // Categorías para el dropdown de edición — lista curada del user
+  // (v0.32) con fallback a defaults del giro si no la ha curado todavía.
+  // Si la IA devolvió una cat que no está en el set actual, la incluimos
+  // como opción para no perder lo que generó.
   const { profile } = useAuth()
   const categoryOptions = useMemo(() => {
-    const resolved = getCategoriesForGiro(profile?.giro)
-    const base = resolved.fromGiro ? resolved.all : [...CATEGORIES]
+    const resolved = getUserCategories({
+      categories: profile?.categories,
+      giro: profile?.giro,
+    })
+    const base = resolved.list
     const extras: string[] = []
     for (const m of movements) {
       const c = m.category as string | undefined
       if (typeof c === 'string' && c.length > 0 && !base.includes(c)) extras.push(c)
     }
     return [...new Set([...base, ...extras])]
-  }, [profile?.giro, movements])
+  }, [profile?.categories, profile?.giro, movements])
 
   function update(tempId: string, patch: Partial<PendingMovement>) {
     setMovements(prev =>

@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { extractFromText } from '@/lib/openai/client'
 import { buildExtractionSystemPrompt } from '@/lib/ai/prompts'
-import { getCategoriesForGiro, buildCategoriesSection } from '@/lib/giro-categories'
+import { getUserCategories, buildCategoriesSection } from '@/lib/giro-categories'
 import { parseGeminiResponse } from '@/lib/ai/parser'
 import { PLANS } from '@/lib/constants'
 import { consumeRateLimit } from '@/lib/rate-limit'
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     //    que pasamos al system prompt (v0.292).
     const { data: profile } = await supabase
       .from('profiles')
-      .select('plan, movements_today, movements_today_date, giro')
+      .select('plan, movements_today, movements_today_date, giro, categories')
       .eq('id', user.id)
       .single()
 
@@ -78,7 +78,10 @@ export async function POST(request: Request) {
     // 4. Llamar a OpenAI para extraer movimientos.
     //    Inyectamos las categorías del giro del user (o las genéricas si no
     //    tiene giro) en el system prompt.
-    const cats = getCategoriesForGiro(profile?.giro as string | null | undefined)
+    const cats = getUserCategories({
+      categories: profile?.categories as string[] | null | undefined,
+      giro: profile?.giro as string | null | undefined,
+    })
     const systemPrompt = buildExtractionSystemPrompt(buildCategoriesSection(cats))
     const userContent = `Fecha base: ${fechaMovimiento}\n\nTexto del usuario:\n${texto.trim()}`
     const raw = await extractFromText(systemPrompt, userContent)

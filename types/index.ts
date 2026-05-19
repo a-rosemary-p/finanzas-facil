@@ -55,6 +55,13 @@ export interface Profile {
    * post-primer-movimiento (v0.292). NULL = todavía no se le ha mostrado;
    * después del primer mov se dispara una vez. */
   profilePromptSeenAt?: string | null
+  /** Lista curada de categorías del user (v0.32). Vacío = todavía no ha
+   * pasado por el flow nuevo; el resolver cae a GIRO_DEFAULTS del giro. */
+  categories?: string[]
+  /** Timestamp ISO cuando el user vio/confirmó el flow de categorías
+   * del nuevo sistema (v0.32). NULL = pendiente — para users existentes
+   * dispara modal bloqueante al siguiente login. */
+  categoriesSeenAt?: string | null
 }
 
 export interface ProfileUpdate {

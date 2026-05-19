@@ -24,7 +24,7 @@ export function useAuth() {
   async function loadProfile(supabase: ReturnType<typeof createClient>, userId: string) {
     const { data } = await supabase
       .from('profiles')
-      .select('id, email, display_name, plan, subscription_status, movements_today, movements_today_date, total_movements, giro, ciudad, estado, timezone, moneda_preferida, mostrar_inversiones, mostrar_pendientes, trial_used, onboarded_at, profile_prompt_seen_at')
+      .select('id, email, display_name, plan, subscription_status, movements_today, movements_today_date, total_movements, giro, ciudad, estado, timezone, moneda_preferida, mostrar_inversiones, mostrar_pendientes, trial_used, onboarded_at, profile_prompt_seen_at, categories, categories_seen_at')
       .eq('id', userId)
       .single()
 
@@ -54,6 +54,8 @@ export function useAuth() {
         trialUsed: (data.trial_used as boolean) ?? false,
         onboardedAt: (data.onboarded_at as string | null) ?? null,
         profilePromptSeenAt: (data.profile_prompt_seen_at as string | null) ?? null,
+        categories: (data.categories as string[] | null) ?? [],
+        categoriesSeenAt: (data.categories_seen_at as string | null) ?? null,
       })
     }
   }
