@@ -6,6 +6,7 @@ import { MOVEMENT_TYPES, MOVEMENT_TYPE_CONFIG } from '@/lib/constants'
 import { getUserCategories } from '@/lib/giro-categories'
 import { useAuth } from '@/hooks/use-auth'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
+import { CategoryPickerModal } from '@/components/categories/category-picker-modal'
 import type { PendingMovement, Entry } from '@/types'
 
 interface ConfirmationScreenProps {
@@ -49,6 +50,9 @@ export function ConfirmationScreen({
   const [movements, setMovements] = useState<PendingMovement[]>(initialMovements)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  // v0.32: tempId del movimiento cuya categoría se está editando vía el
+  // CategoryPickerModal. null = modal cerrado.
+  const [editingCategoryFor, setEditingCategoryFor] = useState<string | null>(null)
 
   // Categorías para el dropdown de edición — lista curada del user
   // (v0.32) con fallback a defaults del giro si no la ha curado todavía.
@@ -226,17 +230,26 @@ export function ConfirmationScreen({
             />
           </div>
 
-          {/* Categoría */}
+          {/* Categoría — dropdown del set del user + opción "Otra opción"
+           * que abre el picker para elegir/agregar (v0.32). */}
           <div className="flex flex-col gap-1">
             <label className="fz-input-label">Categoría</label>
             <select
               value={m.category}
-              onChange={e => update(m.tempId, { category: e.target.value as PendingMovement['category'] })}
+              onChange={e => {
+                const val = e.target.value
+                if (val === '__open_picker__') {
+                  setEditingCategoryFor(m.tempId)
+                  return
+                }
+                update(m.tempId, { category: val as PendingMovement['category'] })
+              }}
               className="fz-input"
             >
               {categoryOptions.map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}
+              <option value="__open_picker__">+ Otra opción…</option>
             </select>
           </div>
 
@@ -376,6 +389,36 @@ export function ConfirmationScreen({
       >
         Cancelar
       </button>
+
+      {/* CategoryPickerModal — abierto cuando el user da "Otra opción..."
+       * en el dropdown de categoría de algún movimiento. onPick persiste
+       * la lista del user (puede haber agregado custom o del catálogo) Y
+       * asigna esa categoría al movimiento. (v0.32) */}
+      {editingCategoryFor && profile && (
+        <CategoryPickerModal
+          selected={categoryOptions}
+          isPro={profile.plan === 'pro'}
+          title="Elige una categoría"
+          description="Toca una activa para usarla en este movimiento. Puedes agregar otras del catálogo o crear una personalizada."
+          saveLabel="Guardar lista"
+          onSave={async (list) => {
+            const res = await fetchWithAuthRetry('/api/profile/categories', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ categories: list }),
+            })
+            if (!res.ok) {
+              const data = await res.json().catch(() => ({}))
+              throw new Error(data?.error ?? 'No se pudo guardar')
+            }
+          }}
+          onPick={(cat) => {
+            update(editingCategoryFor, { category: cat as PendingMovement['category'] })
+            setEditingCategoryFor(null)
+          }}
+          onClose={() => setEditingCategoryFor(null)}
+        />
+      )}
     </div>
   )
 }

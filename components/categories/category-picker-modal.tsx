@@ -1,48 +1,36 @@
 'use client'
 
 /**
- * CategoryPickerModal — picker reutilizable de categorías del user (v0.32).
+ * CategoryPickerModal — wrapper modal del CategoryPicker (v0.32).
  *
- * Usado en 3 surfaces:
- *  1. Onboarding final (ProfilePromptModal step categories) — `mode='setup'`
- *  2. Ajustes → editar categorías — `mode='manage'`
- *  3. ConfirmationScreen "Otra opción" — `mode='manage'` con selección
- *     final del usuario propagada al callback `onPick`.
+ * Usado en:
+ *  - Ajustes → editar categorías (mode regular, dismissable)
+ *  - ConfirmationScreen "Otra opción" (mode regular, dismissable, onPick set)
+ *  - Re-onboarding bloqueante para users existentes (blocking=true)
  *
- * UI:
- *  - Header: título + counter "X / cap"
- *  - "Tus categorías": pills de la lista actual con ✕ para quitar
- *  - "Agregar del catálogo": pills del master que NO están seleccionadas
- *  - "+ Personalizada": input + botón Pro-gated (Free ve lock + CTA upgrade)
- *  - Footer: Guardar / Cancelar
- *
- * Componente puramente presentacional. El padre maneja la persistencia
- * vía `onSave(newList)` y opcionalmente `onPick(category)` cuando el user
- * selecciona una categoría específica (caso ConfirmationScreen).
+ * El picker (state interno) → modal shell con overlay, header, descripción,
+ * Save/Cancel footer.
  */
 
-import { useMemo, useState } from 'react'
-import { CATEGORIES_MASTER, USER_CATEGORIES_CAP } from '@/lib/constants'
-import { startProCheckout } from '@/lib/upgrade-to-pro'
+import { useState } from 'react'
+import { USER_CATEGORIES_CAP } from '@/lib/constants'
+import { CategoryPicker } from './category-picker'
 
 interface Props {
-  /** Lista actual del user (orden importa — primero las más recientes). */
+  /** Lista actual del user. */
   selected: string[]
   isPro: boolean
-  /** Texto del botón principal según contexto. */
   saveLabel?: string
-  /** Llamado al darle "Guardar". Recibe la nueva lista completa. */
+  /** Llamado al guardar (botón Save). Recibe la lista final. */
   onSave: (newList: string[]) => Promise<void> | void
-  /** Llamado al cancelar / cerrar sin guardar. */
   onClose: () => void
-  /** Si el padre quiere también que el user "elija" una específica del
-   *  set (ej. para asignar a un movimiento en ConfirmationScreen), provee
-   *  este callback. Se dispara con la categoría seleccionada al hacer click
-   *  en un pill de la lista del user. */
+  /** Cuando está set, click en una pill de "Activas" persiste la lista
+   *  actual y selecciona esa categoría (caso ConfirmationScreen). El modal
+   *  llama primero `onSave(currentList)` y luego `onPick(cat)`. */
   onPick?: (category: string) => void
-  /** Texto descriptivo opcional debajo del título. */
   description?: string
-  /** Bloquea el botón de cerrar (sin overlay click) — para mode bloqueante. */
+  title?: string
+  /** Bloquea cierre via overlay click. Mode forzado para re-onboarding. */
   blocking?: boolean
 }
 
@@ -54,55 +42,12 @@ export function CategoryPickerModal({
   onClose,
   onPick,
   description,
+  title = 'Tus categorías',
   blocking,
 }: Props) {
-  // Mantenemos selected como estado interno mutable para que el user pueda
-  // hacer cambios (toggles + custom adds) antes de Guardar.
   const [list, setList] = useState<string[]>(() => [...selected])
-  const [customInput, setCustomInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-
-  const masterSelected = useMemo(() => new Set(list), [list])
-  const addableFromMaster = useMemo(
-    () => CATEGORIES_MASTER.filter(c => !masterSelected.has(c)),
-    [masterSelected],
-  )
-
-  function addFromMaster(cat: string) {
-    if (list.length >= USER_CATEGORIES_CAP) {
-      setError(`Llegaste al máximo de ${USER_CATEGORIES_CAP} categorías.`)
-      return
-    }
-    setError('')
-    setList(prev => [...prev, cat])
-  }
-
-  function removeCategory(cat: string) {
-    setError('')
-    setList(prev => prev.filter(c => c !== cat))
-  }
-
-  function addCustom() {
-    if (!isPro) return
-    const trimmed = customInput.trim()
-    if (!trimmed) return
-    if (trimmed.length > 40) {
-      setError('Máximo 40 caracteres por categoría.')
-      return
-    }
-    if (list.some(c => c.toLowerCase() === trimmed.toLowerCase())) {
-      setError('Esa categoría ya está en tu lista.')
-      return
-    }
-    if (list.length >= USER_CATEGORIES_CAP) {
-      setError(`Llegaste al máximo de ${USER_CATEGORIES_CAP} categorías.`)
-      return
-    }
-    setError('')
-    setList(prev => [...prev, trimmed])
-    setCustomInput('')
-  }
 
   async function handleSave() {
     if (submitting) return
@@ -110,6 +55,24 @@ export function CategoryPickerModal({
     setError('')
     try {
       await onSave(list)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo guardar.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // Si onPick está provisto y el user le da click a una pill activa,
+  // persistimos la lista actual (puede tener cats agregadas/quitadas) ANTES
+  // de propagar el pick al padre. Si la lista cambió o no, igual llamamos
+  // a onSave para mantener semántica simple — el endpoint es idempotente.
+  async function handlePick(cat: string) {
+    if (!onPick || submitting) return
+    setSubmitting(true)
+    setError('')
+    try {
+      await onSave(list)
+      onPick(cat)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo guardar.')
     } finally {
@@ -151,7 +114,7 @@ export function CategoryPickerModal({
       >
         <div className="flex items-baseline justify-between mb-2">
           <h2 className="font-bold" style={{ color: 'var(--brand)', fontSize: 18 }}>
-            Tus categorías
+            {title}
           </h2>
           <span className="text-xs tabular-nums" style={{ color: 'var(--ink-500)' }}>
             {list.length} / {USER_CATEGORIES_CAP}
@@ -164,137 +127,21 @@ export function CategoryPickerModal({
           </p>
         )}
 
-        {/* Lista actual */}
-        <div className="mb-4">
-          <p
-            className="text-[10px] font-bold uppercase mb-2"
-            style={{ color: 'var(--brand-mid)', letterSpacing: '0.1em' }}
-          >
-            Activas ({list.length})
-          </p>
-          {list.length === 0 ? (
-            <p className="text-xs italic" style={{ color: 'var(--ink-500)' }}>
-              Agrega al menos una categoría abajo.
-            </p>
-          ) : (
-            <ul className="flex flex-wrap gap-1.5">
-              {list.map(c => (
-                <li key={c}>
-                  <button
-                    type="button"
-                    onClick={() => onPick ? onPick(c) : removeCategory(c)}
-                    className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full font-medium"
-                    style={{
-                      background: 'var(--brand-chip)',
-                      border: '1px solid var(--brand-light)',
-                      color: 'var(--brand)',
-                    }}
-                    aria-label={onPick ? `Usar categoría ${c}` : `Quitar ${c}`}
-                  >
-                    {c}
-                    {!onPick && (
-                      <span aria-hidden="true" style={{ opacity: 0.7, fontSize: 14, lineHeight: 1 }}>
-                        ×
-                      </span>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        {/* Addable from master */}
-        {addableFromMaster.length > 0 && (
-          <div className="mb-4">
-            <p
-              className="text-[10px] font-bold uppercase mb-2"
-              style={{ color: 'var(--brand-mid)', letterSpacing: '0.1em' }}
-            >
-              Agregar del catálogo
-            </p>
-            <ul className="flex flex-wrap gap-1.5">
-              {addableFromMaster.map(c => (
-                <li key={c}>
-                  <button
-                    type="button"
-                    onClick={() => addFromMaster(c)}
-                    className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full font-medium"
-                    style={{
-                      background: 'var(--paper)',
-                      border: '1px solid var(--brand-border)',
-                      color: 'var(--ink-700)',
-                    }}
-                  >
-                    <span aria-hidden="true" style={{ opacity: 0.7 }}>+</span>
-                    {c}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Custom — Pro only */}
-        <div className="mb-3">
-          <p
-            className="text-[10px] font-bold uppercase mb-2"
-            style={{ color: 'var(--brand-mid)', letterSpacing: '0.1em' }}
-          >
-            Personalizada
-            {!isPro && (
-              <span
-                className="ml-1.5 inline-block px-1.5 py-0.5 rounded-full text-[9px]"
-                style={{ background: 'var(--brand)', color: '#fff', letterSpacing: '0.05em' }}
-              >
-                PRO
-              </span>
-            )}
-          </p>
-          {isPro ? (
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={customInput}
-                onChange={e => setCustomInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustom() } }}
-                placeholder="Ej: Lavandería"
-                maxLength={40}
-                className="fz-input flex-1"
-              />
-              <button
-                type="button"
-                onClick={addCustom}
-                disabled={!customInput.trim()}
-                className="text-sm font-bold px-3 rounded-xl disabled:opacity-50"
-                style={{ background: 'var(--brand)', color: '#fff', minHeight: 40 }}
-              >
-                Agregar
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => { void startProCheckout() }}
-              className="w-full text-left px-3 py-2.5 rounded-xl text-xs"
-              style={{
-                background: 'var(--brand-chip)',
-                border: '1px dashed var(--brand-light)',
-                color: 'var(--brand-mid)',
-              }}
-            >
-              Crea categorías propias con Fiza Pro →
-            </button>
-          )}
-        </div>
+        <CategoryPicker
+          value={list}
+          isPro={isPro}
+          onChange={setList}
+          onPick={onPick ? handlePick : undefined}
+          hideCounter
+        />
 
         {error && (
-          <p className="text-xs mb-2" style={{ color: 'var(--danger)' }}>
+          <p className="text-xs mt-3" style={{ color: 'var(--danger)' }}>
             {error}
           </p>
         )}
 
-        <div className="flex gap-2 mt-4">
+        <div className="flex gap-2 mt-5">
           {!blocking && (
             <button
               type="button"

@@ -27,6 +27,8 @@ import { useState } from 'react'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import { GIROS, ESTADOS_MX, GIRO_DEFAULTS } from '@/lib/constants'
 import { IconArrowRight } from '@/components/icons'
+import { CategoryPicker } from '@/components/categories/category-picker'
+import { useAuth } from '@/hooks/use-auth'
 
 interface Props {
   /** Llamado tras éxito (cualquier branch) — el padre debe ocultar el modal
@@ -37,10 +39,17 @@ interface Props {
 type Step = 'form' | 'categories'
 
 export function ProfilePromptModal({ onComplete }: Props) {
+  const { profile } = useAuth()
+  const isPro = profile?.plan === 'pro'
+
   const [step, setStep]         = useState<Step>('form')
   const [ciudad, setCiudad]     = useState('')
   const [estado, setEstado]     = useState('')
   const [giro,   setGiro]       = useState('')
+  // Pre-selección de categorías para el step `categories`. Inicia con los
+  // defaults del giro elegido (v0.32) y el user puede tocar/destocar antes
+  // de continuar.
+  const [categories, setCategories] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
 
   async function persistAndClose(reason: 'submitted' | 'dismissed') {
@@ -54,6 +63,10 @@ export function ProfilePromptModal({ onComplete }: Props) {
           ciudad: ciudad.trim() || undefined,
           estado: estado || undefined,
           giro:   giro   || undefined,
+          // v0.32: solo manda categorías cuando llegó al step categories
+          // (reason='submitted' y categories.length > 0). Si dismissed o
+          // sin giro, no toca la lista del user.
+          categories: reason === 'submitted' && categories.length > 0 ? categories : undefined,
           reason,
         }),
       })
@@ -65,19 +78,16 @@ export function ProfilePromptModal({ onComplete }: Props) {
   }
 
   // Click en "Continuar" del form: si eligió giro válido, pasa al step de
-  // confirmación de categorías. Si no, persiste directo y cierra.
+  // categorías pre-rellenando con defaults del giro. Si no, persiste directo
+  // y cierra (no le mostramos categorías sin giro de referencia).
   function handleFormContinue() {
     if (giro && GIRO_DEFAULTS[giro]) {
+      setCategories([...GIRO_DEFAULTS[giro]])
       setStep('categories')
       return
     }
     void persistAndClose('submitted')
   }
-
-  // v0.32: lista flat de categorías sugeridas para el giro (antes era
-  // { ingresos, gastos }). El step de confirmación las muestra como pills
-  // — el picker completo con add/remove/custom vive en CategoryPickerModal.
-  const giroData = giro && GIRO_DEFAULTS[giro] ? GIRO_DEFAULTS[giro] : null
 
   return (
     <>
@@ -194,7 +204,9 @@ export function ProfilePromptModal({ onComplete }: Props) {
             </button>
           </>
         ) : (
-          /* step === 'categories' — confirmación con las cats del giro */
+          /* step === 'categories' — picker con defaults del giro + addable
+           * del catálogo + custom (Pro). v0.32 reemplazó el read-only
+           * display por el picker interactivo. */
           <>
             <p
               className="text-xs font-bold uppercase mb-2"
@@ -206,56 +218,28 @@ export function ProfilePromptModal({ onComplete }: Props) {
               className="font-bold mb-2"
               style={{ color: 'var(--brand)', fontSize: 20, lineHeight: 1.25 }}
             >
-              Estas son tus categorías
+              Tus categorías
             </h2>
             <p className="text-sm mb-4" style={{ color: 'var(--ink-700)', lineHeight: 1.5 }}>
-              Fiza usará estas categorías para clasificar tus movimientos
-              automáticamente. Más adelante puedes cambiar tu giro desde Ajustes.
+              Te pre-seleccionamos algunas según tu giro. Quita las que no
+              uses o agrega otras del catálogo. Después puedes editarlas
+              desde Ajustes.
             </p>
 
-            {giroData && (
-              <div
-                className="rounded-xl p-3 mb-4"
-                style={{
-                  background: 'var(--brand-chip)',
-                  border: '1px solid var(--brand-border)',
-                }}
-              >
-                <p
-                  className="text-[10px] font-bold uppercase mb-2"
-                  style={{ color: 'var(--brand)', letterSpacing: '0.1em' }}
-                >
-                  Categorías pre-seleccionadas
-                </p>
-                <ul className="flex flex-wrap gap-1.5">
-                  {giroData.map((c: string) => (
-                    <li
-                      key={c}
-                      className="text-xs px-2 py-1 rounded-full"
-                      style={{
-                        background: 'var(--paper)',
-                        border: '1px solid var(--brand-border)',
-                        color: 'var(--ink-900)',
-                      }}
-                    >
-                      {c}
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-[11px] mt-2.5" style={{ color: 'var(--ink-500)' }}>
-                  Puedes agregar o quitar desde Ajustes después.
-                </p>
-              </div>
-            )}
+            <CategoryPicker
+              value={categories}
+              isPro={isPro}
+              onChange={setCategories}
+            />
 
             <button
               type="button"
               onClick={() => persistAndClose('submitted')}
-              disabled={submitting}
-              className="w-full rounded-xl text-white text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-70"
+              disabled={submitting || categories.length === 0}
+              className="w-full rounded-xl text-white text-sm font-bold flex items-center justify-center gap-2 mt-5 disabled:opacity-70"
               style={{ background: 'var(--brand)', minHeight: 48 }}
             >
-              {submitting ? 'Guardando…' : 'Estas son mis categorías, continuar'}
+              {submitting ? 'Guardando…' : 'Continuar con estas categorías'}
             </button>
 
             <button

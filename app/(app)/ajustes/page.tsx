@@ -7,12 +7,93 @@ import type { SettingsUpdate } from '@/types'
 import { AppHeader } from '@/components/app-header'
 import { WaveSection } from '@/components/ui/wave'
 import { FeedbackModal } from '@/components/feedback-modal'
+import { CategoryPickerModal } from '@/components/categories/category-picker-modal'
+import { GIRO_DEFAULTS } from '@/lib/constants'
 import { startProCheckout } from '@/lib/upgrade-to-pro'
 import { translateAuthError } from '@/lib/auth-errors'
 
 type EditingSection = 'cuenta' | 'password' | null
 
 // ── Helpers de UI ───────────────────────────────────────────
+
+/**
+ * Card de Categorías del user (v0.32). Muestra la lista actual como
+ * read-only pills + botón Editar que abre CategoryPickerModal. Si el user
+ * no tiene categorías curadas todavía (caso edge: vino directo a Ajustes
+ * sin pasar por el modal bloqueante), inicia con defaults del giro o el
+ * set genérico de fallback.
+ */
+function CategoriesCard() {
+  const { profile, refreshProfile } = useAuth()
+  const [editing, setEditing] = useState(false)
+  const [saveError, setSaveError] = useState('')
+
+  if (!profile) return null
+
+  const current = profile.categories && profile.categories.length > 0
+    ? profile.categories
+    : profile.giro && GIRO_DEFAULTS[profile.giro]
+      ? [...GIRO_DEFAULTS[profile.giro]]
+      : [...GIRO_DEFAULTS['Otro']]
+
+  return (
+    <>
+      <SectionCard
+        title="Categorías"
+        editing={false}
+        onEdit={() => setEditing(true)}
+        onSave={() => {}}
+        onCancel={() => {}}
+      >
+        <div className="flex flex-col gap-2 pt-2">
+          <p className="text-xs text-brand-mid">
+            Estas son las {current.length} categorías que la IA usa para clasificar
+            tus movimientos. Edítalas cuando quieras.
+          </p>
+          <ul className="flex flex-wrap gap-1.5 pt-1">
+            {current.map(c => (
+              <li
+                key={c}
+                className="text-xs px-2 py-1 rounded-full bg-brand-chip border border-brand-border text-ink-700"
+              >
+                {c}
+              </li>
+            ))}
+          </ul>
+          {saveError && (
+            <p className="text-xs text-danger pt-1">{saveError}</p>
+          )}
+        </div>
+      </SectionCard>
+
+      {editing && (
+        <CategoryPickerModal
+          selected={current}
+          isPro={profile.plan === 'pro'}
+          title="Editar categorías"
+          description="Quita las que no uses o agrega otras del catálogo. Pro puede crear personalizadas."
+          saveLabel="Guardar"
+          onSave={async (list) => {
+            setSaveError('')
+            const res = await fetchWithAuthRetry('/api/profile/categories', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ categories: list }),
+            })
+            if (!res.ok) {
+              const data = await res.json().catch(() => ({}))
+              setSaveError(data?.error ?? 'No se pudo guardar')
+              throw new Error(data?.error ?? 'No se pudo guardar')
+            }
+            await refreshProfile()
+            setEditing(false)
+          }}
+          onClose={() => setEditing(false)}
+        />
+      )}
+    </>
+  )
+}
 
 function SectionCard({
   title, editing, onEdit, onSave, onCancel, saving, children, noEdit,
@@ -371,7 +452,10 @@ export default function AjustesPage() {
           </div>
         </SectionCard>
 
-        {/* ── 3. Cuenta ── */}
+        {/* ── 3. Categorías (v0.32) ── */}
+        <CategoriesCard />
+
+        {/* ── 4. Cuenta ── */}
         {/* Para users con identity 'email' (tienen password): card editable
          *  como siempre. Para users solo-Google: sin botón Editar — cambiar
          *  el correo en Supabase requiere password (que no tienen). Mostramos

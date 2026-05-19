@@ -44,6 +44,8 @@ import { InputCard } from '@/components/inicio/input-card'
 import { RecentMovements } from '@/components/inicio/recent-movements'
 import { Onboarding, type OnboardingHighlight } from '@/components/onboarding/onboarding'
 import { ProfilePromptModal } from '@/components/onboarding/profile-prompt-modal'
+import { CategoryPickerModal } from '@/components/categories/category-picker-modal'
+import { GIRO_DEFAULTS } from '@/lib/constants'
 import type { RegistrosPeriod } from '@/components/inicio/period-dropdown'
 import type { Entry, PendingMovement } from '@/types'
 
@@ -105,6 +107,18 @@ function RegistrosInner() {
     !profile.profilePromptSeenAt &&
     !profilePromptDismissed &&
     !showOnboarding &&
+    mode === 'dashboard'
+
+  // Categories re-onboarding bloqueante (v0.32): users existentes que ya
+  // pasaron por profile-prompt antes de v0.32 (o que lo dismisearon sin
+  // llegar al step categorías) caen aquí. Aparece SIEMPRE — sin "Ahora no" —
+  // hasta que confirmen una lista. Se autoexcluye si todavía hay otro
+  // onboarding pendiente (mostramos uno a la vez).
+  const showCategoriesRequired =
+    !!profile &&
+    !profile.categoriesSeenAt &&
+    !showOnboarding &&
+    !showProfilePrompt &&
     mode === 'dashboard'
 
 // Banner de bienvenida tras checkout exitoso.
@@ -330,6 +344,41 @@ function RegistrosInner() {
             setProfilePromptDismissed(true)
             void refreshProfile()
           }}
+        />
+      )}
+
+      {/* Re-onboarding bloqueante de categorías (v0.32) — users que ya
+       * pasaron profile-prompt antes de v0.32 caen aquí. Sin "Ahora no",
+       * sin dismiss vía overlay. Pre-rellena con defaults del giro o
+       * fallback genérico. POST /api/profile/categories con
+       * markSeen=true setea categories_seen_at. */}
+      {showCategoriesRequired && profile && (
+        <CategoryPickerModal
+          selected={
+            profile.categories && profile.categories.length > 0
+              ? profile.categories
+              : profile.giro && GIRO_DEFAULTS[profile.giro]
+                ? [...GIRO_DEFAULTS[profile.giro]]
+                : [...GIRO_DEFAULTS['Otro']]
+          }
+          isPro={profile.plan === 'pro'}
+          blocking
+          title="Configura tus categorías"
+          description="Estamos estrenando un sistema nuevo de categorías. Confirma tu lista — quita las que no usas o agrega otras del catálogo. Después puedes editarlas en Ajustes."
+          saveLabel="Confirmar y continuar"
+          onSave={async (list) => {
+            const res = await fetchWithAuthRetry('/api/profile/categories', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ categories: list, markSeen: true }),
+            })
+            if (!res.ok) {
+              const data = await res.json().catch(() => ({}))
+              throw new Error(data?.error ?? 'No se pudo guardar')
+            }
+            await refreshProfile()
+          }}
+          onClose={() => { /* blocking: no-op */ }}
         />
       )}
     </div>
