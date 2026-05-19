@@ -54,24 +54,34 @@ export function ConfirmationScreen({
   // CategoryPickerModal. null = modal cerrado.
   const [editingCategoryFor, setEditingCategoryFor] = useState<string | null>(null)
 
-  // Categorías para el dropdown de edición — lista curada del user
-  // (v0.32) con fallback a defaults del giro si no la ha curado todavía.
-  // Si la IA devolvió una cat que no está en el set actual, la incluimos
-  // como opción para no perder lo que generó.
   const { profile } = useAuth()
-  const categoryOptions = useMemo(() => {
+
+  // v0.32: lista curada del user para el modal picker (Otra opción...).
+  // CRÍTICO: aquí NO incluimos los "extras" de movimientos con cats legacy
+  // — el picker save POSTea la lista completa y el server rechaza cats que
+  // no estén en el master como "personalizadas (Pro)". Si dejamos extras
+  // legacy aquí, un user Free pickando una cat del master triggerea 403.
+  const userCategoryList = useMemo(() => {
     const resolved = getUserCategories({
       categories: profile?.categories,
       giro: profile?.giro,
     })
-    const base = resolved.list
+    return resolved.list
+  }, [profile?.categories, profile?.giro])
+
+  // Categorías para el <select> dropdown — incluye extras (cats legacy de
+  // movs que la IA devolvió y que no están en la lista curada). Esto solo
+  // sirve para que el dropdown muestre la cat actual del mov si fuera una
+  // legacy; no se pasa al picker.
+  const categoryOptions = useMemo(() => {
+    const base = userCategoryList
     const extras: string[] = []
     for (const m of movements) {
       const c = m.category as string | undefined
       if (typeof c === 'string' && c.length > 0 && !base.includes(c)) extras.push(c)
     }
     return [...new Set([...base, ...extras])]
-  }, [profile?.categories, profile?.giro, movements])
+  }, [userCategoryList, movements])
 
   function update(tempId: string, patch: Partial<PendingMovement>) {
     setMovements(prev =>
@@ -396,7 +406,7 @@ export function ConfirmationScreen({
        * asigna esa categoría al movimiento. (v0.32) */}
       {editingCategoryFor && profile && (
         <CategoryPickerModal
-          selected={categoryOptions}
+          selected={userCategoryList}
           isPro={profile.plan === 'pro'}
           title="Elige una categoría"
           description="Toca una activa para usarla en este movimiento. Puedes agregar otras del catálogo o crear una personalizada."

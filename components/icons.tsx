@@ -152,6 +152,14 @@ export function IconPlus(p: IconProps) {
   )
 }
 
+export function IconChevronDown(p: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" {...svgProps(p, 14)}>
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  )
+}
+
 export function IconLogout(p: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...svgProps(p, 16)}>
