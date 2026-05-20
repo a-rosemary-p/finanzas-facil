@@ -41,7 +41,7 @@ const EXCLUDE_USER_IDS: readonly string[] = [
   '15933f7d-8025-43ef-9294-0fee569a718d',
 ]
 
-const PRO_PRICE_MXN = 49
+const PRO_PRICE_MXN = 79
 
 // Server Component — fuerza re-render en cada navegación (no cachear)
 export const dynamic = 'force-dynamic'

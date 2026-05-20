@@ -384,8 +384,8 @@ export default function AjustesPage() {
                 {checkoutLoading
                   ? 'Redirigiendo...'
                   : profile?.trialUsed
-                    ? 'Activa Pro — $49/mes'
-                    : 'Prueba Pro gratis 30 días — $49/mes después'}
+                    ? 'Activa Pro — $79/mes'
+                    : 'Prueba Pro gratis 30 días — $79/mes después'}
               </button>
               <p className="text-xs text-center text-brand-muted">
                 Historial limitado a 30 días · Movimientos limitados a 10/día

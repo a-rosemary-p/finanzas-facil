@@ -89,7 +89,7 @@ export default function TerminosPage() {
                 y funciones básicas.
               </li>
               <li>
-                <strong>Plan Pro ($49 MXN al mes):</strong> movimientos ilimitados,
+                <strong>Plan Pro ($79 MXN al mes):</strong> movimientos ilimitados,
                 historial sin límite, exportación a Excel, rangos personalizados, análisis
                 comparativo con IA y todas las funciones disponibles.
               </li>

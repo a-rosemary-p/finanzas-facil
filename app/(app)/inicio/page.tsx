@@ -268,7 +268,7 @@ function RegistrosInner() {
                 {checkoutLoading
                   ? 'Redirigiendo...'
                   : profile.trialUsed
-                    ? 'Activa Pro por $49/mes'
+                    ? 'Activa Pro por $79/mes'
                     : 'Prueba Pro gratis 30 días'}
               </button>
             </div>

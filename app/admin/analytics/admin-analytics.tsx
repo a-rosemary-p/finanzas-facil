@@ -202,7 +202,7 @@ export function AdminAnalytics({ generatedAt, kpis, charts, recentUsers, pageSta
             <Stat label="Pro activos"            value={kpis.proActive} accent="text-brand" />
             <Stat label="Trial activos"          value={kpis.trialActive} accent="text-pending-text" />
             <Stat label="MRR estimado"           value={`$${kpis.mrrEstimate.toLocaleString('es-MX')}`}
-                  accent="text-brand" hint={`Pro × $49`} />
+                  accent="text-brand" hint={`Pro × $79`} />
           </div>
         </section>
 
