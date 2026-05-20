@@ -2,8 +2,8 @@
 
 > **La spec viva está fuera del repo**, en la carpeta del proyecto.
 >
-> Versión actual: **v0.4** (mayo 8, 2026)
-> Archivo: `C:\Users\arome\Documents - Local\App Finanzas Pymes\Fiza_APP_SPEC v0.4. 080526.md`
+> Versión actual: **v0.41** (mayo 19, 2026)
+> Archivo: `C:\Users\arome\Documents - Local\App Finanzas Pymes\Fiza_APP_SPEC v0.41. 190526.md`
 >
 > Contiene: rutas (incl. `/inicio`, `/movimientos`, `/admin/analytics`, `/privacidad`, `/terminos`), API routes (incl. `/api/profile/categories` v0.4 GET/POST), schema DB (migrations 001–023), hooks (`useAuth` con `categories` + `categoriesSeenAt` + identities, `usePendings` con `dueAlertCount`, useRecurring), componentes (inicio/, pendientes/ con subsecciones colapsables, reports/, FeedbackModal, PageViewTracker en root, onboarding/ con tour + step `name` + ProfilePromptModal, **categories/ con CategoryPicker + CategoryPickerModal**), tipos, constantes (**`CATEGORIES_MASTER` flat de 19 + `GIRO_DEFAULTS` 24 mapeos + `USER_CATEGORIES_CAP=40`** — `GIRO_CATEGORIES` borrado en v0.4), enforcement Base vs Pro (incluye custom categories Pro-only), AI insights endpoint adaptativo a giro, AI extraction prompt con regla dirección-neutra + no-doble-describir-tipo, analytics events (`categories_updated`), page analytics propia con OS breakdown, dashboard interno admin con tabs usuarios/página, CDMX timezone, style system Tailwind v4, OAuth Google con auto-link, páginas legales LFPDPPP MX, landing reposicionada para freelancers con mockups reales + carousel mobile, hero gradient 135deg deep→light, /reportes ¿Cómo voy? con 2 insights y card autosize, security headers, rate limiting, audit trail, recurrentes, onboarding, y changelogs v0.21 → v0.4.
 
