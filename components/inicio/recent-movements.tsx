@@ -26,11 +26,13 @@ import type { Movement } from '@/types'
 interface Props {
   /** Bump para forzar refetch (después de registrar un nuevo mov). */
   refreshKey?: number
+  /** Filtro de proyecto activo (v0.61). Si está set, solo movs del proyecto. */
+  activeProjectId?: string | null
 }
 
 const PAGE_SIZE = 10
 
-export function RecentMovements({ refreshKey = 0 }: Props) {
+export function RecentMovements({ refreshKey = 0, activeProjectId = null }: Props) {
   const router = useRouter()
   const [movements, setMovements] = useState<Movement[]>([])
   const [loading, setLoading] = useState(true)
@@ -39,7 +41,9 @@ export function RecentMovements({ refreshKey = 0 }: Props) {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    fetchWithAuthRetry(`/api/movements?sort=recent&pageSize=${PAGE_SIZE}`)
+    const qs = new URLSearchParams({ sort: 'recent', pageSize: String(PAGE_SIZE) })
+    if (activeProjectId) qs.set('projectId', activeProjectId)
+    fetchWithAuthRetry(`/api/movements?${qs.toString()}`)
       .then(r => r.json())
       .then((d: { movements?: Movement[] }) => {
         if (!cancelled) {
@@ -49,7 +53,7 @@ export function RecentMovements({ refreshKey = 0 }: Props) {
       })
       .catch(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [refreshKey])
+  }, [refreshKey, activeProjectId])
 
   const visible = expanded ? movements : movements.slice(0, 5)
   const hasMore = movements.length > 5

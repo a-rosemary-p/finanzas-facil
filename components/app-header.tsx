@@ -20,10 +20,15 @@ import { IconList, IconLogout, IconLock } from '@/components/icons'
 import { WaveRule } from '@/components/ui/wave'
 import { startProCheckout } from '@/lib/upgrade-to-pro'
 import { track } from '@/lib/analytics'
+import { ActiveProjectBar } from '@/components/projects/active-project-bar'
 
 interface AppHeaderProps {
   /** Esconde el plan badge si lo necesitas (raro). Default: visible. */
   hidePlanBadge?: boolean
+  /** Esconde la ActiveProjectBar (v0.61). Default: visible para Pro con proyectos.
+   * Solo se esconde en páginas donde el filtro global no aplica
+   * (ej. /proyectos/[id] detalle, /ajustes, /perfil). */
+  hideActiveProjectBar?: boolean
 }
 
 /**
@@ -40,7 +45,7 @@ const MENU_ITEMS: Array<{ label: string; href: string; proOnly?: boolean }> = [
   { label: 'Ajustes',     href: '/ajustes'     },
 ]
 
-export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
+export function AppHeader({ hidePlanBadge = false, hideActiveProjectBar = false }: AppHeaderProps) {
   const { profile, logout } = useAuth()
   const { dueAlertCount } = usePendings()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -60,8 +65,9 @@ export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
   const isPro = profile?.plan === 'pro'
 
   return (
+    <div className="sticky top-0 z-20">
     <header
-      className="bg-white sticky top-0 flex items-center justify-between px-4 z-20 fz-app-header"
+      className="bg-white flex items-center justify-between px-4 fz-app-header"
       // El header tapa el status bar nativo del móvil con su safe area.
       // Esto es comportamiento responsive imposible de expresar como class.
       style={{
@@ -184,5 +190,12 @@ export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
         />
       </svg>
     </header>
+
+    {/* Active project bar (v0.61) — debajo del header bar pero dentro del
+      * mismo container sticky. Solo se renderea para Pro con proyectos
+      * activos. Páginas que no quieren el filtro global pasan
+      * hideActiveProjectBar={true} (ej. /proyectos/[id] detalle). */}
+    {!hideActiveProjectBar && <ActiveProjectBar />}
+    </div>
   )
 }

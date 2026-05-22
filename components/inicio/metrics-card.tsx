@@ -55,21 +55,26 @@ interface Props {
   period: RegistrosPeriod
   onPeriodChange: (next: RegistrosPeriod) => void
   refreshKey?: number
+  /** Filtro de proyecto activo (v0.61). Si está set, las métricas son del
+   * proyecto. Si null = "General" = todos. */
+  activeProjectId?: string | null
 }
 
-export function MetricsCard({ period, onPeriodChange, refreshKey = 0 }: Props) {
+export function MetricsCard({ period, onPeriodChange, refreshKey = 0, activeProjectId = null }: Props) {
   const [data, setData] = useState<CompareResponse | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    fetchWithAuthRetry(`/api/reports/compare?period=${period}`)
+    const qs = new URLSearchParams({ period })
+    if (activeProjectId) qs.set('projectId', activeProjectId)
+    fetchWithAuthRetry(`/api/reports/compare?${qs.toString()}`)
       .then(r => r.json())
       .then((d: CompareResponse) => { if (!cancelled) { setData(d); setLoading(false) } })
       .catch(() => { if (!cancelled) { setData(null); setLoading(false) } })
     return () => { cancelled = true }
-  }, [period, refreshKey])
+  }, [period, refreshKey, activeProjectId])
 
   const current  = data?.current  ?? { income: 0, expenses: 0, net: 0 }
   const previous = data?.previous ?? null

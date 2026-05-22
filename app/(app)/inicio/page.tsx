@@ -46,6 +46,7 @@ import { Onboarding, type OnboardingHighlight } from '@/components/onboarding/on
 import { ProfilePromptModal } from '@/components/onboarding/profile-prompt-modal'
 import { CategoryPickerModal } from '@/components/categories/category-picker-modal'
 import { ProjectsOnboardingModal } from '@/components/projects/projects-onboarding-modal'
+import { useActiveProject } from '@/hooks/use-active-project'
 import { GIRO_DEFAULTS } from '@/lib/constants'
 import type { RegistrosPeriod } from '@/components/inicio/period-dropdown'
 import type { Entry, PendingMovement } from '@/types'
@@ -77,6 +78,9 @@ function RegistrosInner() {
   const [pendingData, setPendingData] = useState<PendingData | null>(null)
   const [period, setPeriod] = useState<RegistrosPeriod>('global')
   const [refreshKey, setRefreshKey] = useState(0)
+  // Selector de proyecto activo (v0.61) — barrita del header. Filtra
+  // métricas + movs recientes y pre-asigna projectId a nuevos movs.
+  const { activeProjectId } = useActiveProject()
 
   // (v0.292) Insight chip removido — el copy era confuso ("te dice algo en
   // general"). El endpoint `/api/insights` sigue vivo y el state se puede
@@ -164,7 +168,20 @@ function RegistrosInner() {
   }, [])
 
   function handleMovementsExtracted(data: PendingData) {
-    setPendingData(data)
+    // Pre-asignar projectId desde el selector activo del header (v0.61).
+    // Regla: si la IA NO devolvió projectId NI projectCreateName en ese mov,
+    // aplicamos el default del header. Si la IA detectó algo, ella gana —
+    // el header solo cubre el caso "no detección".
+    const withDefaults = activeProjectId
+      ? {
+          ...data,
+          movements: data.movements.map(m => {
+            if (m.projectId || m.projectCreateName) return m
+            return { ...m, projectId: activeProjectId }
+          }),
+        }
+      : data
+    setPendingData(withDefaults)
     setMode('confirming')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -223,6 +240,7 @@ function RegistrosInner() {
               period={period}
               onPeriodChange={setPeriod}
               refreshKey={refreshKey}
+              activeProjectId={activeProjectId}
             />
           </div>
 
@@ -237,7 +255,7 @@ function RegistrosInner() {
           {/* Recent movements (incluye su propio Wave divider debajo del
            * subheader, ver components/inicio/recent-movements.tsx) */}
           <div className="px-3.5 pt-3 pb-4">
-            <RecentMovements refreshKey={refreshKey} />
+            <RecentMovements refreshKey={refreshKey} activeProjectId={activeProjectId} />
           </div>
 
           {/* Banner upgrade exitoso */}

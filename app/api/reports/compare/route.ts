@@ -155,6 +155,21 @@ export async function GET(request: Request) {
   }
   const period = periodRaw as ComparePeriod
 
+  // Filtro de proyecto activo (v0.61, Pro-only). Si Free manda projectId,
+  // lo ignoramos. Si Pro manda un UUID, filtramos las queries de agregación.
+  const projectIdParam = searchParams.get('projectId')
+  let projectFilter: string | null = null
+  if (projectIdParam) {
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('plan')
+      .eq('id', user.id)
+      .single()
+    if ((prof?.plan as string) === 'pro') {
+      projectFilter = projectIdParam
+    }
+  }
+
   // "Hoy" CDMX consistente con el resto de la app.
   const todayMidnight = parseYMD(getAppToday())
 
@@ -165,11 +180,13 @@ export async function GET(request: Request) {
   if (period === 'global') {
     // Necesitamos el primer movement_date del usuario para acotar la consulta
     // y los buckets del sparkline.
-    const { data: firstRow } = await supabase
+    let firstQ = supabase
       .from('movements')
       .select('movement_date')
       .eq('user_id', user.id)
       .in('type', ['ingreso', 'gasto'])
+    if (projectFilter) firstQ = firstQ.eq('project_id', projectFilter) as typeof firstQ
+    const { data: firstRow } = await firstQ
       .order('movement_date', { ascending: true })
       .limit(1)
       .maybeSingle()
@@ -190,13 +207,15 @@ export async function GET(request: Request) {
   const queryStart = fmtYMD(previousRange?.start ?? currentRange.start)
   const queryEnd   = fmtYMD(currentRange.end)
 
-  const { data, error } = await supabase
+  let mainQ = supabase
     .from('movements')
     .select('id, type, amount, description, category, movement_date, is_investment')
     .gte('movement_date', queryStart)
     .lte('movement_date', queryEnd)
     .eq('user_id', user.id)
     .in('type', ['ingreso', 'gasto'])
+  if (projectFilter) mainQ = mainQ.eq('project_id', projectFilter) as typeof mainQ
+  const { data, error } = await mainQ
 
   if (error) {
     console.error('[GET /api/reports/compare]', error)
