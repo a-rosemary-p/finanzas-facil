@@ -25,10 +25,10 @@ import { ActiveProjectBar } from '@/components/projects/active-project-bar'
 interface AppHeaderProps {
   /** Esconde el plan badge si lo necesitas (raro). Default: visible. */
   hidePlanBadge?: boolean
-  /** Muestra el chip selector de proyecto activo arriba del header (v0.62).
-   * Opt-in: solo /inicio lo activa por ahora. Otras páginas TBD. Solo Pro
-   * con proyectos activos creados verá el chip cuando esté activado. */
-  showActiveProjectBar?: boolean
+  /** Esconde el chip selector de proyecto activo (v0.62). Default: false
+   * (visible para Pro con proyectos activos en TODAS las páginas, excepto
+   * donde no aplica — ej. /proyectos/[id] que tiene su propio scope). */
+  hideActiveProjectChip?: boolean
 }
 
 /**
@@ -45,7 +45,7 @@ const MENU_ITEMS: Array<{ label: string; href: string; proOnly?: boolean }> = [
   { label: 'Ajustes',     href: '/ajustes'     },
 ]
 
-export function AppHeader({ hidePlanBadge = false, showActiveProjectBar = false }: AppHeaderProps) {
+export function AppHeader({ hidePlanBadge = false, hideActiveProjectChip = false }: AppHeaderProps) {
   const { profile, logout } = useAuth()
   const { dueAlertCount } = usePendings()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -66,30 +66,27 @@ export function AppHeader({ hidePlanBadge = false, showActiveProjectBar = false 
 
   return (
     <header
-      className="bg-white sticky top-0 z-20 flex flex-col fz-app-header"
+      className="bg-white sticky top-0 z-20 flex items-center justify-between px-4 fz-app-header"
       // El header tapa el status bar nativo del móvil con su safe area.
       // Esto es comportamiento responsive imposible de expresar como class.
       style={{
-        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)',
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 10px)',
       }}
     >
-      {/* Active project chip — arriba del header, centrado. Solo en páginas
-        * que lo activan explícitamente (showActiveProjectBar=true), solo Pro
-        * con proyectos activos creados. */}
-      {showActiveProjectBar && (
-        <div className="flex justify-center pb-1.5">
+      {/* Logo → /registros */}
+      <Link href="/inicio" aria-label="Ir a Inicio" className="shrink-0">
+        <img src="/logo-green.png" alt="fiza" className="h-8 w-auto block" />
+      </Link>
+
+      {/* Active project chip — entre logo y badge+menu. Solo Pro con proyectos
+        * activos lo verá; en /proyectos/[id] se oculta con hideActiveProjectChip. */}
+      {!hideActiveProjectChip && (
+        <div className="flex-1 flex justify-center px-2 min-w-0">
           <ActiveProjectBar />
         </div>
       )}
 
-      {/* Row principal: logo + plan badge + menu */}
-      <div className="flex items-center justify-between px-4">
-      {/* Logo → /registros */}
-      <Link href="/inicio" aria-label="Ir a Inicio">
-        <img src="/logo-green.png" alt="fiza" className="h-8 w-auto block" />
-      </Link>
-
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 shrink-0">
         {!hidePlanBadge && profile && (
           <span
             className={[
@@ -199,7 +196,6 @@ export function AppHeader({ hidePlanBadge = false, showActiveProjectBar = false 
           fill="white"
         />
       </svg>
-      </div>
     </header>
   )
 }

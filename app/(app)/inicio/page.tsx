@@ -46,7 +46,7 @@ import { Onboarding, type OnboardingHighlight } from '@/components/onboarding/on
 import { ProfilePromptModal } from '@/components/onboarding/profile-prompt-modal'
 import { CategoryPickerModal } from '@/components/categories/category-picker-modal'
 import { ProjectsOnboardingModal } from '@/components/projects/projects-onboarding-modal'
-import { useActiveProject } from '@/hooks/use-active-project'
+import { useActiveProject, readActiveProjectId } from '@/hooks/use-active-project'
 import { GIRO_DEFAULTS } from '@/lib/constants'
 import type { RegistrosPeriod } from '@/components/inicio/period-dropdown'
 import type { Entry, PendingMovement } from '@/types'
@@ -170,24 +170,25 @@ function RegistrosInner() {
   function handleMovementsExtracted(data: PendingData) {
     // Pre-asignar projectId desde el selector activo del header (v0.61).
     //
-    // Regla v0.62 (corregida): el header GANA salvo cuando la IA encontró
-    // un match FIRME contra un proyecto EXISTENTE (projectId no-null).
-    //   - IA dice projectId='casa-pedro-uuid' → respeta (match firme,
-    //     el user fue explícito al mencionarlo en el texto).
-    //   - IA dice projectCreateName='Algo' → IGNORAR la sugerencia y usar
-    //     el activo del header. createName es una "adivinanza" del modelo
-    //     que puede ser basura; el user ya eligió un proyecto explícito.
-    //   - IA no devolvió nada → header gana.
+    // IMPORTANTE (v0.62): leemos activeProjectId de localStorage en runtime
+    // (no del hook) porque esta function puede ser llamada desde callbacks
+    // con closures stale (ej. recorder.onResult de voz, registrado con
+    // useEffect([]) en el primer render del InputCard, captura el state inicial
+    // y nunca se actualiza). localStorage es síncrono y siempre fresco.
     //
-    // Si no hay header activo (General), se respeta la IA como antes.
-    const withDefaults = activeProjectId
+    // Regla: el header GANA salvo cuando la IA encontró un match FIRME contra
+    // un proyecto EXISTENTE (projectId no-null).
+    //   - IA dice projectId='casa-pedro-uuid' → respeta (match firme).
+    //   - IA dice projectCreateName='Algo' → IGNORAR (adivinanza del modelo)
+    //     y aplicar el del header — el user ya fue explícito al elegir.
+    //   - IA no devolvió nada → header gana.
+    const currentActiveProjectId = readActiveProjectId()
+    const withDefaults = currentActiveProjectId
       ? {
           ...data,
           movements: data.movements.map(m => {
             if (m.projectId) return m  // IA tiene match firme → IA gana
-            // No hay match firme — descartamos cualquier createName de IA
-            // y aplicamos el del header.
-            return { ...m, projectId: activeProjectId, projectCreateName: null }
+            return { ...m, projectId: currentActiveProjectId, projectCreateName: null }
           }),
         }
       : data
@@ -214,7 +215,7 @@ function RegistrosInner() {
 
   return (
     <div className="min-h-screen fz-page-gradient">
-      <AppHeader showActiveProjectBar />
+      <AppHeader />
 
       {mode === 'confirming' && pendingData ? (
         <main className="max-w-lg mx-auto px-4 py-6 fz-pad-safe-bottom">

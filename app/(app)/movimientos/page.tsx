@@ -21,6 +21,7 @@ import { WaveSection } from '@/components/ui/wave'
 import { MovementCard } from '@/components/entries/entry-card'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import { useAuth } from '@/hooks/use-auth'
+import { useActiveProject } from '@/hooks/use-active-project'
 import { startProCheckout } from '@/lib/upgrade-to-pro'
 import { track } from '@/lib/analytics'
 import { getDateRange, formatRangeShort } from '@/lib/utils'
@@ -65,6 +66,9 @@ const PAGE_SIZE = 30
 export default function MovimientosPage() {
   const { profile, loading: authLoading } = useAuth()
   const isPro = profile?.plan === 'pro'
+  // Filtro global de proyecto (v0.62) — viene del chip del header.
+  // El endpoint /api/movimientos ya soporta projectId desde v0.5.
+  const { activeProjectId } = useActiveProject()
 
   const [dateFilter, setDateFilter] = useState<DateFilter>('month')
   // Inicializamos en null para esperar al profile y aplicar los defaults
@@ -123,10 +127,11 @@ export default function MovimientosPage() {
     if (categoriesArr.length < ALL_CATEGORIES.length && categoriesArr.length > 0) {
       params.set('categories', categoriesArr.join(','))
     }
+    if (activeProjectId) params.set('projectId', activeProjectId)
     params.set('offset', String(newOffset))
     params.set('pageSize', String(PAGE_SIZE))
     return `/api/movimientos?${params.toString()}`
-  }, [dateFilter, customFrom, customTo, categoriesArr])
+  }, [dateFilter, customFrom, customTo, categoriesArr, activeProjectId])
 
   // Fetch inicial (offset 0) cuando cambian filtros
   useEffect(() => {
@@ -163,7 +168,7 @@ export default function MovimientosPage() {
     })
 
     return () => { cancelled = true }
-  }, [profile, dateFilter, customFrom, customTo, categoriesArr, buildUrl])
+  }, [profile, dateFilter, customFrom, customTo, categoriesArr, activeProjectId, buildUrl])
 
   async function loadMore() {
     if (loadingMore || movements.length >= total) return

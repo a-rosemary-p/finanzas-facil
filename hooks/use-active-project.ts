@@ -54,6 +54,19 @@ function subscribe(callback: () => void) {
   }
 }
 
+/**
+ * Lee el activeProjectId directamente del localStorage SIN hook. Útil cuando
+ * necesitas el valor desde un callback registrado con useEffect([]) (closure
+ * stale) — ej. recorder.onResult de voz, donde el subscribe inicial captura
+ * el state de la primera render y nunca ve actualizaciones.
+ *
+ * localStorage es síncrono y siempre actualizado, así que esto sirve como
+ * "read-anytime" sin depender de re-renders.
+ */
+export function readActiveProjectId(): string | null {
+  return getSnapshot()
+}
+
 export interface UseActiveProjectResult {
   /** ID del proyecto activo o null si "General". */
   activeProjectId: string | null
