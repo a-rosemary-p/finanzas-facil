@@ -27,6 +27,7 @@ import { PendingRow } from '@/components/pendientes/pending-row'
 import { RecurringRow } from '@/components/pendientes/recurring-row'
 import { ManualPendingForm } from '@/components/pendientes/manual-pending-form'
 import { ManualRecurringForm } from '@/components/pendientes/manual-recurring-form'
+import { PendientesHelpModal } from '@/components/pendientes/pendientes-help-modal'
 import { WaveSection } from '@/components/ui/wave'
 import { IconPlus, IconChevronDown } from '@/components/icons'
 
@@ -49,6 +50,7 @@ export default function PendientesPage() {
   const [openRecurring, setOpenRecurring] = useState(false)
   const [openOverdue,   setOpenOverdue]   = useState(true)
   const [openPending,   setOpenPending]   = useState(true)
+  const [showHelp,      setShowHelp]      = useState(false)
 
   const activeRecurring = recurring.filter(r => r.isActive)
   const pausedRecurring = recurring.filter(r => !r.isActive)
@@ -58,14 +60,25 @@ export default function PendientesPage() {
       <AppHeader />
 
       <main className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-6 fz-pad-safe-bottom">
-        <div>
-          <h1 className="font-bold text-lg text-brand">Pendientes</h1>
-          <p className="text-sm mt-0.5 text-brand-mid">
-            Compromisos por pagar y movimientos que se repiten.
-          </p>
-          <div className="mt-3">
-            <WaveSection />
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1">
+            <h1 className="font-bold text-lg text-brand">Pendientes</h1>
+            <p className="text-sm mt-0.5 text-brand-mid">
+              Compromisos por pagar y movimientos que se repiten.
+            </p>
+            <div className="mt-3">
+              <WaveSection />
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => setShowHelp(true)}
+            className="w-8 h-8 rounded-full border border-brand-border text-brand-mid text-sm font-bold flex items-center justify-center shrink-0"
+            aria-label="Ayuda sobre pendientes"
+            title="¿Cómo funcionan los pendientes?"
+          >
+            ?
+          </button>
         </div>
 
         {/* ── 1. Recurrentes (desplegable; arranca cerrado) ────────────── */}
@@ -191,6 +204,13 @@ export default function PendientesPage() {
           )}
         </section>
       </main>
+
+      {/* Help modal (v0.60) — siempre manual via "?", nunca auto-trigger
+        * porque pendientes y recurrentes ya están en producción desde
+        * hace tiempo y los users existentes ya los conocen. */}
+      {showHelp && (
+        <PendientesHelpModal onClose={() => setShowHelp(false)} />
+      )}
     </div>
   )
 }
