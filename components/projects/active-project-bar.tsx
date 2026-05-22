@@ -60,15 +60,14 @@ export function ActiveProjectBar() {
     : null
 
   const label = activeProject ? activeProject.name : 'General'
-  const sublabel = activeProject?.clientName ?? null
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative max-w-[140px]" ref={dropdownRef}>
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
         className={[
-          'inline-flex items-center gap-1.5 py-1 px-3 rounded-full border text-xs font-bold transition-colors',
+          'inline-flex items-center gap-1 py-1 px-2.5 rounded-full border text-xs font-bold transition-colors max-w-full',
           activeProject
             ? 'bg-brand text-white border-brand'
             : 'bg-brand-chip text-brand border-brand-border',
@@ -76,15 +75,9 @@ export function ActiveProjectBar() {
         aria-expanded={open}
         aria-label={`Proyecto activo: ${label}`}
       >
-        <IconFolder size={12} />
-        <span className="truncate max-w-[160px]">
+        <span className="truncate min-w-0">
           {label}
         </span>
-        {sublabel && (
-          <span className="text-[10px] opacity-80 truncate max-w-[100px] font-medium">
-            · {sublabel}
-          </span>
-        )}
         <IconChevronDown size={11} />
       </button>
 
