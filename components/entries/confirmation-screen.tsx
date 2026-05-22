@@ -5,9 +5,11 @@ import { formatCurrency, getTodayString } from '@/lib/utils'
 import { MOVEMENT_TYPES, MOVEMENT_TYPE_CONFIG } from '@/lib/constants'
 import { getUserCategories } from '@/lib/giro-categories'
 import { useAuth } from '@/hooks/use-auth'
+import { useProjects } from '@/hooks/use-projects'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import { CategoryPickerModal } from '@/components/categories/category-picker-modal'
-import type { PendingMovement, Entry } from '@/types'
+import { ProjectSelector } from '@/components/projects/project-selector'
+import type { PendingMovement, Entry, Project } from '@/types'
 
 interface ConfirmationScreenProps {
   rawText: string
@@ -55,6 +57,30 @@ export function ConfirmationScreen({
   const [editingCategoryFor, setEditingCategoryFor] = useState<string | null>(null)
 
   const { profile } = useAuth()
+  const isPro = profile?.plan === 'pro'
+  const { projects, addProject } = useProjects({ isPro, enabled: isPro })
+
+  /**
+   * Crea un proyecto inline desde el selector. Devuelve el Project completo
+   * para que ProjectSelector pueda auto-seleccionarlo. Errores (tope, etc.)
+   * los lanza como Error para que el selector los muestre.
+   */
+  async function handleCreateProjectInline(
+    name: string,
+    clientName: string | null,
+  ): Promise<Project | null> {
+    const res = await fetchWithAuthRetry('/api/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, clientName }),
+    })
+    const data = (await res.json().catch(() => ({}))) as { project?: Project; error?: string; code?: string }
+    if (!res.ok || !data.project) {
+      throw new Error(data.error ?? 'No se pudo crear el proyecto')
+    }
+    addProject(data.project)
+    return data.project
+  }
 
   // v0.32: lista curada del user para el modal picker (Otra opción...).
   // CRÍTICO: aquí NO incluimos los "extras" de movimientos con cats legacy
@@ -262,6 +288,19 @@ export function ConfirmationScreen({
               <option value="__open_picker__">+ Otra opción…</option>
             </select>
           </div>
+
+          {/* Proyecto (v0.5) — selector con creación inline, Pro-only.
+            * Para Free se muestra como teaser ghosted que abre upgrade. */}
+          <ProjectSelector
+            projects={projects}
+            value={m.projectId ?? null}
+            pendingCreateName={m.projectCreateName ?? null}
+            suggestion={m.projectSuggestion ?? null}
+            isPro={!!isPro}
+            teaserSource="confirmation"
+            onChange={pid => update(m.tempId, { projectId: pid, projectCreateName: null })}
+            onCreate={handleCreateProjectInline}
+          />
 
           {/* Fecha */}
           <div className="flex flex-col gap-1">

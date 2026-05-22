@@ -30,6 +30,9 @@ interface RecurringRow {
   frequency: RecurringFrequency
   next_due_date: string  // YYYY-MM-DD
   is_active: boolean
+  /** v0.5: si el recurrente pertenece a un proyecto, el pendiente generado
+   * hereda este project_id. NULL si no hay proyecto. */
+  project_id: string | null
 }
 
 /**
@@ -45,7 +48,7 @@ export async function materializeNextPending(
   // 1. Lee el template
   const { data: rec, error: recErr } = await supabase
     .from('recurring_movements')
-    .select('id, user_id, type, amount, description, category, frequency, next_due_date, is_active')
+    .select('id, user_id, type, amount, description, category, frequency, next_due_date, is_active, project_id')
     .eq('id', recurringId)
     .single<RecurringRow>()
 
@@ -93,6 +96,10 @@ export async function materializeNextPending(
       pending_direction: rec.type,
       recurring_movement_id: rec.id,
       original_type: 'pendiente',
+      // v0.5: heredar project_id del template. Si el proyecto fue eliminado
+      // (ON DELETE SET NULL en recurring_movements.project_id), esto es null
+      // y el pendiente queda sin proyecto — comportamiento correcto.
+      project_id: rec.project_id,
     })
     .select('id')
     .single()

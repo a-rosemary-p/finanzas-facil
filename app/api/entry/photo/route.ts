@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { extractTextFromImage, extractFromText, extractFromImage, extractFromPdf } from '@/lib/openai/client'
-import { OCR_TRANSCRIPTION_PROMPT, buildPhotoExtractionPrompt, buildExtractionSystemPrompt } from '@/lib/ai/prompts'
+import { OCR_TRANSCRIPTION_PROMPT, buildPhotoExtractionPrompt, buildExtractionSystemPrompt, buildProjectsSection } from '@/lib/ai/prompts'
 import { getUserCategories, buildCategoriesSection } from '@/lib/giro-categories'
 import { parseGeminiResponse } from '@/lib/ai/parser'
 import { PLANS, PHOTO_LIMITS, OCR_MIN_TEXT_LENGTH } from '@/lib/constants'
@@ -122,8 +122,29 @@ export async function POST(request: Request) {
       giro: profile?.giro as string | null | undefined,
     })
     const categoriesSection = buildCategoriesSection(cats)
-    const photoPromptBase = buildPhotoExtractionPrompt(categoriesSection)
-    const textPromptBase  = buildExtractionSystemPrompt(categoriesSection)
+
+    // v0.5: Proyectos activos para Pro. Mismo patrón que /api/entry.
+    let projectsSection = ''
+    let activeProjectIds: Set<string> | undefined
+    if (profile?.plan === 'pro') {
+      const { data: projects } = await supabase
+        .from('projects')
+        .select('id, name, client_name')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('updated_at', { ascending: false })
+        .limit(20)
+      const projList = (projects ?? []).map(r => ({
+        id: (r as { id: string }).id,
+        name: (r as { name: string }).name,
+        clientName: (r as { client_name: string | null }).client_name,
+      }))
+      projectsSection = buildProjectsSection(projList)
+      activeProjectIds = new Set(projList.map(p => p.id))
+    }
+
+    const photoPromptBase = buildPhotoExtractionPrompt(categoriesSection, projectsSection)
+    const textPromptBase  = buildExtractionSystemPrompt(categoriesSection, projectsSection)
 
     let movements: PendingMovement[] = []
 
@@ -131,7 +152,7 @@ export async function POST(request: Request) {
       // ── Path PDF: extracción en una sola llamada ───────────────────────────
       const prompt = `${photoPromptBase}\n\nFecha base: ${fecha}`
       const raw = await extractFromPdf(prompt, b64, 'documento.pdf')
-      movements = parseGeminiResponse(raw, fecha)
+      movements = parseGeminiResponse(raw, fecha, activeProjectIds)
     } else {
       // ── Path imagen: OCR → texto → JSON, con fallback a visión directa ─────
       let ocrText = ''
@@ -155,14 +176,14 @@ export async function POST(request: Request) {
         ].join('\n')
 
         const raw = await extractFromText(textPromptBase, userContent)
-        movements = parseGeminiResponse(raw, fecha)
+        movements = parseGeminiResponse(raw, fecha, activeProjectIds)
       }
 
       // Si el OCR falló o no se encontraron movimientos → fallback visión directa
       if (movements.length === 0) {
         const prompt = `${photoPromptBase}\n\nFecha base: ${fecha}`
         const raw = await extractFromImage(prompt, b64, mime)
-        movements = parseGeminiResponse(raw, fecha)
+        movements = parseGeminiResponse(raw, fecha, activeProjectIds)
       }
     }
 

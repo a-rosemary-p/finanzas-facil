@@ -160,6 +160,24 @@ export function IconChevronDown(p: IconProps) {
   )
 }
 
+/** Candado pequeño — para teasers Pro y campos bloqueados en plan Free. */
+export function IconLock(p: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...svgProps(p, 14)}>
+      <path d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2zm-7-2a2 2 0 0 1 4 0v2h-4z" />
+    </svg>
+  )
+}
+
+/** Carpeta / proyecto — para entry de Proyectos en menú y selector. */
+export function IconFolder(p: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...svgProps(p)}>
+      <path d="M20 6h-7l-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z" />
+    </svg>
+  )
+}
+
 export function IconLogout(p: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...svgProps(p, 16)}>

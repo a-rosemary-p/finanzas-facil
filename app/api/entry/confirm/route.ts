@@ -4,7 +4,13 @@ import { MOVEMENT_TYPES, isValidCategoryName } from '@/lib/constants'
 import { materializeNextPending } from '@/lib/recurring/materialize'
 import { getAppToday } from '@/lib/cdmx-date'
 import { trackServer } from '@/lib/analytics-server'
-import type { Entry, Movement } from '@/types'
+import {
+  countActiveProjects,
+  MAX_ACTIVE_PROJECTS,
+  MAX_NAME_LEN as PROJ_NAME_MAX,
+  MAX_CLIENT_LEN as PROJ_CLIENT_MAX,
+} from '@/lib/projects/helpers'
+import type { Entry, Movement, ProjectSuggestion } from '@/types'
 
 export async function POST(request: Request) {
   try {
@@ -64,6 +70,31 @@ export async function POST(request: Request) {
           rawFreq === 'week' || rawFreq === 'month' || rawFreq === 'year' ? rawFreq : null
         const isRecurring = m['isRecurring'] === true && recurringFrequency !== null
 
+        // Proyectos (v0.5): aceptamos projectId (existente) y/o projectCreateName
+        // (crear nuevo). projectSuggestion es solo metadata para audit.
+        const rawProjId = m['projectId']
+        const projectId = typeof rawProjId === 'string' && rawProjId.length > 0 ? rawProjId : null
+
+        const rawCreate = m['projectCreateName']
+        const projectCreateName =
+          typeof rawCreate === 'string' && rawCreate.trim().length > 0
+            ? rawCreate.trim().slice(0, PROJ_NAME_MAX)
+            : null
+
+        const rawSug = m['projectSuggestion']
+        let projectSuggestion: ProjectSuggestion | null = null
+        if (rawSug && typeof rawSug === 'object') {
+          const s = rawSug as Record<string, unknown>
+          const conf = s['confidence']
+          projectSuggestion = {
+            projectId: typeof s['projectId'] === 'string' ? (s['projectId'] as string) : null,
+            createName: typeof s['createName'] === 'string'
+              ? ((s['createName'] as string).slice(0, PROJ_NAME_MAX))
+              : null,
+            confidence: conf === 'high' ? 'high' : 'low',
+          }
+        }
+
         return {
           type,
           amount: Math.round((m['amount'] as number) * 100) / 100,
@@ -85,6 +116,9 @@ export async function POST(request: Request) {
           pendingDirection,
           isRecurring,
           recurringFrequency,
+          projectId,
+          projectCreateName,
+          projectSuggestion,
         }
       })
 
@@ -98,6 +132,8 @@ export async function POST(request: Request) {
       .select('plan, movements_today, movements_today_date')
       .eq('id', user.id)
       .single()
+
+    const isPro = profile?.plan === 'pro'
 
     if (profile && profile.plan === 'free') {
       const today = getAppToday()
@@ -122,6 +158,134 @@ export async function POST(request: Request) {
           { status: 429 }
         )
       }
+    }
+
+    // 3.5. Resolver proyectos (v0.5):
+    //   - Si el user NO es Pro, ignoramos cualquier projectId/projectCreateName.
+    //   - Si es Pro y vino projectCreateName, creamos los proyectos antes del
+    //     insert de movements (deduplicando por nombre case-insensitive contra
+    //     proyectos activos existentes y entre sí en el mismo confirm).
+    //   - Validamos tope de 10 activos. Si la creación pasaría el tope, devolvemos
+    //     409 y abortamos la entry entera. Mejor abortar fuerte que crear movs
+    //     sin el proyecto que el user esperaba.
+    //
+    // Mapa nombre_lowercase → projectId (real). Para deduplicar dentro del batch.
+    const createdProjectByName = new Map<string, string>()
+    if (isPro) {
+      // Recolectar nombres únicos a crear. Si un mov ya tiene projectId
+      // resuelto, ignoramos su projectCreateName aunque venga (defense-in-depth
+      // contra que el cliente o el parser de IA dejaron ambos puestos).
+      const namesToCreate = new Set<string>()
+      for (const s of sanitized) {
+        if (s.projectId) continue
+        if (s.projectCreateName) {
+          namesToCreate.add(s.projectCreateName.toLowerCase())
+        }
+      }
+
+      if (namesToCreate.size > 0) {
+        // ¿Alguno ya existe activo? Si sí, no crear — reusar id.
+        const { data: existing } = await supabase
+          .from('projects')
+          .select('id, name, status')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+
+        const existingByName = new Map<string, string>()
+        for (const row of existing ?? []) {
+          existingByName.set(
+            ((row as { name: string }).name).toLowerCase(),
+            (row as { id: string }).id,
+          )
+        }
+
+        // Calcular cuántos nuevos vamos a tener que crear (que no existan).
+        let toCreate: string[] = []
+        for (const s of sanitized) {
+          if (s.projectId) continue   // ya resuelto, no crear
+          if (!s.projectCreateName) continue
+          const key = s.projectCreateName.toLowerCase()
+          if (existingByName.has(key)) {
+            createdProjectByName.set(key, existingByName.get(key)!)
+            continue
+          }
+          if (!toCreate.find(t => t.toLowerCase() === key)) {
+            toCreate.push(s.projectCreateName)
+          }
+        }
+
+        if (toCreate.length > 0) {
+          const activeCount = await countActiveProjects(supabase, user.id)
+          if (activeCount + toCreate.length > MAX_ACTIVE_PROJECTS) {
+            return Response.json(
+              {
+                error: `Crear estos proyectos pasaría el tope de ${MAX_ACTIVE_PROJECTS} activos. Archiva alguno o quita los nuevos.`,
+                code: 'MAX_ACTIVE_PROJECTS',
+              },
+              { status: 409 },
+            )
+          }
+
+          // Insert batch — uno por uno para que un fallo aislado no aborte todos.
+          for (const name of toCreate) {
+            const cleanName = name.slice(0, 60)
+            const { data: newProj, error: pErr } = await supabase
+              .from('projects')
+              .insert({
+                user_id: user.id,
+                name: cleanName,
+                client_name: null,
+                status: 'active',
+              })
+              .select('id, name')
+              .single()
+            if (pErr || !newProj) {
+              // UNIQUE violation: alguien (esta misma request en otro tab, o
+              // race con /api/projects POST) ya creó un proyecto activo con
+              // este nombre. Buscamos y reusamos el id en lugar de fallar.
+              if (
+                (pErr as { code?: string } | null)?.code === '23505' ||
+                pErr?.message?.includes('projects_user_active_name_lower_uq')
+              ) {
+                const { data: existing } = await supabase
+                  .from('projects')
+                  .select('id, name')
+                  .eq('user_id', user.id)
+                  .eq('status', 'active')
+                  .ilike('name', cleanName)
+                  .maybeSingle()
+                if (existing) {
+                  createdProjectByName.set(
+                    (existing.name as string).toLowerCase(),
+                    existing.id as string,
+                  )
+                  continue
+                }
+              }
+              console.error('[confirm] project create failed', pErr)
+              continue
+            }
+            createdProjectByName.set(
+              (newProj.name as string).toLowerCase(),
+              newProj.id as string,
+            )
+            await trackServer(supabase, user.id, 'project_created', {
+              project_id: newProj.id,
+              source: 'confirmation',
+            })
+          }
+        }
+      }
+    }
+
+    /** Resuelve el project_id final de un movimiento sanitizado. */
+    function resolveProjectId(s: (typeof sanitized)[number]): string | null {
+      if (!isPro) return null
+      if (s.projectId) return s.projectId
+      if (s.projectCreateName) {
+        return createdProjectByName.get(s.projectCreateName.toLowerCase()) ?? null
+      }
+      return null
     }
 
     // 4. Guardar entry
@@ -168,12 +332,13 @@ export async function POST(request: Request) {
         original_currency: m.originalCurrency,
         exchange_rate_used: m.exchangeRateUsed,
         pending_direction: m.pendingDirection,
+        project_id: resolveProjectId(m),
       }))
 
       const { data, error } = await supabase
         .from('movements')
         .insert(movementRows)
-        .select('id, type, amount, description, category, movement_date, is_investment')
+        .select('id, type, amount, description, category, movement_date, is_investment, project_id')
 
       savedMovements = (data ?? []) as Array<Record<string, unknown>>
       movError = error
@@ -217,6 +382,7 @@ export async function POST(request: Request) {
           frequency: r.recurringFrequency,
           next_due_date: r.movementDate,
           is_active: true,
+          project_id: resolveProjectId(r),
         })
         .select('id')
         .single()
@@ -253,6 +419,78 @@ export async function POST(request: Request) {
         .from('movement_events')
         .insert(eventRows)
       if (eventErr) console.error('[confirm] events insert failed', eventErr)
+
+      // Audit de proyectos (v0.5): para cada movimiento, si vino una sugerencia
+      // de IA logueamos 'project_ai_suggested' (con qué propuso vs qué quedó);
+      // si quedó asignado a un proyecto logueamos 'project_assigned' con source
+      // 'ai' (si vino sugerencia consistente) o 'manual' (si el user lo cambió
+      // o lo asignó sin sugerencia).
+      //
+      // CRÍTICO: NO asumir que savedMovements[i] corresponde a nonRecurring[i].
+      // Supabase .insert().select() no garantiza orden — empíricamente sí lo
+      // mantiene pero no es contractual. Reconciliamos por la tripleta
+      // (amount, description, movement_date) que es suficientemente única
+      // dentro de UN MISMO entry (mismo user, mismo segundo).
+      function findSrc(saved: Record<string, unknown>): (typeof nonRecurring)[number] | null {
+        const amt = Number(saved['amount'])
+        const desc = saved['description'] as string
+        const date = saved['movement_date'] as string
+        return nonRecurring.find(
+          n => n.amount === amt && n.description === desc && n.movementDate === date,
+        ) ?? null
+      }
+
+      const projectEventRows: Array<Record<string, unknown>> = []
+      for (let i = 0; i < savedMovements.length; i++) {
+        const saved = savedMovements[i]!
+        const src = findSrc(saved)
+        if (!src) continue
+        const finalProjectId = (saved['project_id'] as string | null) ?? null
+        const sug = src.projectSuggestion
+
+        if (sug) {
+          projectEventRows.push({
+            movement_id: saved['id'] as string,
+            user_id: user.id,
+            event_type: 'project_ai_suggested',
+            payload: {
+              description: src.description,
+              suggested_project_id: sug.projectId ?? null,
+              suggested_create_name: sug.createName ?? null,
+              confidence: sug.confidence,
+              accepted_project_id: finalProjectId,
+            },
+          })
+        }
+
+        if (finalProjectId) {
+          // ¿La asignación final coincide con lo que la IA sugirió?
+          const aiMatched =
+            sug?.projectId === finalProjectId ||
+            (sug?.createName != null && src.projectCreateName === sug.createName)
+          projectEventRows.push({
+            movement_id: saved['id'] as string,
+            user_id: user.id,
+            event_type: 'project_assigned',
+            payload: {
+              prev_project_id: null,
+              new_project_id: finalProjectId,
+              source: aiMatched ? 'ai' : 'manual',
+            },
+          })
+          await trackServer(supabase, user.id, 'project_assigned', {
+            movement_id: saved['id'],
+            project_id: finalProjectId,
+            source: aiMatched ? 'ai' : 'manual',
+          })
+        }
+      }
+      if (projectEventRows.length > 0) {
+        const { error: pEvtErr } = await supabase
+          .from('movement_events')
+          .insert(projectEventRows)
+        if (pEvtErr) console.error('[confirm] project events insert failed', pEvtErr)
+      }
     }
 
     // 6.5. Analytics — un solo evento por entry (no uno por movimiento).
@@ -286,6 +524,7 @@ export async function POST(request: Request) {
         category: m.category as Movement['category'],
         movementDate: m.movement_date as string,
         isInvestment: (m.is_investment as boolean) ?? false,
+        projectId: (m.project_id as string | null) ?? null,
       })),
     }
 

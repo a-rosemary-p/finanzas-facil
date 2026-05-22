@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { extractFromText } from '@/lib/openai/client'
-import { buildExtractionSystemPrompt } from '@/lib/ai/prompts'
+import { buildExtractionSystemPrompt, buildProjectsSection } from '@/lib/ai/prompts'
 import { getUserCategories, buildCategoriesSection } from '@/lib/giro-categories'
 import { parseGeminiResponse } from '@/lib/ai/parser'
 import { PLANS } from '@/lib/constants'
@@ -82,12 +82,39 @@ export async function POST(request: Request) {
       categories: profile?.categories as string[] | null | undefined,
       giro: profile?.giro as string | null | undefined,
     })
-    const systemPrompt = buildExtractionSystemPrompt(buildCategoriesSection(cats))
+
+    // v0.5: Si el user es Pro, cargamos proyectos activos para que el modelo
+    // pueda matchear menciones y devolver projectId/projectCreateName.
+    // Para Free no fetch — projectsSection queda "" y el bloque se omite
+    // del prompt y del JSON schema (ahorra tokens + no menciona Pro a Free).
+    let projectsSection = ''
+    let activeProjectIds: Set<string> | undefined
+    if (profile?.plan === 'pro') {
+      const { data: projects } = await supabase
+        .from('projects')
+        .select('id, name, client_name')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('updated_at', { ascending: false })
+        .limit(20)
+      const projList = (projects ?? []).map(r => ({
+        id: (r as { id: string }).id,
+        name: (r as { name: string }).name,
+        clientName: (r as { client_name: string | null }).client_name,
+      }))
+      projectsSection = buildProjectsSection(projList)
+      activeProjectIds = new Set(projList.map(p => p.id))
+    }
+
+    const systemPrompt = buildExtractionSystemPrompt(
+      buildCategoriesSection(cats),
+      projectsSection,
+    )
     const userContent = `Fecha base: ${fechaMovimiento}\n\nTexto del usuario:\n${texto.trim()}`
     const raw = await extractFromText(systemPrompt, userContent)
 
     // 5. Parsear y validar respuesta
-    const movements = parseGeminiResponse(raw, fechaMovimiento)
+    const movements = parseGeminiResponse(raw, fechaMovimiento, activeProjectIds)
 
     if (movements.length === 0) {
       // Intentar dar una pista según lo que falta en el texto

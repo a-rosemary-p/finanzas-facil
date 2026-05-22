@@ -16,18 +16,25 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/use-auth'
 import { usePendings } from '@/hooks/use-pendings'
-import { IconList, IconLogout } from '@/components/icons'
+import { IconList, IconLogout, IconLock } from '@/components/icons'
 import { WaveRule } from '@/components/ui/wave'
+import { startProCheckout } from '@/lib/upgrade-to-pro'
+import { track } from '@/lib/analytics'
 
 interface AppHeaderProps {
   /** Esconde el plan badge si lo necesitas (raro). Default: visible. */
   hidePlanBadge?: boolean
 }
 
-const MENU_ITEMS: Array<{ label: string; href: string }> = [
+/**
+ * Items del menú. `proOnly`: para users Free se muestra con candado y al click
+ * dispara el flujo de upgrade (no navega).
+ */
+const MENU_ITEMS: Array<{ label: string; href: string; proOnly?: boolean }> = [
   { label: 'Inicio',      href: '/inicio'      },
   { label: 'Movimientos', href: '/movimientos' },
   { label: 'Pendientes',  href: '/pendientes'  },
+  { label: 'Proyectos',   href: '/proyectos',  proOnly: true },
   { label: 'Reportes',    href: '/reportes'    },
   { label: 'Perfil',      href: '/perfil'      },
   { label: 'Ajustes',     href: '/ajustes'     },
@@ -111,6 +118,26 @@ export function AppHeader({ hidePlanBadge = false }: AppHeaderProps) {
             >
               {MENU_ITEMS.map(item => {
                 const showDot = item.href === '/pendientes' && dueAlertCount > 0
+                const showLock = item.proOnly && !isPro
+                if (showLock) {
+                  // Teaser para Free: no navega, dispara upgrade flow.
+                  return (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false)
+                        track('projects_teaser_clicked', { source: 'menu' })
+                        startProCheckout()
+                      }}
+                      className="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors hover:bg-brand-chip min-h-[48px] text-brand-mid w-full text-left"
+                      role="menuitem"
+                    >
+                      <span className="flex-1">{item.label}</span>
+                      <IconLock />
+                    </button>
+                  )
+                }
                 return (
                   <Link
                     key={item.label}

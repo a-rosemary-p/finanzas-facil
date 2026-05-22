@@ -18,10 +18,71 @@ Si no hay texto legible, responde únicamente: [SIN TEXTO]
 `.trim()
 
 /**
+ * Construye el bloque de PROYECTOS del prompt (v0.5, Pro-only).
+ *
+ * - Si no hay proyectos activos (o el user es Free), devuelve "" — el prompt
+ *   completo simplemente omite el bloque y los campos de proyecto del JSON.
+ * - Si hay proyectos, lista cada uno como "- id <uuid>: nombre [cliente: X]"
+ *   con instrucciones agresivas de match.
+ */
+export function buildProjectsSection(
+  projects: Array<{ id: string; name: string; clientName: string | null }>,
+): string {
+  if (projects.length === 0) return ''
+
+  const list = projects
+    .map(p =>
+      p.clientName
+        ? `- id ${p.id}: "${p.name}" (cliente: ${p.clientName})`
+        : `- id ${p.id}: "${p.name}"`,
+    )
+    .join('\n')
+
+  return `
+PROYECTOS ACTIVOS DEL USUARIO:
+${list}
+
+REGLAS DE ASIGNACIÓN A PROYECTOS (agresivo pero seguro):
+- Si el texto menciona el NOMBRE o el CLIENTE de un proyecto existente, asigna ese proyecto.
+  Ej: hay proyecto "Casa Pedro" cliente "Pedro Reyes". El user dice "compré
+  cemento para la casa de Pedro" → projectId del proyecto Casa Pedro, confidence "high".
+- Si la mención es por cliente Y hay MÁS DE UN proyecto del mismo cliente,
+  NO asignes nada — deja projectId null y projectConfidence "low". El usuario
+  va a desambiguar manualmente. No adivines.
+- Si el user menciona un proyecto NUEVO que no está en la lista
+  (ej: "vendí 5000 del proyecto Reyes" y "Reyes" no aparece arriba),
+  responde con projectCreateName: "Reyes" y projectId: null,
+  projectConfidence: "high". El sistema le ofrecerá al user crearlo.
+- Si la mención es ambigua o no encuentras match claro, deja todos los campos
+  de proyecto null o omitidos.
+- NUNCA inventes IDs — solo usa los UUIDs listados arriba.
+
+Agrega al JSON de cada movimiento (todos opcionales):
+- "projectId": "<uuid de la lista>" | null
+- "projectCreateName": "<nombre del nuevo proyecto a crear>" | null
+- "projectConfidence": "high" | "low" | null
+`.trim()
+}
+
+/**
  * Prompt para extracción desde imagen (foto/PDF). Antes era una constante;
  * ahora es función para inyectar las categorías del giro del user.
+ *
+ * v0.5: opcionalmente recibe `projectsSection` (Pro). Si vacío, omite el
+ * bloque entero y no menciona el feature al modelo.
  */
-export function buildPhotoExtractionPrompt(categoriesSection: string): string {
+export function buildPhotoExtractionPrompt(
+  categoriesSection: string,
+  projectsSection: string = '',
+): string {
+  const projectsBlock = projectsSection ? `\n\n${projectsSection}` : ''
+  const projectsJsonFields = projectsSection
+    ? `,
+      "projectId": "<uuid>" | null,
+      "projectCreateName": "<nombre>" | null,
+      "projectConfidence": "high" | "low" | null`
+    : ''
+
   return `
 IDIOMA:
 El usuario puede escribir en español, inglés, o cualquier otro idioma.
@@ -37,7 +98,7 @@ TIPOS DE MOVIMIENTO:
 - "gasto": dinero que SALIÓ del negocio (compras, pagos, gastos)
 - "pendiente": dinero que se debe cobrar o pagar
 
-${categoriesSection}
+${categoriesSection}${projectsBlock}
 
 CONVERSIÓN DE MONEDA:
 Si el usuario menciona montos en USD o dólares, conviértelos a MXN usando $17 MXN por $1 USD.
@@ -95,7 +156,7 @@ RESPONDE SOLO CON JSON VÁLIDO (sin texto extra, sin markdown):
       "isInvestment": boolean,
       "description": "descripción breve en español",
       "category": "categoría válida",
-      "movementDate": "YYYY-MM-DD"
+      "movementDate": "YYYY-MM-DD"${projectsJsonFields}
     }
   ]
 }
@@ -104,9 +165,20 @@ RESPONDE SOLO CON JSON VÁLIDO (sin texto extra, sin markdown):
 
 /**
  * Prompt para extracción de texto/dictado. v0.292: ahora función con
- * `categoriesSection` inyectado.
+ * `categoriesSection` inyectado. v0.5: opcionalmente recibe `projectsSection`.
  */
-export function buildExtractionSystemPrompt(categoriesSection: string): string {
+export function buildExtractionSystemPrompt(
+  categoriesSection: string,
+  projectsSection: string = '',
+): string {
+  const projectsBlock = projectsSection ? `\n\n${projectsSection}` : ''
+  const projectsJsonFields = projectsSection
+    ? `,
+      "projectId": "<uuid>" | null,
+      "projectCreateName": "<nombre>" | null,
+      "projectConfidence": "high" | "low" | null`
+    : ''
+
   return `
 IDIOMA:
 El usuario puede escribir en español, inglés, o cualquier otro idioma.
@@ -126,7 +198,7 @@ TIPOS DE MOVIMIENTO:
 - "gasto": dinero que SALIÓ del negocio (compras, pagos, gastos)
 - "pendiente": dinero que se DEBE cobrar o pagar en el futuro (menciona "debo", "me deben", "voy a pagar", "próximo", "mañana pago", etc.)
 
-${categoriesSection}
+${categoriesSection}${projectsBlock}
 
 CONVERSIÓN DE MONEDA:
 Si el usuario menciona montos en USD o dólares, conviértelos a MXN usando $17 MXN por $1 USD.
@@ -210,7 +282,7 @@ RESPONDE SOLO CON JSON VÁLIDO (sin texto extra, sin markdown):
       "movementDate": "YYYY-MM-DD",
       "pendingDirection": "ingreso" | "gasto" | null,
       "isRecurring": boolean,
-      "recurringFrequency": "week" | "month" | "year" | null
+      "recurringFrequency": "week" | "month" | "year" | null${projectsJsonFields}
     }
   ]
 }

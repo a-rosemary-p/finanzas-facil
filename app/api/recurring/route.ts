@@ -17,7 +17,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('recurring_movements')
-    .select('id, type, amount, description, category, frequency, next_due_date, is_active, last_materialized_at, created_at, updated_at')
+    .select('id, type, amount, description, category, frequency, next_due_date, is_active, last_materialized_at, created_at, updated_at, project_id')
     .eq('user_id', user.id)
     .order('is_active', { ascending: false })
     .order('next_due_date', { ascending: true })
@@ -39,6 +39,7 @@ export async function GET() {
     lastMaterializedAt: (r.last_materialized_at as string | null) ?? null,
     createdAt: r.created_at as string,
     updatedAt: r.updated_at as string,
+    projectId: (r.project_id as string | null) ?? null,
   }))
 
   return Response.json({ recurring })
@@ -83,6 +84,35 @@ export async function POST(request: Request) {
     return Response.json({ error: 'nextDueDate inválida (YYYY-MM-DD)' }, { status: 400 })
   }
 
+  // Proyecto opcional (v0.5, Pro-only). Validar ownership si vino.
+  let projectId: string | null = null
+  if (body['projectId'] !== undefined && body['projectId'] !== null) {
+    if (typeof body['projectId'] !== 'string' || body['projectId'].length === 0) {
+      return Response.json({ error: 'projectId inválido' }, { status: 400 })
+    }
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('plan')
+      .eq('id', user.id)
+      .single()
+    if ((prof?.plan as string) !== 'pro') {
+      return Response.json(
+        { error: 'Proyectos requiere Pro.', code: 'PRO_REQUIRED' },
+        { status: 403 },
+      )
+    }
+    const { data: proj } = await supabase
+      .from('projects')
+      .select('id')
+      .eq('id', body['projectId'])
+      .eq('user_id', user.id)
+      .single()
+    if (!proj) {
+      return Response.json({ error: 'Proyecto no encontrado' }, { status: 400 })
+    }
+    projectId = body['projectId']
+  }
+
   // ── Insert template ───────────────────────────────────────────────────
   const { data: rec, error: insertErr } = await supabase
     .from('recurring_movements')
@@ -95,6 +125,7 @@ export async function POST(request: Request) {
       frequency,
       next_due_date: nextDueDate,
       is_active: true,
+      project_id: projectId,
     })
     .select('id')
     .single()

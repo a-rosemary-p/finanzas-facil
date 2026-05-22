@@ -449,6 +449,17 @@ export default function AjustesPage() {
               checked={profile.mostrarPendientes ?? true}
               onChange={v => toggleSetting({ mostrarPendientes: v })}
             />
+            {/* v0.5: toggle Pro-only. Si el user es Free no tiene sentido (no
+             * tiene proyectos). Cuando OFF, /inicio cards y /reportes excluyen
+             * movs de proyectos archivados. */}
+            {profile.plan === 'pro' && (
+              <ToggleRow
+                label="Incluir proyectos archivados"
+                description="Cuando lo apagas, las métricas globales (Inicio y Reportes) excluyen movimientos de proyectos archivados."
+                checked={profile.includeArchivedInMetrics ?? true}
+                onChange={v => toggleSetting({ includeArchivedInMetrics: v })}
+              />
+            )}
           </div>
         </SectionCard>
 

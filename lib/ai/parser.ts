@@ -1,5 +1,5 @@
 import { CATEGORIES, MOVEMENT_TYPES } from '@/lib/constants'
-import type { PendingMovement } from '@/types'
+import type { PendingMovement, ProjectSuggestion } from '@/types'
 
 // Extrae el primer bloque JSON válido de un string
 // (maneja casos donde el modelo incluye texto extra o markdown)
@@ -12,10 +12,19 @@ function extractJSON(raw: string): string {
   return raw.slice(start, end + 1)
 }
 
-// Parsea y valida la respuesta de la IA → PendingMovement[]
+/**
+ * Parsea y valida la respuesta de la IA → PendingMovement[].
+ *
+ * v0.5: opcionalmente recibe `activeProjectIds` (Set<string>) para validar que
+ * el modelo no haya inventado un UUID que no existe. Si el modelo devuelve un
+ * projectId que no está en el set, lo descartamos (se ignora silenciosamente)
+ * pero conservamos projectCreateName si vino — el user verá la sugerencia de
+ * "Crear X" en la UI.
+ */
 export function parseGeminiResponse(
   raw: string,
-  fallbackDate: string
+  fallbackDate: string,
+  activeProjectIds?: Set<string>,
 ): PendingMovement[] {
   const json = extractJSON(raw)
   const parsed: unknown = JSON.parse(json)
@@ -99,6 +108,47 @@ export function parseGeminiResponse(
     // (mejor no crear un recurrente sin saber cada cuánto).
     const finalIsRecurring = isRecurring && recurringFrequency !== null
 
+    // Proyectos (v0.5). Sólo si recibimos activeProjectIds (Pro con proyectos).
+    // Para usuarios sin la sección de proyectos en el prompt, el modelo no
+    // debería incluir estos campos — y si los inventa, los descartamos.
+    let projectId: string | null = null
+    let projectCreateName: string | null = null
+    let projectSuggestion: ProjectSuggestion | null = null
+    if (activeProjectIds && activeProjectIds.size > 0) {
+      const rawPid = m['projectId']
+      const rawCreate = m['projectCreateName']
+      const rawConf = m['projectConfidence']
+
+      const confidence: 'high' | 'low' = rawConf === 'high' ? 'high' : 'low'
+
+      // Validar projectId contra la whitelist. Si el modelo inventó un UUID
+      // que no está en activeProjectIds, lo ignoramos.
+      if (typeof rawPid === 'string' && activeProjectIds.has(rawPid)) {
+        projectId = rawPid
+      }
+
+      // Si ya hay projectId válido, ignoramos projectCreateName aunque el
+      // modelo lo haya devuelto — son mutuamente excluyentes en el confirm
+      // (resolveProjectId prioriza projectId, pero la sección de creación
+      // crearía un proyecto extra innecesariamente y consumiría cupo).
+      if (
+        !projectId &&
+        typeof rawCreate === 'string' &&
+        rawCreate.trim().length > 0 &&
+        rawCreate.trim().length <= 60
+      ) {
+        projectCreateName = rawCreate.trim()
+      }
+
+      if (projectId || projectCreateName) {
+        projectSuggestion = {
+          projectId,
+          createName: projectCreateName,
+          confidence,
+        }
+      }
+    }
+
     valid.push({
       tempId: crypto.randomUUID(),
       type: type as PendingMovement['type'],
@@ -113,6 +163,9 @@ export function parseGeminiResponse(
       pendingDirection,
       isRecurring: finalIsRecurring,
       recurringFrequency,
+      projectId,
+      projectCreateName,
+      projectSuggestion,
     })
   }
 

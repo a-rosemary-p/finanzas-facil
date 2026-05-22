@@ -48,6 +48,21 @@ export async function PATCH(
     patch['category'] = isValidCategoryName(body['category']) ? body['category'] : 'Otro'
   }
 
+  // Proyectos (v0.5, Pro-only): aceptamos null (desasignar) y string (asignar).
+  // Si el user es Free, ignoramos silenciosamente. El verificar plan + ownership
+  // del proyecto destino se hace abajo, antes del UPDATE.
+  let projectChangeRequested = false
+  if (body['projectId'] !== undefined) {
+    projectChangeRequested = true
+    if (body['projectId'] === null) {
+      patch['project_id'] = null
+    } else if (typeof body['projectId'] === 'string' && body['projectId'].length > 0) {
+      patch['project_id'] = body['projectId']
+    } else {
+      return Response.json({ error: 'projectId inválido' }, { status: 400 })
+    }
+  }
+
   if (Object.keys(patch).length === 0) {
     return Response.json({ error: 'Nada que actualizar' }, { status: 400 })
   }
@@ -57,10 +72,38 @@ export async function PATCH(
   // en movement_events. Sin esto solo sabríamos el estado final.
   const { data: before } = await supabase
     .from('movements')
-    .select('id, type, amount, description, category, movement_date, is_investment, paid_at, original_type, pending_direction, recurring_movement_id')
+    .select('id, type, amount, description, category, movement_date, is_investment, paid_at, original_type, pending_direction, recurring_movement_id, project_id')
     .eq('id', id)
     .eq('user_id', user.id)
     .single()
+
+  // Pro-gate del cambio de proyecto. Si Free intenta cambiar projectId, lo
+  // ignoramos silenciosamente (saco del patch). Si es Pro y manda un id no-nulo,
+  // verificamos ownership del proyecto destino (RLS también lo bloquearía pero
+  // damos 400 explícito).
+  if (projectChangeRequested) {
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('plan')
+      .eq('id', user.id)
+      .single()
+    const isPro = (prof?.plan as string) === 'pro'
+
+    if (!isPro) {
+      delete patch['project_id']
+      projectChangeRequested = false
+    } else if (patch['project_id'] != null) {
+      const { data: proj } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('id', patch['project_id'] as string)
+        .eq('user_id', user.id)
+        .single()
+      if (!proj) {
+        return Response.json({ error: 'Proyecto no encontrado' }, { status: 400 })
+      }
+    }
+  }
 
   // Caso especial: pagar un pendiente. Detectamos cambio type=pendiente→ingreso/gasto
   // y agregamos paid_at + original_type al UPDATE para preservar la señal.
@@ -74,12 +117,16 @@ export async function PATCH(
     patch['original_type'] = 'pendiente'
   }
 
+  if (Object.keys(patch).length === 0) {
+    return Response.json({ error: 'Nada que actualizar' }, { status: 400 })
+  }
+
   const { data, error } = await supabase
     .from('movements')
     .update(patch)
     .eq('id', id)
     .eq('user_id', user.id)
-    .select('id, type, amount, description, category, movement_date, is_investment, paid_at, original_type, pending_direction, recurring_movement_id')
+    .select('id, type, amount, description, category, movement_date, is_investment, paid_at, original_type, pending_direction, recurring_movement_id, project_id')
     .single()
 
   if (error || !data) {
@@ -118,6 +165,43 @@ export async function PATCH(
       payload['new_is_investment'] = patch['is_investment']
     }
   }
+
+  // Audit del cambio de proyecto (v0.5) — evento separado para que el query
+  // de "asignaciones por proyecto" sea limpio.
+  if (
+    projectChangeRequested &&
+    before &&
+    (before.project_id ?? null) !== (patch['project_id'] ?? null)
+  ) {
+    const { error: pEvtErr } = await supabase
+      .from('movement_events')
+      .insert({
+        movement_id: id,
+        user_id: user.id,
+        event_type: 'project_assigned',
+        payload: {
+          prev_project_id: before.project_id ?? null,
+          new_project_id: (patch['project_id'] as string | null) ?? null,
+          source: 'manual',
+        },
+      })
+    if (pEvtErr) console.error('[PATCH /api/movements/:id] project event failed', pEvtErr)
+
+    // Analytics: el evento agregado va al stream de producto.
+    // Fail-soft. import lazy para evitar duplicado en este file ya cargado.
+    void (async () => {
+      try {
+        const { trackServer } = await import('@/lib/analytics-server')
+        await trackServer(supabase, user.id, 'project_assigned', {
+          movement_id: id,
+          project_id: (patch['project_id'] as string | null) ?? null,
+          prev_project_id: before.project_id ?? null,
+          source: 'manual',
+        })
+      } catch {}
+    })()
+  }
+
   // Solo logueamos si algo de verdad cambió.
   if (Object.keys(payload).length > 0) {
     const { error: evtErr } = await supabase
@@ -143,6 +227,7 @@ export async function PATCH(
     originalType: (data['original_type'] as Movement['type'] | null) ?? null,
     pendingDirection: (data['pending_direction'] as 'ingreso' | 'gasto' | null) ?? null,
     recurringMovementId: (data['recurring_movement_id'] as string | null) ?? null,
+    projectId: (data['project_id'] as string | null) ?? null,
   }
 
   // ── Sprint 3: si pagamos un pendiente que vino de un recurrente,

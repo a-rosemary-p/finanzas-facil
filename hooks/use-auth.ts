@@ -24,7 +24,7 @@ export function useAuth() {
   async function loadProfile(supabase: ReturnType<typeof createClient>, userId: string) {
     const { data } = await supabase
       .from('profiles')
-      .select('id, email, display_name, plan, subscription_status, movements_today, movements_today_date, total_movements, giro, ciudad, estado, timezone, moneda_preferida, mostrar_inversiones, mostrar_pendientes, trial_used, onboarded_at, profile_prompt_seen_at, categories, categories_seen_at')
+      .select('id, email, display_name, plan, subscription_status, movements_today, movements_today_date, total_movements, giro, ciudad, estado, timezone, moneda_preferida, mostrar_inversiones, mostrar_pendientes, trial_used, onboarded_at, profile_prompt_seen_at, categories, categories_seen_at, include_archived_in_metrics, projects_onboarded_at')
       .eq('id', userId)
       .single()
 
@@ -56,6 +56,8 @@ export function useAuth() {
         profilePromptSeenAt: (data.profile_prompt_seen_at as string | null) ?? null,
         categories: (data.categories as string[] | null) ?? [],
         categoriesSeenAt: (data.categories_seen_at as string | null) ?? null,
+        includeArchivedInMetrics: (data.include_archived_in_metrics as boolean | null) ?? true,
+        projectsOnboardedAt: (data.projects_onboarded_at as string | null) ?? null,
       })
     }
   }
@@ -166,6 +168,7 @@ export function useAuth() {
     if (update.monedaPreferida  !== undefined) patch.moneda_preferida    = update.monedaPreferida
     if (update.mostrarInversiones !== undefined) patch.mostrar_inversiones = update.mostrarInversiones
     if (update.mostrarPendientes  !== undefined) patch.mostrar_pendientes  = update.mostrarPendientes
+    if (update.includeArchivedInMetrics !== undefined) patch.include_archived_in_metrics = update.includeArchivedInMetrics
 
     const { error } = await supabase
       .from('profiles')

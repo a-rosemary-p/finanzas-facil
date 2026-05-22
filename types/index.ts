@@ -62,6 +62,13 @@ export interface Profile {
    * del nuevo sistema (v0.32). NULL = pendiente — para users existentes
    * dispara modal bloqueante al siguiente login. */
   categoriesSeenAt?: string | null
+  /** Pref Pro (v0.5): si false, /inicio cards y /reportes excluyen movs
+   * de proyectos archivados. Default true. Solo visible en Ajustes para Pro. */
+  includeArchivedInMetrics?: boolean
+  /** Timestamp cuando el user Pro vio el onboarding del feature de Proyectos
+   * (v0.5). NULL = pendiente — al entrar a /inicio se le dispara el modal una
+   * sola vez. Tanto Pros existentes al actualizar como nuevos Pros (post-upgrade). */
+  projectsOnboardedAt?: string | null
 }
 
 export interface ProfileUpdate {
@@ -75,6 +82,7 @@ export interface SettingsUpdate {
   monedaPreferida?: 'MXN' | 'USD'
   mostrarInversiones?: boolean
   mostrarPendientes?: boolean
+  includeArchivedInMetrics?: boolean
 }
 
 export interface Entry {
@@ -113,6 +121,12 @@ export interface Movement {
    */
   pendingDirection?: 'ingreso' | 'gasto' | null
   recurringMovementId?: string | null
+  /**
+   * Proyectos (v0.5, Pro-only): si el movimiento pertenece a un proyecto,
+   * apunta a su id. NULL = overhead general / sin proyecto. ON DELETE SET NULL
+   * en DB — borrar el proyecto desasigna pero no borra el movimiento.
+   */
+  projectId?: string | null
 }
 
 /**
@@ -134,6 +148,9 @@ export interface RecurringMovement {
   lastMaterializedAt?: string | null
   createdAt: string
   updatedAt: string
+  /** Proyectos (v0.5): si el recurrente pertenece a un proyecto, todos los
+   * pendientes materializados heredan este project_id. ON DELETE SET NULL. */
+  projectId?: string | null
 }
 
 // Movimiento pendiente de confirmación (antes de guardar en DB)
@@ -160,6 +177,88 @@ export interface PendingMovement {
   pendingDirection?: 'ingreso' | 'gasto' | null
   isRecurring?: boolean
   recurringFrequency?: 'week' | 'month' | 'year' | null
+  /**
+   * Proyectos (v0.5, Pro-only):
+   * - `projectId`: si el user / la IA asignó a un proyecto existente.
+   * - `projectCreateName`: si la IA detectó un proyecto nuevo a crear (o el
+   *   user lo pidió desde la confirmación). Si llega al endpoint /confirm,
+   *   se crea el proyecto y se asigna en la misma transacción.
+   * - `projectSuggestion`: metadata cruda de la sugerencia de IA, para
+   *   logging en movement_events. No se persiste en movements.
+   */
+  projectId?: string | null
+  projectCreateName?: string | null
+  projectSuggestion?: ProjectSuggestion | null
+}
+
+// ─── Proyectos (v0.5) ──────────────────────────────────────────────────────
+
+export type ProjectStatus = 'active' | 'archived'
+
+export interface Project {
+  id: string
+  name: string
+  clientName?: string | null
+  status: ProjectStatus
+  notes?: string | null
+  createdAt: string
+  updatedAt: string
+  archivedAt?: string | null
+}
+
+/** Métricas agregadas de un proyecto (cards de detalle + chips en lista). */
+export interface ProjectSummary {
+  projectId: string
+  income: number
+  expenses: number
+  net: number
+  /** Margen como fracción 0-1 (net/income). null si income=0. */
+  marginPct: number | null
+  movementCount: number
+  /** Fecha del movimiento más reciente o updated_at del proyecto, lo mayor. */
+  lastActivityAt?: string | null
+}
+
+/** Proyecto + summary inline para la lista de /proyectos. */
+export interface ProjectWithSummary extends Project {
+  summary: ProjectSummary
+}
+
+/** Punto de la serie temporal de un proyecto para chart de detalle. */
+export interface ProjectTimeseriesPoint {
+  /** ISO date — primer día del bucket (mes o semana según rango). */
+  bucketStart: string
+  income: number
+  expenses: number
+  net: number
+}
+
+/**
+ * Sugerencia de la IA durante extracción. Acompaña al PendingMovement hasta
+ * el confirm para que el server pueda registrar un evento
+ * movement_events.project_ai_suggested con metadata útil.
+ */
+export interface ProjectSuggestion {
+  /** Si la IA matcheó contra un proyecto existente, su id. */
+  projectId?: string | null
+  /** Si la IA detectó un proyecto nuevo (mención sin match), nombre sugerido. */
+  createName?: string | null
+  /** 'high' = match literal de nombre o cliente; 'low' = aproximación semántica. */
+  confidence: 'high' | 'low'
+}
+
+/** Body del POST /api/projects. */
+export interface CreateProjectInput {
+  name: string
+  clientName?: string | null
+  notes?: string | null
+}
+
+/** Body del PATCH /api/projects/[id]. */
+export interface UpdateProjectInput {
+  name?: string
+  clientName?: string | null
+  notes?: string | null
 }
 
 export interface DashboardMetrics {

@@ -45,6 +45,7 @@ import { RecentMovements } from '@/components/inicio/recent-movements'
 import { Onboarding, type OnboardingHighlight } from '@/components/onboarding/onboarding'
 import { ProfilePromptModal } from '@/components/onboarding/profile-prompt-modal'
 import { CategoryPickerModal } from '@/components/categories/category-picker-modal'
+import { ProjectsOnboardingModal } from '@/components/projects/projects-onboarding-modal'
 import { GIRO_DEFAULTS } from '@/lib/constants'
 import type { RegistrosPeriod } from '@/components/inicio/period-dropdown'
 import type { Entry, PendingMovement } from '@/types'
@@ -119,6 +120,22 @@ function RegistrosInner() {
     !profile.categoriesSeenAt &&
     !showOnboarding &&
     !showProfilePrompt &&
+    mode === 'dashboard'
+
+  // Projects onboarding (v0.5): se dispara UNA vez para Pros que no lo han
+  // visto. Para Pros existentes (Oscar, Ximena) al hacer deploy de v0.5,
+  // la próxima visita a /inicio les muestra el modal. Para nuevos Pros, lo
+  // verán justo después del checkout. NO es bloqueante (puede cerrarse) y
+  // queda en cola DESPUÉS de los otros onboardings — uno a la vez.
+  const [projectsOnboardingDismissed, setProjectsOnboardingDismissed] = useState(false)
+  const showProjectsOnboarding =
+    !!profile &&
+    profile.plan === 'pro' &&
+    !profile.projectsOnboardedAt &&
+    !projectsOnboardingDismissed &&
+    !showOnboarding &&
+    !showProfilePrompt &&
+    !showCategoriesRequired &&
     mode === 'dashboard'
 
 // Banner de bienvenida tras checkout exitoso.
@@ -379,6 +396,18 @@ function RegistrosInner() {
             await refreshProfile()
           }}
           onClose={() => { /* blocking: no-op */ }}
+        />
+      )}
+
+      {/* Projects onboarding modal (v0.5) — UNA vez para Pros que no lo han
+        * visto. No es bloqueante; el modal mismo hace POST a /api/onboarding/projects-seen
+        * al cerrar y refrescamos el profile para que no reaparezca. */}
+      {showProjectsOnboarding && (
+        <ProjectsOnboardingModal
+          onClose={async () => {
+            setProjectsOnboardingDismissed(true)
+            await refreshProfile()
+          }}
         />
       )}
     </div>

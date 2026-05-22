@@ -41,10 +41,11 @@ export async function GET(request: Request) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('plan')
+    .select('plan, include_archived_in_metrics')
     .eq('id', user.id)
     .single()
   const plan = (profile?.plan ?? 'free') as 'free' | 'pro'
+  const includeArchivedInMetrics = (profile?.include_archived_in_metrics as boolean | null) ?? true
 
   const { searchParams } = new URL(request.url)
   const filter = (searchParams.get('filter') ?? 'month') as DateFilter
@@ -65,6 +66,30 @@ export async function GET(request: Request) {
       total: 0,
       enforcedRange: { start: '', end: '' },
     })
+  }
+
+  // Proyectos (v0.5): filtro opcional Pro-only. Si Free manda projectId,
+  // lo ignoramos silenciosamente.
+  const projectIdParam = searchParams.get('projectId')
+  const projectFilter: 'all' | 'none' | string =
+    plan === 'pro' && projectIdParam
+      ? (projectIdParam === 'none' ? 'none' : projectIdParam === 'all' ? 'all' : projectIdParam)
+      : 'all'
+
+  // Si toggle "include archived" off + es Pro, traemos IDs de archivados
+  // para excluir movs con project_id en esa lista.
+  // Cap a 100 UUIDs (defensa contra URLs gigantes en PostgREST .or).
+  const ARCHIVED_FILTER_CAP = 100
+  let archivedProjectIds: string[] = []
+  if (plan === 'pro' && !includeArchivedInMetrics) {
+    const { data: arch } = await supabase
+      .from('projects')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('status', 'archived')
+      .limit(ARCHIVED_FILTER_CAP + 1)
+    const ids = (arch ?? []).map(r => (r as { id: string }).id)
+    archivedProjectIds = ids.length > ARCHIVED_FILTER_CAP ? [] : ids
   }
 
   // ── Plan enforcement ────────────────────────────────────────────────────────
@@ -106,12 +131,22 @@ export async function GET(request: Request) {
   let query = supabase
     .from('movements')
     .select(
-      'id, type, amount, description, category, movement_date, is_investment, paid_at, original_type, pending_direction, recurring_movement_id',
+      'id, type, amount, description, category, movement_date, is_investment, paid_at, original_type, pending_direction, recurring_movement_id, project_id',
       { count: 'exact' }
     )
     .eq('user_id', user.id)
     .gte('movement_date', start)
     .lte('movement_date', end)
+
+  if (projectFilter === 'none') {
+    query = query.is('project_id', null) as typeof query
+  } else if (projectFilter !== 'all') {
+    query = query.eq('project_id', projectFilter) as typeof query
+  } else if (archivedProjectIds.length > 0) {
+    query = query.or(
+      `project_id.is.null,project_id.not.in.(${archivedProjectIds.join(',')})`,
+    ) as typeof query
+  }
 
   // Optimización: si NO hay inversiones y NO hay recurrentes en el filter,
   // podemos hacer un .in('type', [...]) directo. Esto cubre el caso común
@@ -171,6 +206,7 @@ export async function GET(request: Request) {
     originalType:        (r['original_type']        as string | null) ?? null,
     pendingDirection:    (r['pending_direction']    as 'ingreso' | 'gasto' | null) ?? null,
     recurringMovementId: (r['recurring_movement_id'] as string | null) ?? null,
+    projectId:           (r['project_id']           as string | null) ?? null,
   }))
 
   return Response.json({

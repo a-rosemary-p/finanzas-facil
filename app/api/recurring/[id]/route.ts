@@ -61,6 +61,37 @@ export async function PATCH(
     patch['next_due_date'] = body['nextDueDate']
   }
 
+  // Proyecto (v0.5, Pro-only). null = desasignar, string = asignar.
+  if (body['projectId'] !== undefined) {
+    if (body['projectId'] === null) {
+      patch['project_id'] = null
+    } else if (typeof body['projectId'] === 'string' && body['projectId'].length > 0) {
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('plan')
+        .eq('id', user.id)
+        .single()
+      if ((prof?.plan as string) !== 'pro') {
+        return Response.json(
+          { error: 'Proyectos requiere Pro.', code: 'PRO_REQUIRED' },
+          { status: 403 },
+        )
+      }
+      const { data: proj } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('id', body['projectId'])
+        .eq('user_id', user.id)
+        .single()
+      if (!proj) {
+        return Response.json({ error: 'Proyecto no encontrado' }, { status: 400 })
+      }
+      patch['project_id'] = body['projectId']
+    } else {
+      return Response.json({ error: 'projectId inválido' }, { status: 400 })
+    }
+  }
+
   // is_active: detección antes/después para saber si fue resumir.
   let resumeRequested = false
   if (body['isActive'] !== undefined) {
