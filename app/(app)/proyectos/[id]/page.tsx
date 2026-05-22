@@ -100,7 +100,7 @@ export default function ProyectoDetailPage() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen fz-page-gradient">
-        <AppHeader hideActiveProjectBar />
+        <AppHeader />
         <main className="max-w-lg mx-auto px-4 py-6">
           <p className="text-sm text-brand-mid">Cargando…</p>
         </main>
@@ -111,7 +111,7 @@ export default function ProyectoDetailPage() {
   if (error || !data) {
     return (
       <div className="min-h-screen fz-page-gradient">
-        <AppHeader hideActiveProjectBar />
+        <AppHeader />
         <main className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-4">
           <p className="text-sm text-danger">{error || 'No se encontró el proyecto'}</p>
           <Link href="/proyectos" className="text-sm font-bold text-brand">
@@ -128,7 +128,7 @@ export default function ProyectoDetailPage() {
 
   return (
     <div className="min-h-screen fz-page-gradient">
-      <AppHeader hideActiveProjectBar />
+      <AppHeader />
       <main className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-5 fz-pad-safe-bottom">
         <Link href="/proyectos" className="text-xs font-medium text-brand-mid flex items-center gap-1">
           ← Proyectos

@@ -169,15 +169,25 @@ function RegistrosInner() {
 
   function handleMovementsExtracted(data: PendingData) {
     // Pre-asignar projectId desde el selector activo del header (v0.61).
-    // Regla: si la IA NO devolvió projectId NI projectCreateName en ese mov,
-    // aplicamos el default del header. Si la IA detectó algo, ella gana —
-    // el header solo cubre el caso "no detección".
+    //
+    // Regla v0.62 (corregida): el header GANA salvo cuando la IA encontró
+    // un match FIRME contra un proyecto EXISTENTE (projectId no-null).
+    //   - IA dice projectId='casa-pedro-uuid' → respeta (match firme,
+    //     el user fue explícito al mencionarlo en el texto).
+    //   - IA dice projectCreateName='Algo' → IGNORAR la sugerencia y usar
+    //     el activo del header. createName es una "adivinanza" del modelo
+    //     que puede ser basura; el user ya eligió un proyecto explícito.
+    //   - IA no devolvió nada → header gana.
+    //
+    // Si no hay header activo (General), se respeta la IA como antes.
     const withDefaults = activeProjectId
       ? {
           ...data,
           movements: data.movements.map(m => {
-            if (m.projectId || m.projectCreateName) return m
-            return { ...m, projectId: activeProjectId }
+            if (m.projectId) return m  // IA tiene match firme → IA gana
+            // No hay match firme — descartamos cualquier createName de IA
+            // y aplicamos el del header.
+            return { ...m, projectId: activeProjectId, projectCreateName: null }
           }),
         }
       : data
@@ -204,7 +214,7 @@ function RegistrosInner() {
 
   return (
     <div className="min-h-screen fz-page-gradient">
-      <AppHeader />
+      <AppHeader showActiveProjectBar />
 
       {mode === 'confirming' && pendingData ? (
         <main className="max-w-lg mx-auto px-4 py-6 fz-pad-safe-bottom">

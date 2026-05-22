@@ -68,7 +68,7 @@ export function ActiveProjectBar() {
         type="button"
         onClick={() => setOpen(v => !v)}
         className={[
-          'w-full flex items-center justify-center gap-2 py-2 px-4 border-b transition-colors',
+          'inline-flex items-center gap-1.5 py-1 px-3 rounded-full border text-xs font-bold transition-colors',
           activeProject
             ? 'bg-brand text-white border-brand'
             : 'bg-brand-chip text-brand border-brand-border',
@@ -76,20 +76,20 @@ export function ActiveProjectBar() {
         aria-expanded={open}
         aria-label={`Proyecto activo: ${label}`}
       >
-        <IconFolder size={14} />
-        <span className="text-xs font-bold truncate max-w-[180px]">
+        <IconFolder size={12} />
+        <span className="truncate max-w-[160px]">
           {label}
         </span>
         {sublabel && (
-          <span className="text-[10px] opacity-80 truncate max-w-[120px]">
+          <span className="text-[10px] opacity-80 truncate max-w-[100px] font-medium">
             · {sublabel}
           </span>
         )}
-        <IconChevronDown size={12} />
+        <IconChevronDown size={11} />
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 right-0 bg-white border-b border-brand-border shadow-md z-30 max-h-[60vh] overflow-y-auto">
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-white border border-brand-border rounded-lg shadow-md z-30 max-h-[60vh] overflow-y-auto min-w-[240px]">
           <button
             type="button"
             onClick={() => {
