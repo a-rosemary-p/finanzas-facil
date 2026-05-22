@@ -64,7 +64,7 @@ export async function GET(request: Request) {
 
   // ── sort=recent: lista de los más recientes por created_at ───────────────
   //
-  // Pensado para el card "Últimos movimientos" de /registros, donde el user
+  // Pensado para el card "Últimos movimientos" de /inicio, donde el user
   // verifica visualmente que lo que acaba de registrar se guardó. Diferente
   // del default (sort='date' = order by movement_date), que está pensado para
   // explorar el historial por fecha real del movimiento.

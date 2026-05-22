@@ -82,23 +82,6 @@ export async function assertProAndGetProfile(
   return { ok: true, userId: user.id, plan: 'pro' }
 }
 
-/** Igual que arriba pero sin gate de Pro — solo auth. Útil para teasers. */
-export async function assertAuth(
-  supabase: SupabaseClient,
-): Promise<
-  | { ok: true; userId: string }
-  | { ok: false; response: Response }
-> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return {
-      ok: false,
-      response: Response.json({ error: 'No autenticado' }, { status: 401 }),
-    }
-  }
-  return { ok: true, userId: user.id }
-}
-
 /** Cuenta proyectos activos del user — para validación previa al insert/reopen. */
 export async function countActiveProjects(
   supabase: SupabaseClient,

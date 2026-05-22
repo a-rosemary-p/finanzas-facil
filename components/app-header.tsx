@@ -73,7 +73,7 @@ export function AppHeader({ hidePlanBadge = false, hideActiveProjectChip = false
         paddingTop: 'calc(env(safe-area-inset-top, 0px) + 10px)',
       }}
     >
-      {/* Logo → /registros */}
+      {/* Logo → /inicio */}
       <Link href="/inicio" aria-label="Ir a Inicio" className="shrink-0">
         <img src="/logo-green.png" alt="fiza" className="h-8 w-auto block" />
       </Link>
