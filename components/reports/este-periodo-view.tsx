@@ -13,6 +13,7 @@
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
+import { useActiveProject } from '@/hooks/use-active-project'
 import { formatCurrency } from '@/lib/utils'
 import { IconWallet, IconReceipt, IconChartPieSlice } from '@/components/icons'
 import type { PeriodSelection, PeriodMode } from '@/lib/periods'
@@ -69,13 +70,16 @@ interface Props {
 }
 
 export function EstePeriodoView({ period }: Props) {
+  const { activeProjectId } = useActiveProject()
   const [data, setData] = useState<SummaryResponse | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    fetchWithAuthRetry(`/api/reports/period-summary?mode=${period.mode}&anchor=${period.anchor}`)
+    const qs = new URLSearchParams({ mode: period.mode, anchor: period.anchor })
+    if (activeProjectId) qs.set('projectId', activeProjectId)
+    fetchWithAuthRetry(`/api/reports/period-summary?${qs.toString()}`)
       .then(r => r.json())
       .then((d: SummaryResponse) => {
         if (!cancelled) {
@@ -90,7 +94,7 @@ export function EstePeriodoView({ period }: Props) {
         }
       })
     return () => { cancelled = true }
-  }, [period.mode, period.anchor])
+  }, [period.mode, period.anchor, activeProjectId])
 
   const current = data?.current ?? { income: 0, expenses: 0, net: 0 }
   const previous = data?.previous ?? { income: 0, expenses: 0, net: 0 }

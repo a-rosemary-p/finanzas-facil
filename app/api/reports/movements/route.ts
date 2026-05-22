@@ -94,13 +94,24 @@ export async function GET(request: Request) {
     return Response.json({ error: 'Falta month o from+to' }, { status: 400 })
   }
 
-  const { data, error } = await supabase
+  // Filtro de proyecto activo (v0.62, Pro-only). Free lo ignora — no debería
+  // llegar con projectId pero defensa silenciosa.
+  const projectIdParam = searchParams.get('projectId')
+  const projectFilter =
+    plan === 'pro' && projectIdParam && projectIdParam.length > 0
+      ? projectIdParam
+      : null
+
+  let q = supabase
     .from('movements')
-    .select('id, type, amount, description, category, movement_date, is_investment')
+    .select('id, type, amount, description, category, movement_date, is_investment, project_id')
     .gte('movement_date', rangeStart)
     .lte('movement_date', rangeEnd)
     .eq('user_id', user.id)              // defense-in-depth sobre RLS
     .in('type', ['ingreso', 'gasto'])    // pendientes NO van en reportes (se manejan aparte)
+  if (projectFilter) q = q.eq('project_id', projectFilter) as typeof q
+
+  const { data, error } = await q
     .order('movement_date', { ascending: false })
     .order('id', { ascending: false })
 
@@ -117,6 +128,7 @@ export async function GET(request: Request) {
     category: r.category as Movement['category'],
     movementDate: r.movement_date as string,
     isInvestment: (r.is_investment as boolean) ?? false,
+    projectId: (r.project_id as string | null) ?? null,
   }))
 
   return Response.json({

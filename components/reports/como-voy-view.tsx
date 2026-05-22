@@ -19,6 +19,7 @@
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
+import { useActiveProject } from '@/hooks/use-active-project'
 import { startProCheckout } from '@/lib/upgrade-to-pro'
 import type { PeriodSelection } from '@/lib/periods'
 
@@ -71,6 +72,7 @@ export function ComoVoyView({ period, plan }: Props) {
 // ── Pro view ────────────────────────────────────────────────────────────────
 
 function ProView({ period }: { period: PeriodSelection }) {
+  const { activeProjectId } = useActiveProject()
   // Buckets para la gráfica comparativa
   const [summary, setSummary] = useState<PeriodSummary | null>(null)
   const [summaryLoading, setSummaryLoading] = useState(true)
@@ -78,7 +80,9 @@ function ProView({ period }: { period: PeriodSelection }) {
   useEffect(() => {
     let cancelled = false
     setSummaryLoading(true)
-    fetchWithAuthRetry(`/api/reports/period-summary?mode=${period.mode}&anchor=${period.anchor}`)
+    const qs = new URLSearchParams({ mode: period.mode, anchor: period.anchor })
+    if (activeProjectId) qs.set('projectId', activeProjectId)
+    fetchWithAuthRetry(`/api/reports/period-summary?${qs.toString()}`)
       .then(r => r.json())
       .then((d: PeriodSummary) => {
         if (!cancelled) {
@@ -93,7 +97,7 @@ function ProView({ period }: { period: PeriodSelection }) {
         }
       })
     return () => { cancelled = true }
-  }, [period.mode, period.anchor])
+  }, [period.mode, period.anchor, activeProjectId])
 
   type InsightsState =
     | { kind: 'idle' }
@@ -102,15 +106,18 @@ function ProView({ period }: { period: PeriodSelection }) {
     | { kind: 'error'; msg: string }
   const [insightsState, setInsightsState] = useState<InsightsState>({ kind: 'idle' })
 
-  // Reset al idle cuando cambia el período — el user pidió que NO se autogenere.
+  // Reset al idle cuando cambia el período o el proyecto activo — el análisis
+  // viejo no corresponde al nuevo scope.
   useEffect(() => {
     setInsightsState({ kind: 'idle' })
-  }, [period.mode, period.anchor])
+  }, [period.mode, period.anchor, activeProjectId])
 
   async function runAnalysis() {
     setInsightsState({ kind: 'loading' })
     try {
-      const res = await fetchWithAuthRetry(`/api/reports/insights?mode=${period.mode}&anchor=${period.anchor}`)
+      const qs = new URLSearchParams({ mode: period.mode, anchor: period.anchor })
+      if (activeProjectId) qs.set('projectId', activeProjectId)
+      const res = await fetchWithAuthRetry(`/api/reports/insights?${qs.toString()}`)
       const json = await res.json().catch(() => null) as Record<string, unknown> | null
       if (!res.ok) {
         setInsightsState({ kind: 'error', msg: (json?.['error'] as string) || 'No se pudo generar el análisis.' })

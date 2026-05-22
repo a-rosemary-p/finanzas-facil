@@ -119,14 +119,21 @@ export async function GET(request: Request) {
   const currentRange = periodRange(period)
   const previousRange = periodRange(previous)
 
+  // Filtro de proyecto activo (v0.62). El endpoint ya es Pro-only entonces
+  // basta validar que el id sea string; no necesitamos re-checar plan aquí.
+  const projectIdParam = searchParams.get('projectId')
+  const projectFilter = projectIdParam && projectIdParam.length > 0 ? projectIdParam : null
+
   // Cubrir ambos rangos en una query
-  const { data: rows, error: dbError } = await supabase
+  let mainQ = supabase
     .from('movements')
     .select('type, amount, category, movement_date, is_investment')
     .eq('user_id', user.id)
     .gte('movement_date', previousRange.start)
     .lte('movement_date', currentRange.end)
     .in('type', ['ingreso', 'gasto'])
+  if (projectFilter) mainQ = mainQ.eq('project_id', projectFilter) as typeof mainQ
+  const { data: rows, error: dbError } = await mainQ
 
   if (dbError) {
     console.error('[GET /api/reports/insights] db error', dbError)

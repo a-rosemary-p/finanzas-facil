@@ -16,6 +16,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useAuth } from '@/hooks/use-auth'
+import { useActiveProject } from '@/hooks/use-active-project'
 import { AppHeader } from '@/components/app-header'
 import { WaveSection } from '@/components/ui/wave'
 import { EstePeriodoView } from '@/components/reports/este-periodo-view'
@@ -69,6 +70,7 @@ const PERIOD_MODE_LABELS: Record<PeriodMode, string> = {
 
 export default function ReportesPage() {
   const { profile, loading: authLoading } = useAuth()
+  const { activeProjectId } = useActiveProject()
   const plan = profile?.plan ?? 'free'
   const isPro = plan === 'pro'
 
@@ -123,7 +125,9 @@ export default function ReportesPage() {
       return `from=${fmt(start)}&to=${fmt(end)}`
     })()
 
-    fetchWithAuthRetry(`/api/reports/movements?${params}`)
+    // Filtro de proyecto activo (v0.62). Aplica a la lista que va al PDF/Excel.
+    const fullParams = activeProjectId ? `${params}&projectId=${activeProjectId}` : params
+    fetchWithAuthRetry(`/api/reports/movements?${fullParams}`)
       .then(async res => {
         if (!res.ok) {
           if (!cancelled) {
@@ -150,7 +154,7 @@ export default function ReportesPage() {
       })
 
     return () => { cancelled = true }
-  }, [profile?.id, period, plan])  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [profile?.id, period, plan, activeProjectId])  // eslint-disable-line react-hooks/exhaustive-deps
 
   function changePeriod(target: PeriodSelection) {
     if (isFuturePeriod(target)) return

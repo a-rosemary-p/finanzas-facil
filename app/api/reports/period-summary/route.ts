@@ -77,6 +77,21 @@ export async function GET(request: Request) {
   const period: PeriodSelection = { mode, anchor: anchorRaw }
   const previous = prevPeriod(period)
 
+  // Filtro de proyecto activo (v0.62, Pro-only). Si Free manda projectId,
+  // lo ignoramos silenciosamente.
+  const projectIdParam = searchParams.get('projectId')
+  let projectFilter: string | null = null
+  if (projectIdParam) {
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('plan')
+      .eq('id', user.id)
+      .single()
+    if ((prof?.plan as string) === 'pro') {
+      projectFilter = projectIdParam
+    }
+  }
+
   const currentRange = periodRange(period)
   const previousRange = periodRange(previous)
 
@@ -84,13 +99,15 @@ export async function GET(request: Request) {
   const queryStart = previousRange.start < currentRange.start ? previousRange.start : currentRange.start
   const queryEnd = currentRange.end
 
-  const { data: rows, error } = await supabase
+  let mainQ = supabase
     .from('movements')
     .select('type, amount, category, movement_date, is_investment')
     .eq('user_id', user.id)
     .gte('movement_date', queryStart)
     .lte('movement_date', queryEnd)
     .in('type', ['ingreso', 'gasto'])
+  if (projectFilter) mainQ = mainQ.eq('project_id', projectFilter) as typeof mainQ
+  const { data: rows, error } = await mainQ
 
   if (error) {
     console.error('[GET /api/reports/period-summary]', error)

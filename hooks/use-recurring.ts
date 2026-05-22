@@ -8,11 +8,19 @@
  * server-side.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
+import { useActiveProject } from '@/hooks/use-active-project'
 import type { RecurringMovement, RecurringFrequency } from '@/types'
 
+/**
+ * v0.62: respeta el chip de proyecto activo del header. Filtramos in-memory
+ * (lista chica — el user rara vez tiene >10 recurrentes) en lugar de pasar
+ * ?projectId= al endpoint para mantener el cache caliente cuando el user
+ * alterna entre proyectos sin recargar.
+ */
 export function useRecurring() {
+  const { activeProjectId } = useActiveProject()
   const [recurring, setRecurring] = useState<RecurringMovement[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -90,5 +98,11 @@ export function useRecurring() {
     }
   }, [recurring])
 
-  return { recurring, loading, error, refresh: load, update, remove }
+  // Filtro por proyecto activo. Si activeProjectId=null, devolvemos todos.
+  const filtered = useMemo(() => {
+    if (!activeProjectId) return recurring
+    return recurring.filter(r => r.projectId === activeProjectId)
+  }, [recurring, activeProjectId])
+
+  return { recurring: filtered, loading, error, refresh: load, update, remove }
 }

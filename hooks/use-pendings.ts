@@ -14,11 +14,19 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
+import { useActiveProject } from '@/hooks/use-active-project'
 import { track } from '@/lib/analytics'
 import { getAppToday } from '@/lib/cdmx-date'
 import type { Movement } from '@/types'
 
+/**
+ * v0.62: el hook ahora respeta el chip de proyecto activo del header.
+ * Cuando hay activeProjectId, todos los SELECTs filtran por project_id.
+ * El badge en AppHeader queda consistente: si user tiene "Casa Pedro"
+ * seleccionado, el contador de alerta cuenta solo pendientes de Casa Pedro.
+ */
 export function usePendings() {
+  const { activeProjectId } = useActiveProject()
   const [pendings, setPendings] = useState<Movement[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -28,11 +36,12 @@ export function usePendings() {
     setError(null)
     try {
       const supabase = createClient()
-      const { data, error: err } = await supabase
+      let q = supabase
         .from('movements')
-        .select('id, type, amount, description, category, movement_date, is_investment, paid_at, original_type, pending_direction, recurring_movement_id')
+        .select('id, type, amount, description, category, movement_date, is_investment, paid_at, original_type, pending_direction, recurring_movement_id, project_id')
         .eq('type', 'pendiente')
-        .order('movement_date', { ascending: true })
+      if (activeProjectId) q = q.eq('project_id', activeProjectId) as typeof q
+      const { data, error: err } = await q.order('movement_date', { ascending: true })
 
       if (err) {
         setError(err.message)
@@ -51,6 +60,7 @@ export function usePendings() {
             originalType: (r.original_type as Movement['type'] | null) ?? null,
             pendingDirection: (r.pending_direction as 'ingreso' | 'gasto' | null) ?? null,
             recurringMovementId: (r.recurring_movement_id as string | null) ?? null,
+            projectId: (r.project_id as string | null) ?? null,
           }))
         )
       }
@@ -60,7 +70,7 @@ export function usePendings() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [activeProjectId])
 
   useEffect(() => { void load() }, [load])
 
