@@ -17,6 +17,7 @@ import { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useAuth } from '@/hooks/use-auth'
 import { useActiveProject } from '@/hooks/use-active-project'
+import { useProjects } from '@/hooks/use-projects'
 import { AppHeader } from '@/components/app-header'
 import { WaveSection } from '@/components/ui/wave'
 import { EstePeriodoView } from '@/components/reports/este-periodo-view'
@@ -71,6 +72,11 @@ const PERIOD_MODE_LABELS: Record<PeriodMode, string> = {
 export default function ReportesPage() {
   const { profile, loading: authLoading } = useAuth()
   const { activeProjectId } = useActiveProject()
+  // v0.63: necesitamos el nombre del proyecto activo para el hint de export.
+  const { projects: activeProjects } = useProjects({ isPro: profile?.plan === 'pro' })
+  const activeProjectName = activeProjectId
+    ? activeProjects.find(p => p.id === activeProjectId)?.name ?? null
+    : null
   const plan = profile?.plan ?? 'free'
   const isPro = plan === 'pro'
 
@@ -332,6 +338,14 @@ export default function ReportesPage() {
         {tab === 'periodo' && (
           <>
             <EstePeriodoView period={period} />
+
+            {/* v0.63: hint visual cuando exports están filtrados por proyecto activo. */}
+            {profile && movements.length > 0 && activeProjectName && (
+              <div className="text-xs text-brand-mid bg-brand-chip border border-brand-border rounded-lg px-3 py-2 mt-1">
+                Los exports incluyen solo movimientos de <strong>{activeProjectName}</strong>.
+                Cambia el chip a General para incluir todos.
+              </div>
+            )}
 
             {/* Botones de export — lado a lado (PDF + Excel) */}
             {profile && movements.length > 0 && (

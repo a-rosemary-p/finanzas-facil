@@ -73,15 +73,18 @@ export function ProjectChart({ granularity, points }: ProjectChartProps) {
   )
 }
 
+// v0.63: usar Intl.DateTimeFormat en español MX — devuelve locale-aware
+// (capitalización, abreviaturas) y queda preparado para soportar otros
+// locales en el futuro sin tocar el código.
+const MONTH_FMT = new Intl.DateTimeFormat('es-MX', { month: 'short', year: '2-digit' })
+const DAY_FMT = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' })
+
 function formatBucketLabel(ymd: string, granularity: 'week' | 'month'): string {
-  if (granularity === 'month') {
-    // 'YYYY-MM-01' → 'MMM yy' (ej. 'may 26').
-    const [y, m] = ymd.split('-')
-    const monthNames = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
-    return `${monthNames[Number(m) - 1]} ${y!.slice(2)}`
-  }
-  // week: 'YYYY-MM-DD' → 'DD MMM'
-  const [, m, d] = ymd.split('-')
-  const monthNames = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
-  return `${d} ${monthNames[Number(m) - 1]}`
+  // 'YYYY-MM-DD' → Date local (noon para evitar TZ drift al borde de día).
+  const [y, m, d] = ymd.split('-').map(Number)
+  const dt = new Date(y!, (m ?? 1) - 1, d ?? 1, 12, 0, 0)
+  // El "ene." con punto de Intl es feo en charts chicos — lo quitamos.
+  return (granularity === 'month' ? MONTH_FMT : DAY_FMT)
+    .format(dt)
+    .replace(/\./g, '')
 }

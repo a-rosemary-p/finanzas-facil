@@ -21,6 +21,20 @@ export function EditProjectModal({ project, onClose, onSaved }: EditProjectModal
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
+  // v0.63: detectar cambios sin guardar para no perderlos al click-outside.
+  const isDirty =
+    name !== project.name ||
+    clientName !== (project.clientName ?? '') ||
+    notes !== (project.notes ?? '')
+
+  function safeClose() {
+    if (isDirty) {
+      const ok = window.confirm('Tienes cambios sin guardar. ¿Cerrar de todos modos?')
+      if (!ok) return
+    }
+    onClose()
+  }
+
   async function handleSave() {
     if (name.trim().length === 0) {
       setError('El nombre es requerido')
@@ -52,7 +66,7 @@ export function EditProjectModal({ project, onClose, onSaved }: EditProjectModal
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={safeClose}>
       <div
         className="bg-white rounded-2xl max-w-md w-full p-5 flex flex-col gap-3"
         onClick={e => e.stopPropagation()}
@@ -104,7 +118,7 @@ export function EditProjectModal({ project, onClose, onSaved }: EditProjectModal
           </button>
           <button
             disabled={busy}
-            onClick={onClose}
+            onClick={safeClose}
             className="flex-1 py-2.5 rounded-xl text-sm font-medium text-brand-mid bg-paper-2"
           >
             Cancelar

@@ -9,7 +9,11 @@ import { useState } from 'react'
 import { CATEGORIES } from '@/lib/constants'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import { getAppToday } from '@/lib/cdmx-date'
-import type { Category, RecurringFrequency } from '@/types'
+import { useAuth } from '@/hooks/use-auth'
+import { useProjects } from '@/hooks/use-projects'
+import { useActiveProject } from '@/hooks/use-active-project'
+import { ProjectSelector } from '@/components/projects/project-selector'
+import type { Category, RecurringFrequency, Project } from '@/types'
 
 interface Props {
   onClose: () => void
@@ -24,14 +28,35 @@ const FREQ_OPTIONS: Array<{ id: RecurringFrequency; label: string }> = [
 ]
 
 export function ManualRecurringForm({ onClose, onCreated }: Props) {
+  const { profile } = useAuth()
+  const isPro = profile?.plan === 'pro'
+  const { projects, addProject } = useProjects({ isPro, enabled: isPro })
+  const { activeProjectId } = useActiveProject()
+
   const [type, setType]             = useState<'gasto' | 'ingreso'>('gasto')
   const [amount, setAmount]         = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory]     = useState<Category>('Renta')
   const [frequency, setFrequency]   = useState<RecurringFrequency>('month')
   const [nextDueDate, setNextDueDate] = useState<string>(getAppToday())
+  // v0.63: pre-asignar proyecto del chip activo del header.
+  const [projectId, setProjectId]   = useState<string | null>(activeProjectId)
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState('')
+
+  async function handleCreateProjectInline(name: string, clientName: string | null): Promise<Project | null> {
+    const res = await fetchWithAuthRetry('/api/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, clientName }),
+    })
+    const data = (await res.json().catch(() => ({}))) as { project?: Project; error?: string }
+    if (!res.ok || !data.project) {
+      throw new Error(data.error ?? 'No se pudo crear el proyecto')
+    }
+    addProject(data.project)
+    return data.project
+  }
 
   async function handleSubmit() {
     const amt = parseFloat(amount)
@@ -57,6 +82,8 @@ export function ManualRecurringForm({ onClose, onCreated }: Props) {
           category,
           frequency,
           nextDueDate,
+          // v0.63: opcional. Server hace Pro-gate + ownership check.
+          projectId: isPro ? projectId : null,
         }),
       })
       const data = await res.json().catch(() => ({})) as Record<string, unknown>
@@ -153,6 +180,19 @@ export function ManualRecurringForm({ onClose, onCreated }: Props) {
           </select>
         </label>
       </div>
+
+      {/* v0.63: selector de proyecto. Pro = dropdown con activos + crear inline;
+        * Free = teaser ghosted. Si el user creó el recurrente con un proyecto,
+        * los pendientes que se materialicen también heredan el project_id
+        * (lib/recurring/materialize.ts). */}
+      <ProjectSelector
+        projects={projects}
+        value={projectId}
+        isPro={!!isPro}
+        teaserSource="recurrentes"
+        onChange={setProjectId}
+        onCreate={handleCreateProjectInline}
+      />
 
       {error && (
         <p className="text-xs text-danger">{error}</p>

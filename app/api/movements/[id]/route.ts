@@ -100,7 +100,16 @@ export async function PATCH(
         .eq('user_id', user.id)
         .single()
       if (!proj) {
-        return Response.json({ error: 'Proyecto no encontrado' }, { status: 400 })
+        // v0.63: mensaje específico para UX claro. 410 GONE comunica que el
+        // proyecto que se intenta asignar ya no existe (probablemente fue
+        // eliminado en otra sesión / tab entre que la UI hizo fetch y este PATCH).
+        return Response.json(
+          {
+            error: 'El proyecto al que querías asignar ya no existe. Refresca la pantalla e intenta de nuevo.',
+            code: 'PROJECT_GONE',
+          },
+          { status: 410 },
+        )
       }
     }
   }

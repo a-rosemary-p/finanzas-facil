@@ -29,6 +29,12 @@ function emptyMovement(date: string): PendingMovement {
     description: '',
     category: 'Ventas',
     movementDate: date,
+    // v0.63: inicializar campos de proyecto explícito en lugar de depender
+    // de undefined→null. Evita comportamiento frágil del selector cuando
+    // el user agrega un mov manual estando en un proyecto activo del header.
+    projectId: null,
+    projectCreateName: null,
+    projectSuggestion: null,
   }
 }
 

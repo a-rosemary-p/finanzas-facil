@@ -10,7 +10,11 @@ import { useState } from 'react'
 import { CATEGORIES } from '@/lib/constants'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import { getAppToday } from '@/lib/cdmx-date'
-import type { Category } from '@/types'
+import { useAuth } from '@/hooks/use-auth'
+import { useProjects } from '@/hooks/use-projects'
+import { useActiveProject } from '@/hooks/use-active-project'
+import { ProjectSelector } from '@/components/projects/project-selector'
+import type { Category, Project } from '@/types'
 
 interface Props {
   onClose: () => void
@@ -19,13 +23,35 @@ interface Props {
 }
 
 export function ManualPendingForm({ onClose, onCreated }: Props) {
+  const { profile } = useAuth()
+  const isPro = profile?.plan === 'pro'
+  const { projects, addProject } = useProjects({ isPro, enabled: isPro })
+  const { activeProjectId } = useActiveProject()
+
   const [direction, setDirection]   = useState<'gasto' | 'ingreso'>('gasto')
   const [amount, setAmount]         = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory]     = useState<Category>('Renta')
   const [movementDate, setMovementDate] = useState<string>(getAppToday())
+  // v0.63: pre-asignar proyecto del chip activo del header (si lo hay).
+  // El user puede cambiar antes de guardar.
+  const [projectId, setProjectId]   = useState<string | null>(activeProjectId)
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState('')
+
+  async function handleCreateProjectInline(name: string, clientName: string | null): Promise<Project | null> {
+    const res = await fetchWithAuthRetry('/api/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, clientName }),
+    })
+    const data = (await res.json().catch(() => ({}))) as { project?: Project; error?: string }
+    if (!res.ok || !data.project) {
+      throw new Error(data.error ?? 'No se pudo crear el proyecto')
+    }
+    addProject(data.project)
+    return data.project
+  }
 
   async function handleSubmit() {
     const amt = parseFloat(amount)
@@ -61,6 +87,9 @@ export function ManualPendingForm({ onClose, onCreated }: Props) {
             pendingDirection: direction,
             isRecurring: false,
             recurringFrequency: null,
+            // v0.63: proyecto opcional. Free → ignorado server-side; Pro
+            // → asignado al pendiente.
+            projectId: isPro ? projectId : null,
           }],
         }),
       })
@@ -146,6 +175,17 @@ export function ManualPendingForm({ onClose, onCreated }: Props) {
           {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
       </label>
+
+      {/* v0.63: selector de proyecto. Pro = dropdown con activos + crear inline;
+        * Free = teaser ghosted con candado. */}
+      <ProjectSelector
+        projects={projects}
+        value={projectId}
+        isPro={!!isPro}
+        teaserSource="pendientes"
+        onChange={setProjectId}
+        onCreate={handleCreateProjectInline}
+      />
 
       {error && (
         <p className="text-xs text-danger">{error}</p>

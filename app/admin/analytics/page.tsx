@@ -143,7 +143,7 @@ export default async function AdminAnalyticsPage() {
   // tiene cap de 1000 por default, así que pedimos hasta 50K vía range.
   const pvCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
-  const [profilesRes, movementsRes, entriesRes, recurringRes, pvRes] = await Promise.all([
+  const [profilesRes, movementsRes, entriesRes, recurringRes, pvRes, projectsRes, projectsMovsRes, projectsTeaserRes, projectsAssignedRes] = await Promise.all([
     admin
       .from('profiles')
       .select('id, email, display_name, plan, subscription_status, created_at, total_movements, giro')
@@ -166,6 +166,28 @@ export default async function AdminAnalyticsPage() {
       .gte('created_at', pvCutoff)
       .order('created_at', { ascending: false })
       .range(0, 49999),
+    // v0.63: Proyectos (todos los users, incluso archivados)
+    admin
+      .from('projects')
+      .select('user_id, status, created_at'),
+    // v0.63: Movs con project_id no-null, para conteo de "movs asignados"
+    admin
+      .from('movements')
+      .select('id, user_id, project_id')
+      .not('project_id', 'is', null)
+      .range(0, 99999),
+    // v0.63: Teasers tocados por Free
+    admin
+      .from('analytics_events')
+      .select('user_id, payload, created_at')
+      .eq('event_name', 'projects_teaser_clicked')
+      .range(0, 9999),
+    // v0.63: Asignaciones de proyecto (AI vs manual)
+    admin
+      .from('analytics_events')
+      .select('user_id, payload, created_at')
+      .eq('event_name', 'project_assigned')
+      .range(0, 49999),
   ])
 
   if (profilesRes.error) throw profilesRes.error
@@ -173,6 +195,10 @@ export default async function AdminAnalyticsPage() {
   if (entriesRes.error) throw entriesRes.error
   if (recurringRes.error) throw recurringRes.error
   if (pvRes.error) throw pvRes.error
+  if (projectsRes.error) throw projectsRes.error
+  if (projectsMovsRes.error) throw projectsMovsRes.error
+  if (projectsTeaserRes.error) throw projectsTeaserRes.error
+  if (projectsAssignedRes.error) throw projectsAssignedRes.error
 
   // Filtrado client-side de founders en TODAS las tablas. Defense-in-depth:
   // si por algún motivo un founder ID nuevo se cuela, el conteo se mantiene
@@ -186,6 +212,23 @@ export default async function AdminAnalyticsPage() {
   const pvEvents = (pvRes.data ?? []).filter(
     (e: { user_id: string | null }) => !isFounder(e.user_id),
   ) as PageViewEvent[]
+
+  // v0.63: Proyectos — filtramos founders.
+  const projectsAll = (projectsRes.data ?? []).filter(
+    (p: { user_id: string }) => !isFounder(p.user_id),
+  ) as Array<{ user_id: string; status: string; created_at: string }>
+
+  const projectsAssignedMovs = (projectsMovsRes.data ?? []).filter(
+    (m: { user_id: string }) => !isFounder(m.user_id),
+  ) as Array<{ id: string; user_id: string; project_id: string }>
+
+  const teaserClicks = (projectsTeaserRes.data ?? []).filter(
+    (e: { user_id: string | null }) => !isFounder(e.user_id),
+  ) as Array<{ user_id: string | null; payload: { source?: string } | null; created_at: string }>
+
+  const projectAssignedEvents = (projectsAssignedRes.data ?? []).filter(
+    (e: { user_id: string | null }) => !isFounder(e.user_id),
+  ) as Array<{ user_id: string | null; payload: { source?: string } | null; created_at: string }>
 
   // ── 4. Cálculos ─────────────────────────────────────────────────────
   const now      = Date.now()
@@ -376,6 +419,77 @@ export default async function AdminAnalyticsPage() {
     utmSources:   rankSet(utmSourcesMap, 6),
   }
 
+  // ─── v0.63: Proyectos analytics ────────────────────────────────────
+  const proUserIds = new Set(profiles.filter(p => p.plan === 'pro').map(p => p.id))
+  const proUsersTotal = proUserIds.size
+
+  // Pro users con al menos 1 proyecto
+  const proUsersWithProjects = new Set<string>()
+  let totalActiveProjects = 0
+  let totalArchivedProjects = 0
+  for (const p of projectsAll) {
+    if (proUserIds.has(p.user_id)) proUsersWithProjects.add(p.user_id)
+    if (p.status === 'archived') totalArchivedProjects += 1
+    else totalActiveProjects += 1
+  }
+  const proUsersWithProjectsPct = proUsersTotal > 0
+    ? proUsersWithProjects.size / proUsersTotal
+    : 0
+
+  // Avg activos por user Pro con proyectos
+  const activeByUser = new Map<string, number>()
+  for (const p of projectsAll) {
+    if (p.status !== 'active') continue
+    activeByUser.set(p.user_id, (activeByUser.get(p.user_id) ?? 0) + 1)
+  }
+  const usersWithAtLeastOneActive = Array.from(activeByUser.values()).filter(c => c > 0)
+  const avgActivePerProUser = usersWithAtLeastOneActive.length > 0
+    ? usersWithAtLeastOneActive.reduce((s, n) => s + n, 0) / usersWithAtLeastOneActive.length
+    : 0
+
+  // Movs asignados a proyecto
+  const movementsAssignedCount = projectsAssignedMovs.length
+  const movementsAssignedPct = totalMovements > 0
+    ? movementsAssignedCount / totalMovements
+    : 0
+
+  // AI vs manual assignments (de analytics_events.project_assigned.payload.source)
+  let aiAssignments = 0
+  let manualAssignments = 0
+  let projectDeletedAssignments = 0
+  for (const ev of projectAssignedEvents) {
+    const src = ev.payload?.source ?? 'manual'
+    if (src === 'ai') aiAssignments += 1
+    else if (src === 'project_deleted') projectDeletedAssignments += 1
+    else manualAssignments += 1
+  }
+
+  // Teasers tocados por Free (interés latente)
+  const teasersClicked = teaserClicks.length
+  const teaserClicksBySource = new Map<string, number>()
+  for (const ev of teaserClicks) {
+    const src = ev.payload?.source ?? 'unknown'
+    teaserClicksBySource.set(src, (teaserClicksBySource.get(src) ?? 0) + 1)
+  }
+
+  const projectsStats = {
+    proUsersTotal,
+    proUsersWithProjects: proUsersWithProjects.size,
+    proUsersWithProjectsPct,
+    totalActiveProjects,
+    totalArchivedProjects,
+    avgActivePerProUser,
+    movementsAssignedCount,
+    movementsAssignedPct,
+    aiAssignments,
+    manualAssignments,
+    projectDeletedAssignments,
+    teasersClicked,
+    teaserClicksBySource: Array.from(teaserClicksBySource.entries())
+      .map(([source, count]) => ({ source, count }))
+      .sort((a, b) => b.count - a.count),
+  }
+
   const recentUsers = profiles.slice(0, 20).map(p => ({
     id: p.id,
     email: p.email,
@@ -406,6 +520,7 @@ export default async function AdminAnalyticsPage() {
       }}
       recentUsers={recentUsers}
       pageStats={pageStats}
+      projectsStats={projectsStats}
     />
   )
 }

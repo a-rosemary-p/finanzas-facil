@@ -204,7 +204,11 @@ export default function ProyectosPage() {
         {loading ? (
           <p className="text-sm text-brand-mid">Cargando…</p>
         ) : error ? null : projects.length === 0 ? (
-          <EmptyState filter={filter} onCreate={() => setShowForm(true)} />
+          <EmptyState
+            filter={filter}
+            onCreate={() => setShowForm(true)}
+            onSwitchToActive={() => setFilter('active')}
+          />
         ) : (
           <div className="flex flex-col gap-2">
             {projects.map(p => (
@@ -255,11 +259,17 @@ function ProjectCard({ project }: { project: ProjectWithSummary }) {
   )
 }
 
-function EmptyState({ filter, onCreate }: { filter: ProjectStatusFilter; onCreate: () => void }) {
+function EmptyState({ filter, onCreate, onSwitchToActive }: { filter: ProjectStatusFilter; onCreate: () => void; onSwitchToActive: () => void }) {
   if (filter === 'archived') {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-5 border border-brand-border text-center">
+      <div className="bg-white rounded-xl shadow-sm p-5 border border-brand-border flex flex-col gap-2 items-center text-center">
         <p className="text-sm text-brand-mid">No tienes proyectos archivados.</p>
+        <button
+          onClick={onSwitchToActive}
+          className="text-xs font-bold text-brand"
+        >
+          ← Ver activos
+        </button>
       </div>
     )
   }

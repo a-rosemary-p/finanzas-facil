@@ -65,6 +65,22 @@ interface PageStats {
   utmSources:   Array<{ key: string; visitors: number }>
 }
 
+interface ProjectsStats {
+  proUsersTotal: number
+  proUsersWithProjects: number
+  proUsersWithProjectsPct: number
+  totalActiveProjects: number
+  totalArchivedProjects: number
+  avgActivePerProUser: number
+  movementsAssignedCount: number
+  movementsAssignedPct: number
+  aiAssignments: number
+  manualAssignments: number
+  projectDeletedAssignments: number
+  teasersClicked: number
+  teaserClicksBySource: Array<{ source: string; count: number }>
+}
+
 interface Props {
   generatedAt: string
   kpis: KPIs
@@ -74,6 +90,7 @@ interface Props {
   }
   recentUsers: RecentUser[]
   pageStats: PageStats
+  projectsStats: ProjectsStats
 }
 
 type Tab = 'usuarios' | 'pagina'
@@ -94,7 +111,7 @@ const INPUT_SRC_COLORS: Record<string, string> = {
   photo: COLORS.expense,
 }
 
-export function AdminAnalytics({ generatedAt, kpis, charts, recentUsers, pageStats }: Props) {
+export function AdminAnalytics({ generatedAt, kpis, charts, recentUsers, pageStats, projectsStats }: Props) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [tab, setTab] = useState<Tab>('usuarios')
@@ -203,6 +220,57 @@ export function AdminAnalytics({ generatedAt, kpis, charts, recentUsers, pageSta
             <Stat label="Trial activos"          value={kpis.trialActive} accent="text-pending-text" />
             <Stat label="MRR estimado"           value={`$${kpis.mrrEstimate.toLocaleString('es-MX')}`}
                   accent="text-brand" hint={`Pro × $79`} />
+          </div>
+        </section>
+
+        {/* ── Sección Proyectos (v0.63) ──────────────────────────────── */}
+        <section className="flex flex-col gap-3">
+          <h2 className="fz-eyebrow">Proyectos (Pro feature, v0.5+)</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <Stat
+              label="Pro con proyectos"
+              value={projectsStats.proUsersWithProjects}
+              accent="text-brand"
+              hint={`${(projectsStats.proUsersWithProjectsPct * 100).toFixed(0)}% del total Pro (${projectsStats.proUsersTotal})`}
+            />
+            <Stat
+              label="Activos (suma)"
+              value={projectsStats.totalActiveProjects}
+              accent="text-brand"
+            />
+            <Stat
+              label="Archivados (suma)"
+              value={projectsStats.totalArchivedProjects}
+              accent="text-ink-300"
+            />
+            <Stat
+              label="Avg activos / Pro con proy"
+              value={projectsStats.avgActivePerProUser.toFixed(1)}
+              accent="text-brand"
+              hint="Solo cuenta users con ≥1"
+            />
+            <Stat
+              label="Movs asignados a proyecto"
+              value={projectsStats.movementsAssignedCount}
+              accent="text-brand"
+              hint={`${(projectsStats.movementsAssignedPct * 100).toFixed(1)}% del total`}
+            />
+            <Stat
+              label="IA vs manual"
+              value={`${projectsStats.aiAssignments} / ${projectsStats.manualAssignments}`}
+              accent="text-brand"
+              hint={`AI / manual ${projectsStats.projectDeletedAssignments > 0 ? `· ${projectsStats.projectDeletedAssignments} por delete` : ''}`}
+            />
+            <Stat
+              label="Teasers tocados por Base"
+              value={projectsStats.teasersClicked}
+              accent="text-pending-text"
+              hint={
+                projectsStats.teaserClicksBySource.length > 0
+                  ? projectsStats.teaserClicksBySource.slice(0, 2).map(s => `${s.source}: ${s.count}`).join(' · ')
+                  : 'Sin clicks aún'
+              }
+            />
           </div>
         </section>
 

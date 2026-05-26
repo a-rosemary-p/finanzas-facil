@@ -14,8 +14,10 @@ import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
 import { useActiveProject } from '@/hooks/use-active-project'
+import { useAuth } from '@/hooks/use-auth'
 import { formatCurrency } from '@/lib/utils'
 import { IconWallet, IconReceipt, IconChartPieSlice } from '@/components/icons'
+import { ProjectsRanking } from '@/components/reports/projects-ranking'
 import type { PeriodSelection, PeriodMode } from '@/lib/periods'
 
 // Recharts cargado client-only — evita el bundle inicial del page
@@ -71,6 +73,8 @@ interface Props {
 
 export function EstePeriodoView({ period }: Props) {
   const { activeProjectId } = useActiveProject()
+  const { profile } = useAuth()
+  const isPro = profile?.plan === 'pro'
   const [data, setData] = useState<SummaryResponse | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -99,8 +103,24 @@ export function EstePeriodoView({ period }: Props) {
   const current = data?.current ?? { income: 0, expenses: 0, net: 0 }
   const previous = data?.previous ?? { income: 0, expenses: 0, net: 0 }
 
+  // v0.63: UX hint cuando el chip está en un proyecto específico y el período
+  // no tiene movs. Sin esto el user ve "0" en todo y puede pensar que el período
+  // está mal — cuando realmente es el filtro de proyecto.
+  const emptyDueToProjectFilter =
+    !loading &&
+    !!activeProjectId &&
+    current.income === 0 &&
+    current.expenses === 0
+
   return (
     <div className="flex flex-col gap-4">
+      {emptyDueToProjectFilter && (
+        <div className="bg-brand-chip border border-brand-border rounded-lg px-3 py-2.5 text-xs text-brand-mid leading-relaxed">
+          Sin movimientos para este proyecto en el período seleccionado.
+          Cambia el chip del header a <strong>General</strong> para ver todos los movimientos.
+        </div>
+      )}
+
       {/* Tarjetas de números con flechas */}
       <div className="grid grid-cols-3 gap-2">
         <SummaryCard
@@ -143,6 +163,15 @@ export function EstePeriodoView({ period }: Props) {
       <CategoryPies
         byCategory={data?.byCategory ?? {}}
         loading={loading}
+      />
+
+      {/* v0.63: Ranking de proyectos del período. Pro only; sólo cuando
+        * el chip del header está en "General". Si está filtrado a un proyecto
+        * la vista entera ya es de ese proyecto, ranking sería redundante. */}
+      <ProjectsRanking
+        period={period}
+        activeProjectId={activeProjectId}
+        isPro={!!isPro}
       />
     </div>
   )

@@ -14,6 +14,7 @@
 
 import { useState } from 'react'
 import { fetchWithAuthRetry } from '@/lib/fetch-with-auth'
+import { useToast } from '@/components/ui/toast'
 import type { Project } from '@/types'
 
 interface ProjectActionsMenuProps {
@@ -27,6 +28,7 @@ interface ProjectActionsMenuProps {
 export function ProjectActionsMenu({
   project, onEdit, onArchived, onReopened, onDeleted,
 }: ProjectActionsMenuProps) {
+  const toast = useToast()
   const [open, setOpen] = useState(false)
   const [confirmArchive, setConfirmArchive] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -76,13 +78,17 @@ export function ProjectActionsMenu({
         return
       }
       // Aviso si hay recurrentes pausados que NO se reactivan automáticamente.
-      // El user debe ir a /recurrentes a reactivarlos. Usamos alert() simple
-      // para v0.5 — si en el futuro tenemos sistema de toasts, mover allá.
+      // El user debe ir a /pendientes a reactivarlos. v0.63: ahora usamos
+      // toast del design system en lugar de window.alert nativo.
       if ((data.pausedRecurringCount ?? 0) > 0) {
         const n = data.pausedRecurringCount as number
-        window.alert(
-          `Proyecto reabierto. Hay ${n} recurrente${n !== 1 ? 's' : ''} pausado${n !== 1 ? 's' : ''} en este proyecto que NO se reactivaron. Ve a /recurrentes para activarlos si quieres que sigan generando pendientes.`,
-        )
+        toast.show({
+          kind: 'warning',
+          duration: 8000,
+          message: `Proyecto reabierto. ${n} recurrente${n !== 1 ? 's' : ''} sigue${n !== 1 ? 'n' : ''} pausado${n !== 1 ? 's' : ''} — actívalos desde Pendientes si quieres.`,
+        })
+      } else {
+        toast.show({ kind: 'success', message: 'Proyecto reabierto.' })
       }
       setOpen(false)
       onReopened()
@@ -104,12 +110,14 @@ export function ProjectActionsMenu({
       }
       if (!res.ok) {
         setError(data.error ?? 'No se pudo eliminar')
-        setBusy(false)
         return
       }
       onDeleted()
     } catch {
       setError('No se pudo conectar')
+    } finally {
+      // v0.63: siempre limpiar busy. Antes solo se limpiaba en error path —
+      // si onDeleted() fallaba al navegar, el botón quedaba spinning.
       setBusy(false)
     }
   }

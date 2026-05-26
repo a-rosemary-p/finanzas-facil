@@ -34,7 +34,10 @@ export async function GET(request: Request) {
 
   if (q.length > 0) {
     // ilike '<q>%' — case-insensitive prefix match.
-    query = query.ilike('client_name', `${q}%`)
+    // v0.63: escapar wildcards SQL `%` y `_` para que un cliente llamado "50%"
+    // o "ABC_Co" matchee literal en vez de actuar como pattern.
+    const safe = q.replace(/[\\%_]/g, c => `\\${c}`)
+    query = query.ilike('client_name', `${safe}%`)
   }
 
   const { data, error } = await query.order('updated_at', { ascending: false }).limit(50)

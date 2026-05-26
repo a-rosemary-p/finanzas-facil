@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Outfit } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { PageViewTracker } from '@/components/analytics/page-view-tracker'
+import { ToastProvider } from '@/components/ui/toast'
 import './globals.css'
 
 const outfit = Outfit({
@@ -58,7 +59,9 @@ export default function RootLayout({
     <html lang="es" className={`h-full ${outfit.variable}`}>
       <body className="font-[family-name:var(--font-outfit)]">
         <PageViewTracker />
-        {children}
+        <ToastProvider>
+          {children}
+        </ToastProvider>
         <Analytics />
       </body>
     </html>
