@@ -69,6 +69,12 @@ export async function updateSession(request: NextRequest) {
     // Páginas legales públicas (v0.3) — requeridas por LFPDPPP México y por
     // OAuth providers (Google, Stripe) que piden URL de privacy + terms.
     '/privacidad', '/terminos',
+    // v1.0 — Página pública para eliminar cuenta sin login. URL va al form
+    // de Play Console como "data deletion policy" requerida por Google.
+    '/eliminar-cuenta',
+    // v1.0 — Web App Manifest para PWA / TWA. Chrome lo lee SIN auth para
+    // generar el splash + nombre del app. Sin esto, install-prompt y TWA rompen.
+    '/manifest.webmanifest',
     // /api/feedback acepta posts anónimos desde la landing (modo público).
     // El handler internamente bifurca según haya sesión o no, así que el
     // middleware no debe bloquear el caso anónimo con un 401 prematuro.
@@ -78,7 +84,10 @@ export async function updateSession(request: NextRequest) {
     // auth a nivel middleware.
     '/api/track',
   ])
-  const PUBLIC_PREFIXES = ['/login/', '/reset-password/', '/auth/', '/api/webhooks/']
+  // v1.0 — /.well-known/ debe ser público para Digital Asset Links (Android TWA),
+  // Apple App Site Association (futuro iOS), etc. Chrome fetcha assetlinks.json
+  // sin cookies durante la verificación del TWA — un redirect a /login lo rompe.
+  const PUBLIC_PREFIXES = ['/login/', '/reset-password/', '/auth/', '/api/webhooks/', '/.well-known/']
 
   const isPublicRoute =
     PUBLIC_EXACT.has(pathname) ||
