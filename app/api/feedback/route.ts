@@ -31,12 +31,13 @@ import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
 import { trackServer } from '@/lib/analytics-server'
 
-type FeedbackKind = 'sugerencia' | 'comentario' | 'problema'
+type FeedbackKind = 'sugerencia' | 'comentario' | 'problema' | 'eliminar_cuenta'
 
 const KIND_LABEL: Record<FeedbackKind, string> = {
-  sugerencia: 'Sugerencia',
-  comentario: 'Comentario',
-  problema:   'Problema',
+  sugerencia:      'Sugerencia',
+  comentario:      'Comentario',
+  problema:        'Problema',
+  eliminar_cuenta: 'Solicitud eliminación de cuenta',
 }
 
 // Email regex pragmático — no covers todos los edge cases del RFC pero
@@ -61,7 +62,8 @@ export async function POST(request: Request) {
 
     const kindRaw = body['kind']
     const kind: FeedbackKind | null =
-      kindRaw === 'sugerencia' || kindRaw === 'comentario' || kindRaw === 'problema'
+      kindRaw === 'sugerencia' || kindRaw === 'comentario' ||
+      kindRaw === 'problema'  || kindRaw === 'eliminar_cuenta'
         ? kindRaw
         : null
     if (!kind) {

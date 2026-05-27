@@ -147,11 +147,23 @@ export default function PrivacidadPage() {
           <section>
             <h2>6. Revocación del consentimiento</h2>
             <p>
-              Puedes revocar el consentimiento que nos hayas otorgado para el tratamiento
-              de tus datos en cualquier momento, escribiendo a{' '}
-              <a href="mailto:admin@fiza.mx">admin@fiza.mx</a>. Al revocar el
-              consentimiento, eliminaremos tu cuenta y los datos asociados, salvo
-              aquellos que debamos conservar por obligaciones legales o fiscales.
+              Puedes revocar el consentimiento y eliminar tu cuenta de dos formas:
+            </p>
+            <ol>
+              <li>
+                Desde la app: <strong>Ajustes → Eliminar mi cuenta</strong>. El borrado es
+                inmediato e irreversible.
+              </li>
+              <li>
+                Si no puedes acceder a tu cuenta: visita{' '}
+                <a href="/eliminar-cuenta">fiza.mx/eliminar-cuenta</a> y llena el form.
+                Procesamos solicitudes manuales en máximo 7 días.
+              </li>
+            </ol>
+            <p>
+              Al eliminar tu cuenta borramos tu perfil, movimientos, proyectos, pendientes,
+              recurrentes, categorías y eventos de uso, salvo lo que debamos conservar por
+              obligaciones legales o fiscales (registros de pago hasta 5 años por SAT).
             </p>
           </section>
 

@@ -21,6 +21,10 @@ function LoginInner() {
   const [loading, setLoading] = useState(false)
   const [registered, setRegistered] = useState(false)
 
+  // v1.0: banner cuando user llega aquí después de eliminar su cuenta
+  // (redirect desde /ajustes → DeleteAccountSection success).
+  const accountDeleted = searchParams.get('deleted') === '1'
+
   function switchMode(next: Mode) {
     setMode(next)
     setError('')
@@ -148,6 +152,13 @@ function LoginInner() {
           <img src="/logo-white.png" alt="fiza" className="h-16 w-auto" />
           <p className="text-xl italic mt-3 text-white/85 text-center">Tus cuentas, sin cuentos</p>
         </div>
+
+        {/* v1.0: banner confirmando eliminación de cuenta */}
+        {accountDeleted && (
+          <div className="mb-4 bg-white/95 border border-brand-border rounded-xl px-4 py-3 text-sm text-brand">
+            Tu cuenta y todos tus datos fueron eliminados. Esperamos verte de vuelta algún día.
+          </div>
+        )}
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-sm p-6 border border-brand-border">

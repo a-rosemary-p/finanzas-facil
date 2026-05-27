@@ -7,6 +7,7 @@ import type { SettingsUpdate } from '@/types'
 import { AppHeader } from '@/components/app-header'
 import { WaveSection } from '@/components/ui/wave'
 import { FeedbackModal } from '@/components/feedback-modal'
+import { DeleteAccountSection } from '@/components/ajustes/delete-account-section'
 import { CategoryPickerModal } from '@/components/categories/category-picker-modal'
 import { GIRO_DEFAULTS } from '@/lib/constants'
 import { startProCheckout } from '@/lib/upgrade-to-pro'
@@ -617,6 +618,12 @@ export default function AjustesPage() {
             Comentarios
           </button>
         </div>
+
+        {/* Eliminar cuenta — requisito de Google Play Store v1.0.
+          * Componente con doble confirmación (click → texto ELIMINAR).
+          * Cancela suscripción Stripe + borra auth.users + cascade
+          * borra profile y todo lo demás. */}
+        <DeleteAccountSection />
 
       </main>
 
