@@ -2,10 +2,14 @@
 
 > **La spec viva está fuera del repo**, en la carpeta del proyecto.
 >
-> Versión actual: **v0.63** (mayo 26, 2026)
-> Archivo: `C:\Users\arome\Documents - Local\App Finanzas Pymes\Fiza_APP_SPEC v0.63. 260526.md`
+> Versión actual: **v1.0** (mayo 26, 2026) 🚀 — Listo para Play Store
+> Archivo: `C:\Users\arome\Documents - Local\App Finanzas Pymes\Fiza_APP_SPEC v1.0. 260526.md`
 >
-> Contiene todo lo de v0.62 más: cleanup completo de 14 TODOs (proyectos UX completion + bugs menores + nice-to-haves). Selector de proyecto en forms manuales de /pendientes y /recurrentes. Ranking de proyectos en /reportes (endpoint nuevo). 7 tarjetas de proyectos en /admin/analytics. ToastProvider nuevo + cleanup window.alert en ActionsMenu reopen. UX hints en /reportes (proyecto activo + 0 movs / exports filtrados). EditProjectModal confirm con dirty check. Empty state Archivados con link. ProjectChart con Intl.DateTimeFormat. Migración 027: pg_advisory_xact_lock en trigger tope 10. Bugs: escape ilike clients, busy en finally, 410 GONE para project_id eliminado, emptyMovement init explícito.
+> **v1.0 — Listo para Google Play Store (TWA)**: milestone. Fiza pasa de web app a app publicable en Android via Trusted Web Activity (Bubblewrap). Decisión: usar excepción "Business Management Software" de Google Play Payments Policy — Stripe sigue funcionando, NO migramos a Play Billing. Comparables: Xero, QuickBooks, FreshBooks, Wave.
+>
+> Nuevo: `app/manifest.ts` (PWA manifest); íconos maskable + 1024 para Play Store; eliminar cuenta (endpoint `/api/profile/delete` + UI doble-confirm + página pública `/eliminar-cuenta` para users sin acceso); `/.well-known/assetlinks.json` con SHA real; migración 028 `profiles.id ON DELETE CASCADE`; middleware actualizado con rutas públicas (`/manifest.webmanifest`, `/eliminar-cuenta`, `/.well-known/`). TWA Android build vive en `App Finanzas Pymes/android-keystore/` (out-of-repo) — keystore + .aab firmado + README con instrucciones de update futuro. Package: `mx.fiza.app`. SHA-256: `C9:3B:F6:A1:7D:4F:2E:4D:EE:D6:B0:5B:EA:C2:D9:CD:76:AD:44:10:9A:BA:5F:06:B5:01:54:A8:AD:57:4C:DD`.
+>
+> **v0.63 (heredado)**: cleanup completo de 14 TODOs (proyectos UX completion + bugs menores + nice-to-haves). Selector de proyecto en forms manuales /pendientes y /recurrentes. Ranking de proyectos en /reportes. 7 tarjetas de proyectos en /admin/analytics. ToastProvider + cleanup window.alert. UX hints. EditProjectModal confirm dirty. Migración 027 advisory_xact_lock.
 >
 > Contiene todo lo de v0.60 más: **Selector global de proyecto activo + filtro cross-page**. Chip pill compacto en el header (entre logo y badge+menu) que persiste en localStorage. Filtro propagado a `/inicio` (cards + recientes + pre-asignación en captura), `/movimientos`, `/pendientes` (movs + recurrentes + badge alerta), `/reportes` (period-summary + insights IA + PDF/Excel). Auto-reset al archivar/eliminar el proyecto activo. Hook `useActiveProject` con `useSyncExternalStore` + custom event para reactividad. Export `readActiveProjectId()` no-hook para callbacks con closures stale (fix bug voz). Regla "IA gana sobre header" refinada: IA solo gana con match firme (projectId existente), `projectCreateName` adivinado se descarta. Housekeeping: borrado `assertAuth` muerto, fix stale `/registros` en comments.
 >
