@@ -4,7 +4,8 @@
     "namespace": "android_app",
     "package_name": "mx.fiza.app",
     "sha256_cert_fingerprints": [
-      "C9:3B:F6:A1:7D:4F:2E:4D:EE:D6:B0:5B:EA:C2:D9:CD:76:AD:44:10:9A:BA:5F:06:B5:01:54:A8:AD:57:4C:DD"
+      "C9:3B:F6:A1:7D:4F:2E:4D:EE:D6:B0:5B:EA:C2:D9:CD:76:AD:44:10:9A:BA:5F:06:B5:01:54:A8:AD:57:4C:DD",
+      "F2:D1:94:24:18:88:5E:26:CB:71:3D:58:04:91:4A:34:B1:57:3D:1E:E5:43:42:A6:0D:D9:89:26:FE:58:1D:B2"
     ]
   }
 }]
