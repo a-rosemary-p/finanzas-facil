@@ -30,11 +30,10 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
-    // v1.0.1: status bar blanca para matchear el header blanco del app —
-    // elimina la línea visible de transición que Android dibuja cuando los
-    // dos colores son muy distintos. background_color se mantiene en brand
-    // verde porque es para el splash screen (momentáneo) y da identidad.
-    theme_color: '#FFFFFF',
+    // v1.0.2: regreso al verde brand para status bar — look más diseñado /
+    // brandeado. La línea de transición que Android dibuja es aceptable
+    // estéticamente comparado con perder la identidad de marca.
+    theme_color: '#578466',
     background_color: '#578466',
     lang: 'es-MX',
     dir: 'ltr',
