@@ -47,7 +47,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#578466',
+  // v1.0.1: blanco matchea el header del app — elimina la línea de
+  // transición que Android dibuja entre status bar y content cuando los
+  // colores son muy distintos.
+  themeColor: '#FFFFFF',
 }
 
 export default function RootLayout({
