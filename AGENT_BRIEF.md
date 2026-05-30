@@ -1,9 +1,28 @@
-# Fiza — App Spec
+# Fiza — Agent Brief
 
-> **La spec viva está fuera del repo**, en la carpeta del proyecto.
+> **Este archivo NO es la spec del producto.** Es el TL;DR + cheatsheet operativo
+> que un agente cold-start lee antes de tocar código. La spec real (250 KB) vive
+> out-of-repo — si necesitas el detalle profundo, ábrela.
 >
-> Versión actual: **v1.0** (mayo 26, 2026) 🚀 — Listo para Play Store
-> Archivo: `C:\Users\arome\Documents - Local\App Finanzas Pymes\Fiza_APP_SPEC v1.0. 260526.md`
+> **Renombrado de `APPSPEC.md` → `AGENT_BRIEF.md` (30 mayo 2026)** para diferenciarlo
+> del spec gordo y dejar claro que su audiencia es el agente, no documentación
+> formal de producto.
+>
+> ## Capas de documentación (lee `CLAUDE.md` → sección "Arquitectura de docs" para detalle completo)
+>
+> | Layer | Archivo | Audiencia | Frecuencia update |
+> |---|---|---|---|
+> | Spec mayor | `Fiza_APP_SPEC v1.0. 260526.md` (out-of-repo, 250 KB) | Humano + agente para deep-dive | Solo bumps mayores |
+> | Changelog corriente | `Fiza_CHANGELOG.md` (out-of-repo, 70 KB) | Humano + agente | Cada cambio relevante |
+> | Agent brief | **este archivo** (`AGENT_BRIEF.md`, in-repo, ~14 KB) | Agente cold-start | Cuando cambian reglas operativas o se hace version bump |
+> | Reglas de agente | `CLAUDE.md` (in-repo) | Agente | Cuando cambian protocolos |
+> | Build TWA Android | `android-keystore/README.md` (out-of-repo) | Humano + agente operando builds | Cuando cambia workflow de build/sign |
+>
+> ## Versión actual del producto
+>
+> **v1.0.3** (30 mayo 2026) — Internal/Closed Testing en Google Play.
+> Versión publicada de la spec gorda: **v1.0** (26 mayo 2026) 🚀
+> Spec gorda: `C:\Users\arome\Documents - Local\App Finanzas Pymes\Fiza_APP_SPEC v1.0. 260526.md`
 >
 > **v1.0 — Listo para Google Play Store (TWA)**: milestone. Fiza pasa de web app a app publicable en Android via Trusted Web Activity (Bubblewrap). Decisión: usar excepción "Business Management Software" de Google Play Payments Policy — Stripe sigue funcionando, NO migramos a Play Billing. Comparables: Xero, QuickBooks, FreshBooks, Wave.
 >
