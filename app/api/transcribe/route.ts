@@ -57,7 +57,15 @@ export async function POST(request: Request) {
     const transcription = await openai.audio.transcriptions.create({
       file: audio,
       model: 'whisper-1',
-      language: 'es',
+      // v1.0.4: SIN `language: 'es'`. Antes estaba hardcoded a español, lo
+      // que rompía silenciosamente para users que dictaban en otro idioma
+      // (Whisper forzado a mapear sonidos coreanos/ingleses/etc. a fonemas
+      // españoles → transcript basura). Ahora Whisper auto-detecta el idioma
+      // del audio. El AI downstream (`buildTextExtractionPrompt`) ya está
+      // diseñado para aceptar cualquier idioma y devolver descripción +
+      // categoría en español mexicano siempre. Pérdida marginal de accuracy
+      // para Spanish puro (~5%) vs ganancia: el feature ya no falla silente
+      // para users bilingües.
       // "text" es el response_format más barato; devuelve string plano.
       // Lo dejamos en el default ("json") para que el SDK devuelva un objeto
       // tipado y podamos sacar `.text` con TS seguro.
