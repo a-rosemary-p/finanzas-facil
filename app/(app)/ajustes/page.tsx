@@ -8,7 +8,6 @@ import { AppHeader } from '@/components/app-header'
 import { WaveSection } from '@/components/ui/wave'
 import { FeedbackModal } from '@/components/feedback-modal'
 import { DeleteAccountSection } from '@/components/ajustes/delete-account-section'
-import { useIsStandalone } from '@/hooks/use-is-standalone'
 import { CategoryPickerModal } from '@/components/categories/category-picker-modal'
 import { GIRO_DEFAULTS } from '@/lib/constants'
 import { startProCheckout } from '@/lib/upgrade-to-pro'
@@ -238,10 +237,6 @@ export default function AjustesPage() {
 
   // Modal de comentarios — mismo patrón que /inicio.
   const [feedbackOpen, setFeedbackOpen] = useState(false)
-  // v1.0.2: esconder botón Comentarios cuando la app corre en TWA/PWA
-  // standalone — para no confundir a testers de Play Store, que mandan
-  // feedback por el canal oficial de Google. En web normal sigue visible.
-  const isStandalone = useIsStandalone()
 
   useEffect(() => {
     if (!pwSuccess) return
@@ -610,23 +605,21 @@ export default function AjustesPage() {
           )}
         </SectionCard>
 
-        {/* Comentarios — abre FeedbackModal. Mismo patrón que /inicio.
-          * v1.0.2: oculto en TWA/PWA standalone para que testers de Play
-          * Store usen el canal oficial de Google y no este modal interno. */}
-        {!isStandalone && (
-          <div className="flex justify-center pt-3">
-            <button
-              type="button"
-              onClick={() => setFeedbackOpen(true)}
-              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg text-brand-mid"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-              Comentarios
-            </button>
-          </div>
-        )}
+        {/* Comentarios — abre FeedbackModal. Mismo patrón que /inicio + /perfil.
+          * v1.0.5: visible siempre. Ver comentario equivalente en /inicio
+          * (page.tsx alrededor del botón Comentarios) para el rationale. */}
+        <div className="flex justify-center pt-3">
+          <button
+            type="button"
+            onClick={() => setFeedbackOpen(true)}
+            className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg text-brand-mid"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            Comentarios
+          </button>
+        </div>
 
         {/* Eliminar cuenta — requisito de Google Play Store v1.0.
           * Componente con doble confirmación (click → texto ELIMINAR).

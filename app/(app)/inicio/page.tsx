@@ -47,7 +47,6 @@ import { ProfilePromptModal } from '@/components/onboarding/profile-prompt-modal
 import { CategoryPickerModal } from '@/components/categories/category-picker-modal'
 import { ProjectsOnboardingModal } from '@/components/projects/projects-onboarding-modal'
 import { useActiveProject, readActiveProjectId } from '@/hooks/use-active-project'
-import { useIsStandalone } from '@/hooks/use-is-standalone'
 import { GIRO_DEFAULTS } from '@/lib/constants'
 import type { RegistrosPeriod } from '@/components/inicio/period-dropdown'
 import type { Entry, PendingMovement } from '@/types'
@@ -90,8 +89,6 @@ function RegistrosInner() {
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
-  // v1.0.2: esconder Comentarios cuando la app corre standalone (TWA/PWA).
-  const isStandalone = useIsStandalone()
 
   // Onboarding inline: trigger en `total_movements === 0 && !onboardedAt`.
   // Se cierra explícitamente cuando el user termina o salta — `onboardedAt`
@@ -344,22 +341,23 @@ function RegistrosInner() {
           {/* Comentarios — abre modal de feedback. NO mailto: el destino
            * (admin@fiza.mx) no se expone al user; viaja por POST /api/feedback
            * que internamente lo manda con Resend.
-           * v1.0.2: oculto en TWA/PWA standalone (testers usan feedback de
-           * Play Store; no mezclar canales). */}
-          {!isStandalone && (
-            <div className="flex justify-center pt-3 px-4">
-              <button
-                type="button"
-                onClick={() => setFeedbackOpen(true)}
-                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg text-brand-mid"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                </svg>
-                Comentarios
-              </button>
-            </div>
-          )}
+           * v1.0.5: visible siempre (también en TWA/PWA standalone). El
+           * supuesto de v1.0.2 de que testers de Play Store usarían el canal
+           * oficial de Google fue incorrecto — Google no auto-prompts feedback,
+           * solo lo expone pasivamente. El feedback in-app es el único canal
+           * real que tenemos para captar comentarios de testers Android. */}
+          <div className="flex justify-center pt-3 px-4">
+            <button
+              type="button"
+              onClick={() => setFeedbackOpen(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg text-brand-mid"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              Comentarios
+            </button>
+          </div>
         </main>
       )}
 
