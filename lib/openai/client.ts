@@ -10,27 +10,77 @@ function getClient(): OpenAI {
     _client = new OpenAI({
       apiKey,
       timeout: 30_000, // 30s — acomoda el paso OCR con detail:high
+      // Centralizamos TODA la lógica de retry en `withRetry` (abajo) para
+      // tener control sobre backoff, Retry-After y la distinción
+      // rate_limit_exceeded vs insufficient_quota. Apagamos los reintentos
+      // internos del SDK para no duplicar backoffs anidados.
+      maxRetries: 0,
     })
   }
   return _client
 }
 
-// Reintenta hasta 3 veces en errores 429 con backoff lineal
+/**
+ * Reintenta llamadas a OpenAI ante errores transitorios.
+ *
+ * Distingue dos tipos de HTTP 429 que el SDK colapsa en `RateLimitError`:
+ *   - `rate_limit_exceeded` (RPM/TPM del tier) → TRANSITORIO. Esperar ayuda.
+ *     Reintenta con backoff exponencial, respetando el header `Retry-After`
+ *     si OpenAI lo manda.
+ *   - `insufficient_quota` (saldo/cuota de la cuenta agotada) → NO transitorio.
+ *     Esperar NO ayuda. Rethrow inmediato + log claro para debug.
+ *
+ * También reintenta 5xx transitorios (500/502/503/504). Cualquier otro error
+ * (4xx de validación, auth, parseo) se relanza sin reintentar.
+ *
+ * Nota sobre el bug "La IA está saturada" (testing jun 2026): el 429 NO es por
+ * falta de crédito — es el RPM/TPM del usage tier de OpenAI. Subir de tier
+ * (lifetime spend) sube esos límites. Ver Fiza_CHANGELOG.md v1.0.6.
+ */
 async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  const MAX_ATTEMPTS = 4
   let lastErr: unknown
-  for (let attempt = 0; attempt < 3; attempt++) {
+
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     try {
       return await fn()
     } catch (err) {
       lastErr = err
-      const isRateLimit =
-        err instanceof Error &&
-        (err.message.includes('429') ||
-          err.message.includes('rate_limit') ||
-          err.message.includes('quota'))
-      if (!isRateLimit || attempt === 2) throw err
-      // 1.2s → 2.4s entre reintentos
-      await new Promise(r => setTimeout(r, 1200 * (attempt + 1)))
+
+      // 429 rate limit (RPM/TPM) — transitorio, reintentar.
+      if (err instanceof OpenAI.RateLimitError) {
+        // insufficient_quota = saldo agotado. Reintentar es inútil.
+        if (err.code === 'insufficient_quota') {
+          console.error('[openai] insufficient_quota — saldo/cuota agotada, revisar billing. NO se reintenta.')
+          throw err
+        }
+        if (attempt === MAX_ATTEMPTS - 1) {
+          console.error(`[openai] rate_limit_exceeded (RPM/TPM del tier) tras ${MAX_ATTEMPTS} intentos`)
+          throw err
+        }
+        // Respetar Retry-After (segundos) si viene; si no, backoff exponencial.
+        // `err.headers` es un objeto Headers (Fetch API) — usar .get().
+        const retryAfterRaw = err.headers?.get('retry-after')
+        const retryAfterSec = retryAfterRaw ? Number(retryAfterRaw) : NaN
+        const waitMs = Number.isFinite(retryAfterSec) && retryAfterSec > 0
+          ? Math.min(retryAfterSec * 1000, 8000) // cap 8s para no colgar la request
+          : 1000 * 2 ** attempt // 1s, 2s, 4s
+        await new Promise(r => setTimeout(r, waitMs))
+        continue
+      }
+
+      // 5xx transitorios — reintento rápido.
+      if (
+        err instanceof OpenAI.APIError &&
+        (err.status === 500 || err.status === 502 || err.status === 503 || err.status === 504)
+      ) {
+        if (attempt === MAX_ATTEMPTS - 1) throw err
+        await new Promise(r => setTimeout(r, 800 * (attempt + 1)))
+        continue
+      }
+
+      // Cualquier otro error no es recuperable reintentando.
+      throw err
     }
   }
   throw lastErr

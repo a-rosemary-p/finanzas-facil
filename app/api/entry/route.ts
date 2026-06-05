@@ -140,6 +140,16 @@ export async function POST(request: Request) {
     const { default: OpenAI } = await import('openai')
     if (error instanceof OpenAI.APIError) {
       if (error instanceof OpenAI.RateLimitError) {
+        // Distinguir saldo agotado (insufficient_quota) de rate limit del tier
+        // (rpm/tpm). El primero NO se cura esperando — mensaje y log distintos.
+        if (error.code === 'insufficient_quota') {
+          console.error('[POST /api/entry] OpenAI insufficient_quota — revisar saldo/billing de la cuenta')
+          return Response.json(
+            { error: 'El servicio de IA no está disponible por ahora. Intenta más tarde.' },
+            { status: 503 }
+          )
+        }
+        console.error('[POST /api/entry] OpenAI rate_limit_exceeded (RPM/TPM del tier)')
         return Response.json(
           { error: 'La IA está saturada. Espera unos segundos e intenta de nuevo.' },
           { status: 429 }

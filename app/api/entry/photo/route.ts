@@ -200,7 +200,18 @@ export async function POST(request: Request) {
     const msg = error instanceof Error ? error.message : String(error)
     console.error('[POST /api/entry/photo]', msg)
 
-    if (msg.includes('429') || msg.includes('rate_limit') || msg.includes('quota')) {
+    // Errores tipados del SDK (más robusto que string matching sobre el msg).
+    const { default: OpenAI } = await import('openai')
+    if (error instanceof OpenAI.RateLimitError) {
+      // insufficient_quota (saldo) NO se cura esperando; rate_limit del tier sí.
+      if (error.code === 'insufficient_quota') {
+        console.error('[POST /api/entry/photo] OpenAI insufficient_quota — revisar saldo/billing')
+        return Response.json(
+          { error: 'El servicio de IA no está disponible por ahora. Intenta más tarde.' },
+          { status: 503 }
+        )
+      }
+      console.error('[POST /api/entry/photo] OpenAI rate_limit_exceeded (RPM/TPM del tier)')
       return Response.json(
         { error: 'La IA está saturada. Espera unos segundos e intenta de nuevo.' },
         { status: 429 }
