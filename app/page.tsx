@@ -337,18 +337,18 @@ const FEATURE_HIGHLIGHTS: Array<{
   isPro?: boolean
 }> = [
   {
-    image: '/recurrentes.png',
+    image: '/recurrentes.webp',
     title: 'Pendientes y compromisos',
     body: 'Lo que te deben, lo que debes, lo que se vence. Todo en un solo lugar — antes de que se te pase.',
   },
   {
-    image: '/como-voy.png',
+    image: '/como-voy.webp',
     title: 'Análisis con IA',
     body: 'Fiza compara tus períodos y te explica qué cambió en lenguaje claro. Sin gráficas que no entiendes.',
     isPro: true,
   },
   {
-    image: '/reportes-base.png',
+    image: '/reportes-base.webp',
     title: 'Tus números, claros',
     body: 'Gráficas y desglose por categoría. Entiende en segundos a dónde se va tu dinero.',
   },
@@ -631,9 +631,16 @@ export default function HomePage() {
            * bordes y el filter dibujaba un rectángulo visible en mobile. */}
           <div className="flex-shrink-0 w-full md:w-auto flex justify-center">
             <img
-              src="/inicio.png"
+              src="/inicio.webp"
               alt="Pantalla principal de Fiza mostrando ingresos, gastos y neto"
               draggable={false}
+              // width/height reales del asset: dan el aspect-ratio al browser
+              // para que reserve el espacio y no haya layout shift (CLS).
+              width={782}
+              height={1390}
+              // Es el LCP de la landing: carga eager y con prioridad alta.
+              fetchPriority="high"
+              decoding="async"
               style={{
                 width: '100%',
                 maxWidth: '391px',
@@ -786,6 +793,12 @@ export default function HomePage() {
                     alt={f.title}
                     draggable={false}
                     className="mx-auto"
+                    // Assets de 640x1138 (2x del display de 320px).
+                    width={640}
+                    height={1138}
+                    // Están abajo del fold: no compiten con el LCP del hero.
+                    loading="lazy"
+                    decoding="async"
                     style={{
                       width: '100%',
                       maxWidth: '320px',

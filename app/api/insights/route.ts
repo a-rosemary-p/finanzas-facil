@@ -35,6 +35,11 @@ export async function GET() {
   const { data: rows } = await supabase
     .from('movements')
     .select('type, amount, movement_date, is_investment')
+    // Filtro explícito por user_id: defense-in-depth sobre RLS, igual que el
+    // resto de los endpoints de lectura (ej. reports/movements). RLS ya lo
+    // protege, pero si alguna policy se rompiera en el futuro esta era la
+    // única lectura que quedaba sin la segunda barrera.
+    .eq('user_id', user.id)
     .gte('movement_date', start90)
     .order('movement_date', { ascending: true })
 

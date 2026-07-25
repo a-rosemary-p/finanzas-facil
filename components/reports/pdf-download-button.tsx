@@ -13,8 +13,12 @@
 // silenciosamente el resultado anterior (defensa contra share() colgado).
 
 import { useRef, useState } from 'react'
-import { pdf } from '@react-pdf/renderer'
-import { MonthlyReportDoc } from './monthly-report'
+// OJO: `@react-pdf/renderer` (~350 KB gzip) y `./monthly-report` se importan
+// DINÁMICAMENTE dentro de handleClick, no acá arriba. El `dynamic()` de
+// reportes/page.tsx saca este componente del bundle inicial, pero en cuanto
+// hay movimientos el botón se monta y bajaría/parsearía el chunk completo de
+// react-pdf aunque el usuario nunca exporte (cientos de ms de jank en Android
+// de gama baja). Mismo patrón que excel-download-button con exceljs.
 import { shareOrDownload } from '@/lib/file-share'
 import { track } from '@/lib/analytics'
 import type { Movement } from '@/types'
@@ -60,6 +64,12 @@ export default function PdfDownloadButton({ periodSlug, periodLabel, movements, 
     try {
       const logoUrl = window.location.origin + '/logo-green.png'
       const fileName = `fiza-reporte-${periodSlug}.pdf`
+
+      // ── 0. Cargar react-pdf sólo cuando el user de verdad exporta ──────
+      const [{ pdf }, { MonthlyReportDoc }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('./monthly-report'),
+      ])
 
       // ── 1. Generar el PDF blob ─────────────────────────────────────────
       const blob = await withTimeout(

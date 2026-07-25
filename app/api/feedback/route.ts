@@ -15,6 +15,9 @@
  *  - Honeypot field `website` — campo oculto que humanos no llenan; si
  *    viene con valor, devolvemos 200 OK silencioso (el bot cree que
  *    funcionó pero no se manda nada).
+ *  - Rate limit por IP, 8/hora (agregado tras la auditoría de jul 2026 — el
+ *    honeypot solo para bots ingenuos; uno que lo ignorara podía mandar
+ *    correos ilimitados vía Resend).
  *  - Validación de email format mínimo.
  *  - Cap de mensaje 2000 chars (mismo que el modo auth).
  *
@@ -30,6 +33,7 @@
 import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
 import { trackServer } from '@/lib/analytics-server'
+import { consumeIpRateLimit } from '@/lib/ip-rate-limit'
 
 type FeedbackKind = 'sugerencia' | 'comentario' | 'problema' | 'eliminar_cuenta'
 
@@ -105,7 +109,22 @@ export async function POST(request: Request) {
       ciudad      = (profile?.ciudad as string | null) ?? '—'
       userId      = user.id
     } else {
-      // Modo público — el body debe traer name + email
+      // Modo público — el body debe traer name + email.
+      //
+      // Rate limit por IP (8/hora). El honeypot solo frena bots ingenuos: uno
+      // que ignore el campo `website` podía mandar correos ilimitados vía
+      // Resend a admin@fiza.mx (saturar la bandeja + quemar cuota). Se aplica
+      // SOLO en modo público a propósito: los usuarios autenticados ya son
+      // identificables, y limitar por IP los castigaría injustamente cuando
+      // varios comparten salida NAT (una oficina, por ejemplo).
+      const allowed = await consumeIpRateLimit(request, 'feedback_public')
+      if (!allowed) {
+        return Response.json(
+          { error: 'Recibimos varios mensajes desde tu conexión. Intenta más tarde.' },
+          { status: 429 },
+        )
+      }
+
       const nameRaw  = String(body['name']  ?? '').trim()
       const emailRaw = String(body['email'] ?? '').trim()
 

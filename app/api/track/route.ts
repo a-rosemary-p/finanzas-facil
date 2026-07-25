@@ -1,5 +1,6 @@
 import { createClient as createSSRClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { consumeIpRateLimit } from '@/lib/ip-rate-limit'
 
 /**
  * POST /api/track
@@ -24,10 +25,23 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
  * Defense-in-depth: ALLOWED_EVENTS allowlist evita que un atacante use
  * este endpoint para flotar la tabla con eventos arbitrarios.
  *
+ * Anti-abuso (agregado tras la auditoría de jul 2026):
+ *  - Rate limit por IP (300/hora). El allowlist de eventos no impedía que un
+ *    bot inflara la tabla en loop y contaminara todos los KPIs del dashboard
+ *    de founders (visitors, top pages, países, UTMs salen de estos campos,
+ *    que los controla el cliente).
+ *  - Cap de tamaño del payload. Antes se copiaba `{ ...rawPayload }` tal cual,
+ *    sin límite de bytes ni de claves — un payload gigante por request era
+ *    crecimiento de storage sin techo.
+ *
  * Devuelve 204 en TODOS los casos (incluso errores) — analytics no debe
  * ser un canal que el cliente use para detectar otra cosa, y queremos que
  * el browser no intente reintentos.
  */
+
+/** Cap del payload que manda el cliente (antes del enrichment del server). */
+const MAX_PAYLOAD_BYTES = 2048
+const MAX_PAYLOAD_KEYS = 25
 
 const ALLOWED_EVENTS = new Set<string>([
   'page_viewed',
@@ -50,6 +64,10 @@ function parseDevice(ua: string): 'mobile' | 'tablet' | 'desktop' {
 
 export async function POST(request: Request) {
   try {
+    // Rate limit por IP antes de tocar el body o la DB.
+    const allowed = await consumeIpRateLimit(request, 'track')
+    if (!allowed) return new Response(null, { status: 204 })
+
     const body = await request.json().catch(() => null)
     if (!body || typeof (body as Record<string, unknown>).event !== 'string') {
       return new Response(null, { status: 204 })
@@ -61,10 +79,20 @@ export async function POST(request: Request) {
     }
 
     const rawPayload = (body as { payload?: unknown }).payload
-    const payload: Record<string, unknown> =
+    let payload: Record<string, unknown> =
       rawPayload && typeof rawPayload === 'object' && !Array.isArray(rawPayload)
         ? { ...(rawPayload as Record<string, unknown>) }
         : {}
+
+    // Cap de claves y de bytes. Si el cliente manda algo desproporcionado lo
+    // descartamos y dejamos una marca — preferimos perder el detalle del evento
+    // antes que aceptar filas sin techo de tamaño.
+    const keys = Object.keys(payload)
+    if (keys.length > MAX_PAYLOAD_KEYS) {
+      payload = { _truncated: 'too_many_keys' }
+    } else if (JSON.stringify(payload).length > MAX_PAYLOAD_BYTES) {
+      payload = { _truncated: 'too_large' }
+    }
 
     // ── Enrichment server-side ─────────────────────────────────────────
     const country = request.headers.get('x-vercel-ip-country')
